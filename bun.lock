@@ -1,0 +1,24 @@
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "zkvote",
+      "devDependencies": {
+        "prettier": "latest",
+      },
+    },
+    "contracts": {
+      "name": "contracts",
+    },
+    "frontend": {
+      "name": "frontend",
+    },
+  },
+  "packages": {
+    "contracts": ["contracts@workspace:contracts"],
+
+    "frontend": ["frontend@workspace:frontend"],
+
+    "prettier": ["prettier@3.6.2", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ=="],
+  }
+}
