@@ -1,0 +1,22 @@
+{
+  "name": "zkvote",
+  "private": true,
+  "version": "0.0.1",
+  "workspaces": [
+    "contracts",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "bun --filter frontend dev",
+    "dev:chain": "anvil --block-time 2",
+    "build": "bun run build:contracts && bun --filter frontend build",
+    "build:contracts": "cd contracts && forge build && cd .. && bun run generate:abis",
+    "test:contracts": "cd contracts && forge test -vvv",
+    "deploy:local": "cd contracts && forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --verify",
+    "generate:abis": "bun scripts/generate-abis.js",
+    "start": "bun --filter frontend start"
+  },
+  "devDependencies": {
+    "prettier": "latest"
+  }
+}
