@@ -1,10 +1,33 @@
-{ 
-    "name": "frontend", 
+{
+    "name": "frontend",
     "private": true,
     "scripts": {
-        "dev": "next dev",
-        "build": "next build",
+        "dev": "next dev --webpack",
+        "build": "next build --webpack",
         "start": "next start",
         "lint": "next lint"
+    },
+    "dependencies": {
+        "@base-org/account": "^2.5.0",
+        "@coinbase/wallet-sdk": "^4.3.7",
+        "@metamask/sdk": "^0.34.0",
+        "@rainbow-me/rainbowkit": "^2.2.9",
+        "@safe-global/safe-apps-provider": "^0.18.6",
+        "@tanstack/react-query": "^5.90.10",
+        "@wagmi/connectors": "^7.0.1",
+        "@wagmi/core": "^3.0.0",
+        "@walletconnect/ethereum-provider": "^2.23.0",
+        "next": "^16.0.3",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
+        "react-hot-toast": "^2.6.0",
+        "viem": "^2.40.2",
+        "wagmi": "^3.0.1"
+    },
+    "devDependencies": {
+        "@wagmi/cli": "^2.8.0",
+        "autoprefixer": "^10.4.22",
+        "postcss": "^8.5.6",
+        "tailwindcss": "^4.1.17"
     }
 }

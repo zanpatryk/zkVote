@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  webpack: (config) => {
+    config.externals.push('pino-pretty', 'lokijs', 'encoding', '@gemini-wallet/core', 'porto')
+    return config
+  },
 };
 
 export default nextConfig;
