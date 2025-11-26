@@ -15,8 +15,5 @@
     "deploy:local": "cd contracts && forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --verify",
     "generate:abis": "bun scripts/generate-abis.js",
     "start": "bun --filter frontend start"
-  },
-  "devDependencies": {
-    "prettier": "latest"
   }
 }
