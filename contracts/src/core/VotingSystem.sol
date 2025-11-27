@@ -20,12 +20,11 @@ contract VotingSystem {
     /* ... */
 
     /* Functions */
-    constructor(address _pollManager) {
+    constructor() {
         owner = msg.sender;
-        pollManager = _pollManager;
     }
 
-    function changePollManager(address _pollManager) external ownerOnly {}
+    function changePollManager(address _pollManager) external {}
     function createPoll(bytes calldata pollData) external returns (uint256 pollId) {}
     function getPoll(uint256 pollId) external view returns (bytes memory pollData) {}
     function getPolls(address pollOwner) external view returns (uint256[] memory pollIds) {}

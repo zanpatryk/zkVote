@@ -3,54 +3,52 @@ pragma solidity ^0.8.20;
 
 import {IVoteStorage} from "../interfaces/IVoteStorage.sol";
 
+/* Errors */
+error VoteStorageV0__OnlyOwner();
+error VoteStorageV0__AlreadyVoted(address user);
+
 contract VoteStorageV0 is IVoteStorage {
+    /* State Variables */
+    address public immutable i_owner;
+
+    mapping(uint256 pollId => mapping(address user => bool voted)) private s_hasVoted;
+    mapping(uint256 pollId => mapping(uint256 option => uint256 voteCounter)) private s_voteCount;
+
     /* Events */
-    event VoteCast(uint256 indexed pollId);
-    
-    /* Structs */
-    struct Vote {
-        uint256 pollId;
-        uint256 choice;
-    }
+    event VoteCasted(uint256 indexed pollId);
 
     /* Modifiers */
     modifier ownerOnly() {
-        require(msg.sender == owner, "Not owner");
+        if (msg.sender != i_owner) {
+            revert VoteStorageV0__OnlyOwner();
+        }
         _;
-    }
-
-    modifier whitelistedOnly(uint256 pollId) {
-        require(pollManager.isWhitelisted(pollId, msg.sender), "Not whitelisted");
-        _;
-    }
-    
-    /* State Variables */
-    address public owner;
-    mapping(uint256 => mapping(address => bool)) private hasVoted;   // pollId => user => hasVoted
-    mapping(uint256 => mapping(uint256 => Vote)) private votes; // pollId => voteId => Vote
-    mapping(uint256 => mapping(uint256 => uint256)) private voteCount; // pollId => choice => voteCount
-    IPollManager public pollManager;
-    
-    /* Constructor */
-    constructor() {
-        owner = msg.sender;
     }
 
     /* Functions */
-    function castVote(bytes calldata voteData) external {
-        Vote vote = abi.decode(voteData, (Vote));
-        require(pollManager.isValidPollId(vote.pollId), "Invalid pollId");
-        require(pollManager.isValidOption(vote.pollId, vote.choice), "Invalid option");
-        require(whitelistedOnly(vote.pollId), "Not whitelisted");
-        require(!hasVoted[vote.pollId][msg.sender], "Already voted");
-
-        votes[vote.pollId][voteCount[vote.pollId][vote.choice]++] = vote;
-        hasVoted[vote.pollId][msg.sender] = true;
-        voteCount[vote.pollId][vote.choice]++;
-        emit VoteCast(vote.pollId);
+    constructor(address owner) {
+        i_owner = owner;
     }
 
-    function getVote(uint256 pollId, uint256 voteId) external view returns (bytes memory voteData) {
-        return bytes(votes[pollId][voteId]);
+    function castVote(uint256 pollId, uint256 optionIdx, address voter) external ownerOnly {
+        if (s_hasVoted[pollId][voter]) {
+            revert VoteStorageV0__AlreadyVoted(voter);
+        }
+
+        s_hasVoted[pollId][voter] = true;
+        s_voteCount[pollId][optionIdx] += 1;
+        emit VoteCasted(pollId);
+    }
+
+    function getVoteCount(uint256 pollId, uint256 optionIdx) external view returns (uint256) {
+        return s_voteCount[pollId][optionIdx];
+    }
+
+    function getResults(uint256 pollId, uint256 optionCount) external view returns (uint256[] memory) {
+        uint256[] memory results = new uint256[](optionCount);
+        for (uint256 i = 0; i < optionCount; ++i) {
+            results[i] = s_voteCount[pollId][i];
+        }
+        return results;
     }
 }
