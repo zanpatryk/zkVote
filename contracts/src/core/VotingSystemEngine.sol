@@ -8,6 +8,7 @@ import {IVoteStorage} from "../interfaces/IVoteStorage.sol";
 /* Errors */
 error VotingSystem__NotOwner();
 error VotingSystem__AlreadyInitialized();
+error VotingSystem__InvalidAddress();
 error VotingSystem__EmptyTitle();
 error VotingSystem__InvalidNumberOfOptions();
 error VotingSystem__AddressNotWhitelisted(address user);
@@ -45,19 +46,18 @@ contract VotingSystemEngine {
         _;
     }
 
-    modifier initializedOnly() {
-        if (s_initializationFlag) {
-            revert VotingSystem__AlreadyInitialized();
-        }
-        _;
-    }
-
     /* Functions */
     constructor() {
         i_owner = msg.sender;
     }
 
     function initialize(address pollManager, address eligibilityModule, address voteStorage) external ownerOnly {
+        if (s_initializationFlag) {
+            revert VotingSystem__AlreadyInitialized();
+        }
+        if (pollManager == address(0) || eligibilityModule == address(0) || voteStorage == address(0)) {
+            revert VotingSystem__InvalidAddress();
+        }
         s_pollManager = IPollManager(pollManager);
         s_eligibilityModule = IEligibilityModule(eligibilityModule);
         s_voteStorage = IVoteStorage(voteStorage);
