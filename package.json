@@ -12,7 +12,8 @@
     "build": "bun run build:contracts && bun --filter frontend build",
     "build:contracts": "cd contracts && forge build && cd .. && bun run generate:abis",
     "test:contracts": "cd contracts && forge test -vvv",
-    "deploy:local": "cd contracts && forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --verify",
+    "deploy:local": "cd contracts && forge script script/DeployVotingSystem.s.sol:DeployVotingSystem --rpc-url http://127.0.0.1:8545 --broadcast",
+    "deploy:sepolia": "cd contracts && forge script script/DeployVotingSystem.s.sol:DeployVotingSystem --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify",
     "generate:abis": "bun scripts/generate-abis.js",
     "start": "bun --filter frontend start"
   },
