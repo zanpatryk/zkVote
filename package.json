@@ -16,8 +16,5 @@
     "deploy:sepolia": "cd contracts && forge script script/DeployVotingSystem.s.sol:DeployVotingSystem --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify",
     "generate:abis": "bun scripts/generate-abis.js",
     "start": "bun --filter frontend start"
-  },
-  "devDependencies": {
-    "prettier": "latest"
   }
 }
