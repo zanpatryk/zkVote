@@ -11,6 +11,12 @@ error PollManager__InvalidNumberOfOptions();
 error PollManager__NotOwner();
 error PollManager__EmptyOption();
 
+/**
+ * @title Poll Manager
+ * @dev This contract manages polls within the voting system.
+ * It allows for the creation and retrieval of polls.
+ */
+
 contract PollManager is IPollManager {
     /*Types */
     enum State {
@@ -54,6 +60,14 @@ contract PollManager is IPollManager {
         s_pollCount = 0;
     }
 
+    /**
+     * @dev Creates a new poll with the given data.
+     * @param title The title of the poll.
+     * @param description The description of the poll (optional).
+     * @param options The options for the poll.
+     * @param creator The address of the poll creator.
+     * @return pollId The ID of the created poll.
+     */
     function createPoll(string calldata title, string calldata description, string[] calldata options, address creator)
         external
         ownerOnly
@@ -89,6 +103,7 @@ contract PollManager is IPollManager {
         return pollId;
     }
 
+    /* Getters */
     function isValidPollId(uint256 pollId) external view returns (bool) {
         return pollId != 0 && s_polls[pollId].pollId == pollId;
     }

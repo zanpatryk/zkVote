@@ -38,7 +38,9 @@ contract EligibilityModuleV0 {
     }
 
     /**
-     * @dev Returns true if the user is whitelisted for the given poll.
+     * @dev Checks if the user is whitelisted for the given poll.
+     * @param pollId The ID of the poll.
+     * @param user The address of the user.
      */
     function isWhitelisted(uint256 pollId, address user) external view returns (bool) {
         return isEligibleToVote(pollId, user);
@@ -46,6 +48,8 @@ contract EligibilityModuleV0 {
 
     /**
      * @dev Adds the user to whitelist for the given poll.
+     * @param pollId The ID of the poll.
+     * @param user The address of the user.
      */
     function addWhitelisted(uint256 pollId, address user) external ownerOnly {
         if (isEligibleToVote(pollId, user)) {
@@ -58,6 +62,8 @@ contract EligibilityModuleV0 {
 
     /**
      * @dev Removes the user from whitelist for the given poll.
+     * @param pollId The ID of the poll.
+     * @param user The address of the user.
      */
     function removeWhitelisted(uint256 pollId, address user) external ownerOnly {
         if (!isEligibleToVote(pollId, user)) {
@@ -68,6 +74,11 @@ contract EligibilityModuleV0 {
         emit EligibilityModuleV0__AddressRemovedFromWhitelist(user, pollId);
     }
 
+    /**
+     * @dev Internal function to check if the user is eligible to vote in the given poll.
+     * @param pollId The ID of the poll.
+     * @param user The address of the user.
+     */
     function isEligibleToVote(uint256 pollId, address user) internal view returns (bool) {
         return s_whitelist[pollId][user];
     }

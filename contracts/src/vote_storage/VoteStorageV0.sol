@@ -7,6 +7,11 @@ import {IVoteStorage} from "../interfaces/IVoteStorage.sol";
 error VoteStorageV0__OnlyOwner();
 error VoteStorageV0__AlreadyVoted(address user);
 
+/**
+ * @title Vote Storage V0
+ * @dev This contract is the first version of the vote storage module.
+ * It stores the votes casted by users and keeps track of the vote counts for each option.
+ */
 contract VoteStorageV0 is IVoteStorage {
     /* State Variables */
     address public immutable i_owner;
@@ -30,6 +35,12 @@ contract VoteStorageV0 is IVoteStorage {
         i_owner = owner;
     }
 
+    /**
+     * @dev Records a vote for the given poll and option by the voter.
+     * @param pollId The ID of the poll.
+     * @param optionIdx The index of the option being voted for.
+     * @param voter The address of the voter.
+     */
     function castVote(uint256 pollId, uint256 optionIdx, address voter) external ownerOnly {
         if (s_hasVoted[pollId][voter]) {
             revert VoteStorageV0__AlreadyVoted(voter);
