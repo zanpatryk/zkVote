@@ -12,6 +12,8 @@
     "build": "bun run build:contracts && bun --filter frontend build",
     "build:contracts": "cd contracts && make build && cd .. && bun run generate:abis",
     "test:contracts": "cd contracts && make test",
+    "test:ui": "bun --filter frontend test:ui",
+    "test:ui:coverage": "bun --filter frontend test:ui:coverage",
     "deploy:local": "cd contracts && make deploy-anvil",
     "deploy:sepolia": "cd contracts && make deploy-sepolia",
     "generate:abis": "bun scripts/generate-abis.js",
