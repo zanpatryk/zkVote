@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { hexToString } from 'viem'
 import { toast } from 'react-hot-toast'
 
-function formatDuration(ms) {
+export function formatDuration(ms) {
   if (ms <= 0) return '0m'
   const totalSeconds = Math.floor(ms / 1000)
   const minutes = Math.floor(totalSeconds / 60) % 60
