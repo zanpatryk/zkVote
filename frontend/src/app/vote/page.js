@@ -1,7 +1,7 @@
 'use client'
 
 import { useAccount } from 'wagmi'
-import { getWhitelistedPolls } from '@/lib/blockchain/read'
+import { getWhitelistedPolls } from '@/lib/blockchain/engine/read'
 import { useQuery } from '@tanstack/react-query'
 import PollCard from '@/components/PollCard'
 

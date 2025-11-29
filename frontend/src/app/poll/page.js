@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
-import { getOwnedPolls } from '@/lib/blockchain/read'
+import { getOwnedPolls } from '@/lib/blockchain/engine/read'
 import PollCard from '@/components/PollCard'
 import Link from 'next/link'
 

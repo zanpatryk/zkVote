@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { getPollById } from '@/lib/blockchain/read'
+import { getPollById } from '@/lib/blockchain/engine/read'
 
 export default function ManagePoll() {
   const { pollId } = useParams()

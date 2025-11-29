@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { getPollById, hasVoted } from '@/lib/blockchain/read'
+import { getPollById, hasVoted } from '@/lib/blockchain/engine/read'
 import { castVote } from '@/lib/blockchain/write'
 import { toast } from 'react-hot-toast'
 

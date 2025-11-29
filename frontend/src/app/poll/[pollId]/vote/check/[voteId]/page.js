@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { getVote, getPollById } from '@/lib/blockchain/read'
+import { getVote, getPollById } from '@/lib/blockchain/engine/read'
 
 export default function VoteCheckPage() {
   const { pollId, voteId } = useParams()
