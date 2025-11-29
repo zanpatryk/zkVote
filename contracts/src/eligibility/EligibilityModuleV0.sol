@@ -43,7 +43,7 @@ contract EligibilityModuleV0 {
      * @param user The address of the user.
      */
     function isWhitelisted(uint256 pollId, address user) external view returns (bool) {
-        return isEligibleToVote(pollId, user);
+        return s_whitelist[pollId][user];
     }
 
     /**
@@ -51,13 +51,30 @@ contract EligibilityModuleV0 {
      * @param pollId The ID of the poll.
      * @param user The address of the user.
      */
-    function addWhitelisted(uint256 pollId, address user) external ownerOnly {
-        if (isEligibleToVote(pollId, user)) {
+    function addWhitelisted(uint256 pollId, address user) external ownerOnly returns (bool) {
+        if (s_whitelist[pollId][user]) {
             revert EligibilityModuleV0__AlreadyWhitelisted();
         }
 
         s_whitelist[pollId][user] = true;
         emit EligibilityModuleV0__AddressWhitelisted(user, pollId);
+        return true;
+    }
+
+    /**
+     * @dev Adds a batch of users to whitelist for the given poll.
+     * @param pollId The ID of the poll.
+     * @param users The addresses of the users.
+     */
+    function addWhitelistedBatch(uint256 pollId, address[] calldata users) external ownerOnly returns (bool) {
+        for (uint256 i = 0; i < users.length; ++i) {
+            address user = users[i];
+            if (!s_whitelist[pollId][user]) {
+                s_whitelist[pollId][user] = true;
+                emit EligibilityModuleV0__AddressWhitelisted(user, pollId);
+            }
+        }
+        return true;
     }
 
     /**
@@ -65,21 +82,23 @@ contract EligibilityModuleV0 {
      * @param pollId The ID of the poll.
      * @param user The address of the user.
      */
-    function removeWhitelisted(uint256 pollId, address user) external ownerOnly {
-        if (!isEligibleToVote(pollId, user)) {
+    function removeWhitelisted(uint256 pollId, address user) external ownerOnly returns (bool) {
+        if (!s_whitelist[pollId][user]) {
             revert EligibilityModuleV0__NotWhitelisted();
         }
 
         s_whitelist[pollId][user] = false;
         emit EligibilityModuleV0__AddressRemovedFromWhitelist(user, pollId);
+        return true;
     }
 
     /**
      * @dev Internal function to check if the user is eligible to vote in the given poll.
      * @param pollId The ID of the poll.
-     * @param user The address of the user.
+     * @param data The data needed to check if the user is eligible to vote.
      */
-    function isEligibleToVote(uint256 pollId, address user) internal view returns (bool) {
+    function isEligibleToVote(uint256 pollId, bytes calldata data) external view returns (bool) {
+        address user = abi.decode(data, (address));
         return s_whitelist[pollId][user];
     }
 }

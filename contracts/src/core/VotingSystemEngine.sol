@@ -85,6 +85,10 @@ contract VotingSystemEngine {
         s_eligibilityModule.addWhitelisted(pollId, user);
     }
 
+    function whitelistUsers(uint256 pollId, address[] calldata users) external checkPollValidity(pollId) {
+        s_eligibilityModule.addWhitelistedBatch(pollId, users);
+    }
+
     function removeWhitelisted(uint256 pollId, address user) external checkPollValidity(pollId) {
         s_eligibilityModule.removeWhitelisted(pollId, user);
     }
@@ -93,7 +97,7 @@ contract VotingSystemEngine {
         return s_eligibilityModule.isWhitelisted(pollId, user);
     }
 
-    function castVote(uint256 pollId, uint256 optionIdx) external checkPollValidity(pollId) {
+    function castVote(uint256 pollId, uint256 optionIdx) external checkPollValidity(pollId) returns (uint256 voteId) {
         address voter = msg.sender;
         if (!s_eligibilityModule.isWhitelisted(pollId, voter)) {
             revert VotingSystem__AddressNotWhitelisted(voter);
@@ -104,6 +108,6 @@ contract VotingSystemEngine {
             revert VotingSystem__InvalidOption();
         }
 
-        s_voteStorage.castVote(pollId, optionIdx, voter);
+        voteId = s_voteStorage.castVote(pollId, voter, abi.encode(optionIdx));
     }
 }

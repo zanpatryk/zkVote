@@ -35,10 +35,8 @@ contract PollManager is IPollManager {
 
     uint256 private s_pollCount;
     mapping(uint256 pollId => Poll pollStructure) private s_polls;
-    mapping(address pollCreator => uint256[] pollsId) private s_OwnerToPollId;
 
     /* Events */
-    event PollCreated(uint256 indexed pollId);
 
     /* Modifiers */
     modifier ownerOnly() {
@@ -84,8 +82,7 @@ contract PollManager is IPollManager {
             p.options.push(options[i]);
         }
 
-        s_OwnerToPollId[creator].push(pollId);
-        emit PollCreated(pollId);
+        emit PollCreated(pollId, creator);
         return pollId;
     }
 
@@ -114,8 +111,16 @@ contract PollManager is IPollManager {
         return s_polls[pollId].options[index];
     }
 
-    function getPolls(address pollOwner) external view returns (uint256[] memory pollIds) {
-        return s_OwnerToPollId[pollOwner];
+    function getPoll(uint256 pollId) external view returns (
+        uint256 id,
+        address owner,
+        string memory title,
+        string memory description,
+        string[] memory options,
+        uint8 state
+    ) {
+        Poll storage p = s_polls[pollId];
+        return (p.pollId, p.owner, p.title, p.description, p.options, uint8(p.state));
     }
 
     function getDescription(uint256 pollId) external view returns (string memory) {

@@ -13,14 +13,24 @@ error VoteStorageV0__AlreadyVoted(address user);
  * It stores the votes casted by users and keeps track of the vote counts for each option.
  */
 contract VoteStorageV0 is IVoteStorage {
+    /* Structs */
+    struct Vote {
+        uint256 voteId;
+        uint256 pollId;
+        uint256 optionIdx;
+        address voter;
+    }
+
     /* State Variables */
     address public immutable i_owner;
 
     mapping(uint256 pollId => mapping(address user => bool voted)) private s_hasVoted;
     mapping(uint256 pollId => mapping(uint256 option => uint256 voteCounter)) private s_voteCount;
+    
+    uint256 private s_totalVotes;
+    mapping(uint256 voteId => Vote) private s_votes;
 
     /* Events */
-    event VoteCasted(uint256 indexed pollId);
 
     /* Modifiers */
     modifier ownerOnly() {
@@ -33,22 +43,37 @@ contract VoteStorageV0 is IVoteStorage {
     /* Functions */
     constructor(address owner) {
         i_owner = owner;
+        s_totalVotes = 0;
     }
 
     /**
-     * @dev Records a vote for the given poll and option by the voter.
+     * @dev Records a vote for the given poll.
      * @param pollId The ID of the poll.
-     * @param optionIdx The index of the option being voted for.
      * @param voter The address of the voter.
+     * @param voteData The encoded vote data (uint256 optionIdx for V0).
      */
-    function castVote(uint256 pollId, uint256 optionIdx, address voter) external ownerOnly {
+    function castVote(uint256 pollId, address voter, bytes calldata voteData) external ownerOnly returns (uint256 voteId) {
+        uint256 optionIdx = abi.decode(voteData, (uint256));
+
         if (s_hasVoted[pollId][voter]) {
             revert VoteStorageV0__AlreadyVoted(voter);
         }
 
         s_hasVoted[pollId][voter] = true;
         s_voteCount[pollId][optionIdx] += 1;
-        emit VoteCasted(pollId);
+        
+        s_totalVotes += 1;
+        voteId = s_totalVotes;
+        
+        s_votes[voteId] = Vote({
+            voteId: voteId,
+            pollId: pollId,
+            optionIdx: optionIdx,
+            voter: voter
+        });
+
+        emit VoteCasted(pollId, voter, voteId);
+        return voteId;
     }
 
     function getVoteCount(uint256 pollId, uint256 optionIdx) external view returns (uint256) {
@@ -61,5 +86,13 @@ contract VoteStorageV0 is IVoteStorage {
             results[i] = s_voteCount[pollId][i];
         }
         return results;
+    }
+
+    function hasVoted(uint256 pollId, address user) external view returns (bool) {
+        return s_hasVoted[pollId][user];
+    }
+
+    function getVote(uint256 voteId) external view returns (Vote memory) {
+        return s_votes[voteId];
     }
 }
