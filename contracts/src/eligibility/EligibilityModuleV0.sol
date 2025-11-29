@@ -93,7 +93,7 @@ contract EligibilityModuleV0 {
     }
 
     /**
-     * @dev Internal function to check if the user is eligible to vote in the given poll.
+     * @dev Checks if the user is eligible to vote in the given poll.
      * @param pollId The ID of the poll.
      * @param data The data needed to check if the user is eligible to vote.
      */
