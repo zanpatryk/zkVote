@@ -10,6 +10,7 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/components/(.*)$': '<rootDir>/src/components/$1',
     '^@/pages/(.*)$': '<rootDir>/src/pages/$1',
+    '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
   },
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
@@ -18,6 +19,7 @@ const customJestConfig = {
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/pages/_app.js',
     '!src/pages/_document.js',
+    '!src/lib/**/*',
   ],
   coverageReporters: ['text', 'html'],
 }
