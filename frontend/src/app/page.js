@@ -1,7 +1,8 @@
-export default function Home() {
+export default function LandingPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center p-24">
-      <h1 className="text-4xl font-bold">zkVote</h1>
-    </main>
-  );
+    <div className="flex flex-col items-center justify-center min-h-screen text-center -mt-20">
+      <h1 className="text-6xl font-bold mb-8">zkVote</h1>
+      <p className="text-3xl text-gray-600">Decentralized Voting System</p>
+    </div>
+  )
 }
