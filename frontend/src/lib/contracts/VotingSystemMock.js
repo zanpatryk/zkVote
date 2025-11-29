@@ -4,5 +4,5 @@ export const VOTING_SYSTEM_MOCK_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f641
 
 export const votingSystemMockContract = {
   address: VOTING_SYSTEM_MOCK_ADDRESS,
-  abi: VotingSystemMockABI.abi,
+  abi: VotingSystemMockABI,
 }
