@@ -13,10 +13,13 @@ export default function Navbar() {
 
   // Redirect logic (connect → /home, disconnect → /)
   useEffect(() => {
+    const protectedRoutes = ['/home', '/poll', '/vote']
+    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+
     if (isConnected && pathname === '/') {
       router.replace('/home')
-    } else if (!isConnected && pathname !== '/') {
-      router.replace('/')
+    } else if (!isConnected && isProtectedRoute) {
+      router.replace('/restricted')
     }
   }, [isConnected, address, pathname, router])
 
