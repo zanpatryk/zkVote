@@ -6,6 +6,7 @@ import {
 import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { votingSystemContract } from '@/lib/contracts/VotingSystemEngine'
 import PollManagerABI from '@/lib/contracts/abis/PollManager.json'
+import IVoteStorageABI from '@/lib/contracts/abis/IVoteStorage.json'
 import { decodeEventLog, encodeEventTopics } from 'viem'
 import { toast } from 'react-hot-toast'
 
@@ -28,12 +29,7 @@ export async function createPoll(pollDetails) {
     toast.loading('Waiting for confirmation...', { id: 'tx' })
 
     const receipt = await waitForTransactionReceipt(config, { hash })
-
-    // The event PollCreated is emitted by PollManager, not VotingSystemEngine directly.
-    // We need to find the PollManager address to decode the log correctly, 
-    // OR just look for the event signature in the logs.
     
-    // PollCreated(uint256 indexed pollId)
     const pollCreatedTopic = encodeEventTopics({
       abi: PollManagerABI,
       eventName: 'PollCreated',
@@ -86,13 +82,25 @@ export async function whitelistUser(pollId, user) {
 }
 
 export async function whitelistUsers(pollId, users) {
-    // VotingSystemEngine does NOT have whitelistUsers (batch) function.
-    // We must loop or add batch functionality to Engine.
-    // For now, we'll loop (inefficient) or throw error.
-    // Or we can implement a multicall on frontend?
-    
-    // Let's warn for now.
-    throw new Error('Batch whitelisting not supported by VotingSystemEngine V0 yet.')
+  if (!users || users.length === 0) throw new Error('No users to whitelist.')
+
+  toast.loading(`Whitelisting ${users.length} users...`, { id: 'whitelist' })
+
+  try {
+    const hash = await writeContract(config, {
+      address: votingSystemContract.address,
+      abi: votingSystemContract.abi,
+      functionName: 'whitelistUsers',
+      args: [BigInt(pollId), users],
+    })
+    await waitForTransactionReceipt(config, { hash })
+
+    toast.success(`Users whitelisted successfully!`, { id: 'whitelist' })
+  } catch (error) {
+    console.error('whitelistUsers failed:', error)
+    toast.error(error.shortMessage || 'Failed to whitelist users', { id: 'whitelist' })
+    throw error
+  }
 }
 
 export async function castVote(pollId, voteDetails) {
@@ -102,7 +110,6 @@ export async function castVote(pollId, voteDetails) {
   try {
     toast.loading('Sending vote...', { id: 'vote' })
 
-    // voteDetails should contain optionIndex
     const { optionIndex } = voteDetails
 
     const hash = await writeContract(config, {
@@ -115,12 +122,29 @@ export async function castVote(pollId, voteDetails) {
     toast.loading('Waiting for confirmation...', { id: 'vote' })
     const receipt = await waitForTransactionReceipt(config, { hash })
 
-    // VoteStorage emits VoteCasted(pollId)
-    // It does NOT return a voteId.
-    
     toast.success('Vote submitted!', { id: 'vote' })
 
-    return null // No voteId available
+    const voteCastedTopic = encodeEventTopics({
+      abi: IVoteStorageABI,
+      eventName: 'VoteCasted',
+    })
+
+    const voteCastedLog = receipt.logs.find(log => log.topics[0] === voteCastedTopic[0])
+
+    if (voteCastedLog) {
+       const decodedEvent = decodeEventLog({
+        abi: IVoteStorageABI,
+        eventName: 'VoteCasted',
+        data: voteCastedLog.data,
+        topics: voteCastedLog.topics,
+      })
+      const voteId = decodedEvent.args.voteId.toString()
+      toast.success('Vote submitted!', { id: 'vote' })
+      return voteId
+    }
+
+    toast.success('Vote submitted!', { id: 'vote' })
+    return null
   } catch (error) {
     console.error('castVote failed:', error)
     toast.error(error.shortMessage || 'Failed to submit vote', { id: 'vote' })

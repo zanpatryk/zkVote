@@ -31,8 +31,15 @@ export default function VotePage() {
           </div>
         ) : (
           <div className="grid gap-6">
-            {polls.map(({ pollId, data }) => (
-              <PollCard key={pollId} pollId={pollId} rawData={data} showVoteButton />
+            {polls.map((poll) => (
+              <PollCard 
+                key={poll.pollId} 
+                pollId={poll.pollId} 
+                title={poll.title} 
+                state={poll.state}
+                isOwner={poll.creator === address}
+                showVoteButton 
+              />
             ))}
           </div>
         )}

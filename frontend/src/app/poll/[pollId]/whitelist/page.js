@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { whitelistUser, whitelistUsers } from '@/lib/blockchain/write'
+import { whitelistUser, whitelistUsers } from '@/lib/blockchain/engine/write'
 import { toast } from 'react-hot-toast'
 import { isAddress } from 'viem'
 
@@ -89,7 +89,11 @@ export default function WhitelistPage() {
       <div className="flex items-center gap-2 mb-10 text-gray-600">
         <p>For Poll ID:</p>
         <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg font-mono">
-          <span>0x{pollId.toString().slice(0, 4)}...{pollId.toString().slice(-4)}</span>
+          <span>
+            {pollId.toString().length <= 8
+              ? pollId.toString()
+              : `${pollId.toString().slice(0, 4)}...${pollId.toString().slice(-4)}`}
+          </span>
           <button
             onClick={handleCopy}
             className="p-1 hover:bg-gray-200 rounded-md transition-colors"

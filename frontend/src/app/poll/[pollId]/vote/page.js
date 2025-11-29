@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { getPollById, hasVoted } from '@/lib/blockchain/engine/read'
-import { castVote } from '@/lib/blockchain/write'
+import { castVote } from '@/lib/blockchain/engine/write'
 import { toast } from 'react-hot-toast'
 
 export default function VoteOnPoll() {
@@ -42,10 +42,7 @@ export default function VoteOnPoll() {
     }
   }, [pollId, isConnected, address])
 
-  const now = Date.now()
-  const startTime = poll?.startTime ? Number(poll.startTime) : null
-  const endTime = poll?.endTime ? Number(poll.endTime) : null
-  const isActive = startTime && endTime && now >= startTime && now < endTime
+
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -57,10 +54,7 @@ export default function VoteOnPoll() {
 
     if (!poll) return
 
-    if (!isActive) {
-      toast.error('This poll is not currently open for voting')
-      return
-    }
+
 
     if (alreadyVoted) {
       toast.error('You have already voted in this poll')
@@ -146,10 +140,10 @@ export default function VoteOnPoll() {
 
               <button
                 type="submit"
-                disabled={submitting || !isActive}
+                disabled={submitting}
                 className="w-full bg-black text-white py-4 rounded-xl text-lg font-bold hover:bg-gray-800 disabled:opacity-50"
               >
-                {isActive ? (submitting ? 'Submitting vote...' : 'Submit vote') : 'Poll not open for voting'}
+                {submitting ? 'Submitting vote...' : 'Submit vote'}
               </button>
             </form>
           )}

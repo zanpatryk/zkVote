@@ -20,17 +20,23 @@
         "internalType": "uint256"
       },
       {
-        "name": "optionIdx",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
         "name": "voter",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "voteData",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
-    "outputs": [],
+    "outputs": [
+      {
+        "name": "voteId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable"
   },
   {
@@ -53,6 +59,47 @@
         "name": "",
         "type": "uint256[]",
         "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getVote",
+    "inputs": [
+      {
+        "name": "voteId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct VoteStorageV0.Vote",
+        "components": [
+          {
+            "name": "voteId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "pollId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "optionIdx",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "voter",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
       }
     ],
     "stateMutability": "view"
@@ -83,6 +130,30 @@
   },
   {
     "type": "function",
+    "name": "hasVoted",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "i_owner",
     "inputs": [],
     "outputs": [
@@ -102,6 +173,18 @@
         "name": "pollId",
         "type": "uint256",
         "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "voter",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "voteId",
+        "type": "uint256",
+        "indexed": false,
         "internalType": "uint256"
       }
     ],

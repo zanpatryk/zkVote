@@ -15,7 +15,7 @@ export default function VoteCheckPage() {
     async function loadData() {
       try {
         const [voteData, pollData] = await Promise.all([
-          getVote(pollId, voteId),
+          getVote(voteId),
           getPollById(pollId)
         ])
 
@@ -41,8 +41,8 @@ export default function VoteCheckPage() {
     }
   }, [pollId, voteId])
 
-  const optionText = vote && poll && poll.options && vote.optionIndex !== undefined
-    ? poll.options[vote.optionIndex]
+  const optionText = vote && poll && poll.options && vote.optionIdx !== undefined
+    ? poll.options[Number(vote.optionIdx)]
     : 'Unknown Option'
 
   return (

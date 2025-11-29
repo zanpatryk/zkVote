@@ -3,6 +3,8 @@ import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { votingSystemContract } from '@/lib/contracts/VotingSystemEngine'
 import PollManagerABI from '@/lib/contracts/abis/PollManager.json'
 import EligibilityModuleABI from '@/lib/contracts/abis/EligibilityModuleV0.json'
+import IVoteStorageABI from '@/lib/contracts/abis/IVoteStorage.json'
+import VoteStorageV0ABI from '@/lib/contracts/abis/VoteStorageV0.json'
 import { parseAbiItem } from 'viem'
 
 // Helper to get module addresses
@@ -34,38 +36,20 @@ export async function getPollById(pollId) {
   const { pollManager } = await getModules()
 
   try {
-    // Fetch poll details from PollManager
-    // struct Poll { uint256 pollId; address owner; string title; string description; string[] options; State state; }
-    // But PollManager doesn't expose a single getPoll struct getter, it has individual getters.
-    // We need to fetch fields individually or add a struct getter to PollManager (recommended).
-    // Based on current PollManager.sol, we have:
-    // getPollOwner, getPollTitle, getPollOptionCount, getPollOption, getDescription
-    
-    const [title, description, owner, optionCount] = await Promise.all([
-      publicClient.readContract({ address: pollManager, abi: PollManagerABI, functionName: 'getPollTitle', args: [BigInt(pollId)] }),
-      publicClient.readContract({ address: pollManager, abi: PollManagerABI, functionName: 'getDescription', args: [BigInt(pollId)] }),
-      publicClient.readContract({ address: pollManager, abi: PollManagerABI, functionName: 'getPollOwner', args: [BigInt(pollId)] }),
-      publicClient.readContract({ address: pollManager, abi: PollManagerABI, functionName: 'getPollOptionCount', args: [BigInt(pollId)] }),
-    ])
-
-    const options = []
-    for (let i = 0; i < Number(optionCount); i++) {
-      const opt = await publicClient.readContract({
-        address: pollManager,
-        abi: PollManagerABI,
-        functionName: 'getPollOption',
-        args: [BigInt(pollId), BigInt(i)],
-      })
-      options.push(opt)
-    }
+    const [id, owner, title, description, options, state] = await publicClient.readContract({
+      address: pollManager,
+      abi: PollManagerABI,
+      functionName: 'getPoll',
+      args: [BigInt(pollId)],
+    })
 
     return {
-      pollId,
+      pollId: id.toString(),
       title,
       description,
       creator: owner,
-      options,
-      // state: ... (need to fetch state if needed)
+      options: [...options],
+      state: state
     }
   } catch (err) {
     console.error('getPollById failed:', err)
@@ -79,12 +63,17 @@ export async function getOwnedPolls(address) {
   const { pollManager } = await getModules()
 
   try {
-    const pollIds = await publicClient.readContract({
+    // Query events: PollCreated(uint256 indexed pollId, address indexed creator)
+    const logs = await publicClient.getLogs({
       address: pollManager,
-      abi: PollManagerABI,
-      functionName: 'getPolls',
-      args: [address],
+      event: parseAbiItem('event PollCreated(uint256 indexed pollId, address indexed creator)'),
+      args: {
+        creator: address
+      },
+      fromBlock: 'earliest'
     })
+
+    const pollIds = logs.map(log => log.args.pollId)
 
     const polls = await Promise.all(
       pollIds.map(id => getPollById(id))
@@ -133,21 +122,45 @@ export async function isUserWhitelisted(pollId, userAddress) {
   })
 }
 
-// NOTE: getVote and hasVoted are limited in V0
-// hasVoted is internal in VoteStorageV0 (private s_hasVoted), not exposed via interface?
-// Wait, VoteStorageV0 has `castVote` which checks `s_hasVoted`. 
-// But IVoteStorage does NOT expose `hasVoted`. 
-// We might need to add `hasVoted` to IVoteStorage and VoteStorageV0 to check from frontend.
-// For now, we can't check if user has voted without trying to vote (which will revert).
-
 export async function hasVoted(pollId, userAddress) {
-    // TODO: Update VoteStorage to expose hasVoted
-    console.warn('hasVoted is not yet implemented in VoteStorageV0')
+  if (!pollId || !userAddress) return false
+  const publicClient = getPublicClient(config)
+  const { voteStorage } = await getModules()
+
+  try {
+    return await publicClient.readContract({
+      address: voteStorage,
+      abi: IVoteStorageABI,
+      functionName: 'hasVoted',
+      args: [BigInt(pollId), userAddress],
+    })
+  } catch (err) {
+    console.error('hasVoted failed:', err)
     return false
+  }
 }
 
-export async function getVote(pollId, voteId) {
-    // TODO: VoteStorageV0 does not store individual votes publicly
-    console.warn('getVote is not supported in VoteStorageV0')
+export async function getVote(voteId) {
+  if (!voteId) return null
+  const publicClient = getPublicClient(config)
+  const { voteStorage } = await getModules()
+
+  try {
+    const voteData = await publicClient.readContract({
+      address: voteStorage,
+      abi: VoteStorageV0ABI,
+      functionName: 'getVote',
+      args: [BigInt(voteId)],
+    })
+
+    return {
+      voteId: voteData.voteId.toString(),
+      pollId: voteData.pollId.toString(),
+      optionIdx: voteData.optionIdx.toString(),
+      voter: voteData.voter,
+    }
+  } catch (err) {
+    console.error('getVote failed:', err)
     return null
+  }
 }

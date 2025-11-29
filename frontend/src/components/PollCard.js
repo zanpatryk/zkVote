@@ -19,37 +19,22 @@ function formatDuration(ms) {
   return parts.join(' ')
 }
 
-export default function PollCard({ pollId, rawData, isOwner = false, showVoteButton = false }) {
+export default function PollCard({ pollId, title, state, isOwner = false, showVoteButton = false }) {
   const [now, setNow] = useState(Date.now())
 
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000)
-    return () => clearInterval(id)
-  }, [])
-
-  let title = `Poll #${pollId}`
-  let startTime = null
-  let endTime = null
-
-  try {
-    const decoded = JSON.parse(hexToString(rawData))
-    title = decoded.title || decoded.name || title
-    if (decoded.startTime) startTime = Number(decoded.startTime)
-    if (decoded.endTime) endTime = Number(decoded.endTime)
-  } catch {}
-
+  // State mapping: 0 = CREATED, 1 = ACTIVE, 2 = ENDED
   let statusLabel = null
   let statusValue = null
 
-  if (startTime && now < startTime) {
-    statusLabel = 'Starts in'
-    statusValue = formatDuration(startTime - now)
-  } else if (endTime && now < endTime) {
-    statusLabel = 'Ends in'
-    statusValue = formatDuration(endTime - now)
-  } else if (endTime && now >= endTime) {
-    statusLabel = 'Ended'
-    statusValue = formatDuration(now - endTime) + ' ago'
+  if (state === 0) {
+    statusLabel = 'Status'
+    statusValue = 'Created'
+  } else if (state === 1) {
+    statusLabel = 'Status'
+    statusValue = 'Active'
+  } else if (state === 2) {
+    statusLabel = 'Status'
+    statusValue = 'Ended'
   }
 
   const handleCopy = (e) => {
@@ -66,9 +51,11 @@ export default function PollCard({ pollId, rawData, isOwner = false, showVoteBut
             {title}
           </h3>
           <div className="mt-2 flex items-center gap-2 text-gray-600">
-            <p title={pollId.toString()}>
-              Poll ID: 0x{pollId.toString().slice(0, 4)}...{pollId.toString().slice(-4)}
-            </p>
+            <span className="text-gray-500 font-mono text-sm bg-gray-100 px-2 py-1 rounded" title={pollId.toString()}>
+            ID: {pollId.toString().length <= 8
+              ? pollId.toString()
+              : `${pollId.toString().slice(0, 4)}...${pollId.toString().slice(-4)}`}
+          </span>
             <button
               onClick={handleCopy}
               className="p-1 hover:bg-gray-200 rounded-md transition-colors"
@@ -107,7 +94,7 @@ export default function PollCard({ pollId, rawData, isOwner = false, showVoteBut
           </Link>
         )}
 
-        {showVoteButton && startTime && endTime && now >= startTime && now < endTime && (
+        {showVoteButton && (
           <Link href={`/poll/${pollId}/vote`}>
             <span className="text-indigo-600 font-medium hover:underline">
               Vote →

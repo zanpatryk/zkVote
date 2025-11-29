@@ -20,9 +20,17 @@ export default function PollsPage() {
 
     let cancelled = false
 
-    getOwnedPolls(address).then(data => {
+    getOwnedPolls(address).then(async (data) => {
+      if (cancelled) return
+
+      // Check whitelist status for each poll
+      const pollsWithWhitelist = await Promise.all(data.map(async (poll) => {
+        const isWhitelisted = await import('@/lib/blockchain/engine/read').then(m => m.isUserWhitelisted(poll.pollId, address))
+        return { ...poll, isWhitelisted }
+      }))
+
       if (!cancelled) {
-        setPolls(data)
+        setPolls(pollsWithWhitelist)
         setIsLoading(false)
       }
     }).catch(err => {
@@ -53,8 +61,15 @@ export default function PollsPage() {
           </div>
         ) : (
           <div className="grid gap-6">
-            {polls.map(({ pollId, data }) => (
-              <PollCard key={pollId} pollId={pollId} rawData={data} isOwner />
+            {polls.map((poll) => (
+              <PollCard 
+                key={poll.pollId} 
+                pollId={poll.pollId} 
+                title={poll.title} 
+                state={poll.state}
+                isOwner 
+                showVoteButton={poll.isWhitelisted}
+              />
             ))}
           </div>
         )}

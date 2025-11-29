@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { createPoll } from '@/lib/blockchain/write'
+import { createPoll } from '@/lib/blockchain/engine/write'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 
@@ -14,8 +14,7 @@ export default function CreatePollPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [options, setOptions] = useState(['', ''])
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const addOption = () => setOptions([...options, ''])
@@ -34,8 +33,7 @@ export default function CreatePollPage() {
     const cleanOptions = options.filter(o => o.trim() !== '')
     if (cleanOptions.length < 2) return toast.error('Need at least 2 options')
     if (!title.trim()) return toast.error('Poll title is required')
-    if (!startDate) return toast.error('Please select a start date and time')
-    if (!endDate) return toast.error('Please select an end date and time')
+
 
     setIsSubmitting(true)
 
@@ -44,8 +42,6 @@ export default function CreatePollPage() {
         title: title.trim(),
         description: description.trim(),
         options: cleanOptions,
-        startTime: new Date(startDate).getTime(),
-        endTime: new Date(endDate).getTime(),
       })
 
       // Redirect to the new whitelist page for the created poll
@@ -62,11 +58,6 @@ export default function CreatePollPage() {
     <div className="pt-24 max-w-3xl mx-auto px-6 pb-32">
       {/* ← + Title */}
       <div className="flex items-center gap-8 mb-10">
-        <Link href="/poll">
-          <div className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-100 transition cursor-pointer">
-            <span className="text-3xl font-light">←</span>
-          </div>
-        </Link>
         <h1 className="text-4xl font-bold">Create New Poll</h1>
       </div>
 
@@ -129,31 +120,7 @@ export default function CreatePollPage() {
           </button>
         </div>
 
-        {/* Start Date */}
-        <div>
-          <label className="block text-lg font-medium mb-2">Start Date & Time</label>
-          <input
-            type="datetime-local"
-            required
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
-            min={new Date().toISOString().slice(0, 16)}
-            className="w-full px-4 py-3 border-2 border-black rounded-xl text-lg"
-          />
-        </div>
 
-        {/* End Date */}
-        <div>
-          <label className="block text-lg font-medium mb-2">End Date & Time</label>
-          <input
-            type="datetime-local"
-            required
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
-            min={startDate || new Date().toISOString().slice(0, 16)}
-            className="w-full px-4 py-3 border-2 border-black rounded-xl text-lg"
-          />
-        </div>
 
         {/* Submit */}
         <div className="pt-6">

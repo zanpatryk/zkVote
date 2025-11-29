@@ -6,7 +6,7 @@ export default function VoteReceiptPage() {
   const { pollId, voteId } = useParams()
 
   const handleDownload = () => {
-    const content = `zkVote Receipt\nPoll ID: 0x${BigInt(pollId).toString(16)}\nVote ID: 0x${BigInt(voteId).toString(16)}\n`
+    const content = `zkVote Receipt\nPoll ID: ${BigInt(pollId).toString(16)}\nVote ID: ${BigInt(voteId).toString(16)}\n`
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
 
