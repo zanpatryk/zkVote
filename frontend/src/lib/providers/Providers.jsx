@@ -6,7 +6,16 @@ import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { wagmiConfig } from '@/lib/wagmi/config'
 import { rainbowKitConfig } from '@/lib/wagmi/rainbowkit'
 
-const queryClient = new QueryClient() 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        if (error.status === '403') return false
+        return failureCount < 3
+      },
+    },
+  },
+}) 
 
 export default function Providers({ children }) {
   return (
