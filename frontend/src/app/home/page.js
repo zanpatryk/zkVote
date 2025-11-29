@@ -66,6 +66,7 @@ export default function HomePage() {
             type="file"
             accept=".txt"
             onChange={handleFileChange}
+            aria-label="Upload vote receipt"
             className="w-full text-sm file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-200 file:text-black hover:file:bg-gray-300"
           />
         </div>

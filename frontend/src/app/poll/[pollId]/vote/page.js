@@ -30,6 +30,8 @@ export default function VoteOnPoll() {
           const voted = await hasVoted(pollId, address)
           if (!cancelled) setAlreadyVoted(voted)
         }
+      } catch (error) {
+        console.error('Failed to load poll data:', error)
       } finally {
         if (!cancelled) setLoading(false)
       }
