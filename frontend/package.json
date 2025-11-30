@@ -8,7 +8,8 @@
         "lint": "next lint",
         "test:ui": "jest",
         "test:ui:watch": "jest --watch",
-        "test:ui:coverage": "jest --coverage"
+        "test:ui:coverage": "jest --coverage",
+        "test:ui:integration": "jest tests/navigation.test.jsx tests/poll-creation.test.jsx tests/voting.test.jsx"
     },
     "dependencies": {
         "@base-org/account": "^2.5.0",

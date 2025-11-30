@@ -14,6 +14,7 @@
     "test:contracts": "cd contracts && make test",
     "test:ui": "bun --filter frontend test:ui",
     "test:ui:coverage": "bun --filter frontend test:ui:coverage",
+    "test:ui:integration": "bun --filter frontend test:ui:integration",
     "deploy:local": "cd contracts && make deploy-anvil",
     "deploy:sepolia": "cd contracts && make deploy-sepolia",
     "generate:abis": "bun scripts/generate-abis.js",
