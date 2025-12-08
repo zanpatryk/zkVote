@@ -231,8 +231,7 @@ contract Benchmark is Script {
 
         // 1) Deploy the voting system (using DeployVotingSystem)
         deployer = new DeployVotingSystem();
-        // adjust unpacking to match your DeployVotingSystem.run() return signature.
-        // Here we assume it returns (VotingSystemEngine, ..., HelperConfig) at the end.
+
         (VotingSystemEngine vse,,,, HelperConfig helperConf) = deployer.run();
         helper = helperConf;
 
@@ -325,6 +324,7 @@ contract Benchmark is Script {
             computeStats(voteGases);
         uint256 avgVote = participants > 0 ? (sumVotes / participants) : 0;
 
+        // 8)
         // --- compute cost in wei precisely ---
         // gasCostPerGwei_scaled is gas price in gwei scaled by PRECISION
         // Convert: gasPrice (gwei) = gasCostPerGwei_scaled / PRECISION
@@ -338,10 +338,10 @@ contract Benchmark is Script {
         // where ethUsd_scaled = ETH price * PRECISION (so result is USD * PRECISION)
         uint256 totalValueUSD_scaled = (costInWei * ethUsd_scaled) / 1e18;
 
-        // human-readable string like "14.064891"
+        // changes to "14.064891"
         string memory totalValueUSD_str = scaledUintToDecimalString(totalValueUSD_scaled, PRECISION);
 
-        // 8) Prepare JSON report and write to file: script/benchmark/results/run{n}.json
+        // 9) Prepare JSON report and write to file: script/benchmark/results/run{n}.json
         string memory outPath = string(abi.encodePacked("script/benchmark/results/run", runNumber, ".json"));
 
         // build JSON (kept readable)
