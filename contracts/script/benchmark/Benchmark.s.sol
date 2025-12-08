@@ -232,7 +232,7 @@ contract Benchmark is Script {
         // 1) Deploy the voting system (using DeployVotingSystem)
         deployer = new DeployVotingSystem();
 
-        (VotingSystemEngine vse,,,, HelperConfig helperConf) = deployer.run();
+        (VotingSystemEngine vse,,,,, HelperConfig helperConf) = deployer.run();
         helper = helperConf;
 
         // get deployerKey for further broadcasts (HelperConfig.activeNetworkConfig is assumed to return a uint)

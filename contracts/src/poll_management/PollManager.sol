@@ -116,6 +116,10 @@ contract PollManager is IPollManager {
         return s_polls[pollId].description;
     }
 
+    function getPollOptions(uint256 pollId) external view returns (string[] memory) {
+        return s_polls[pollId].options;
+    }
+
     function getPoll(uint256 pollId)
         external
         view

@@ -8,10 +8,14 @@ optimizer_runs = 200
 
 via_ir = true
 
-# foundry.toml (project root)
 fs_permissions = [
     { access = "read-write", path = "./script/benchmark/results" },
     { access = "read", path = "./script/benchmark/BenchmarkConfig.json" },
+]
+
+remappings = [
+    "@chainlink/contracts=lib/chainlink-brownie-contracts/contracts/",
+    "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts",
 ]
 
 

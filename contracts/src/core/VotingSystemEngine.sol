@@ -4,6 +4,9 @@ pragma solidity ^0.8.20;
 import {IPollManager} from "../interfaces/IPollManager.sol";
 import {IEligibilityModule} from "../interfaces/IEligibilityModule.sol";
 import {IVoteStorage} from "../interfaces/IVoteStorage.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
+import {ResultNFT} from "../result_nft/ResultNFT.sol";
 
 /* Errors */
 error VotingSystem__NotOwner();
@@ -16,6 +19,8 @@ error VotingSystem__InvalidPollId();
 error VotingSystem__InvalidOption();
 error VotingSystem__InvalidPollState();
 error VotingSystem__NotPollOwner();
+error VotingSystem__NotAuthorizedToMint();
+error VotingSystem__NFTContractNotSet();
 
 /**
  * @title Voting System
@@ -28,6 +33,7 @@ contract VotingSystemEngine {
     IPollManager public s_pollManager;
     IEligibilityModule public s_eligibilityModule;
     IVoteStorage public s_voteStorage;
+    address public s_resultNFT;
     bool public s_initializationFlag;
 
     /* Events */
@@ -61,7 +67,10 @@ contract VotingSystemEngine {
         i_owner = msg.sender;
     }
 
-    function initialize(address pollManager, address eligibilityModule, address voteStorage) external ownerOnly {
+    function initialize(address pollManager, address eligibilityModule, address voteStorage, address resultNFTAddress)
+        external
+        ownerOnly
+    {
         if (s_initializationFlag) {
             revert VotingSystem__AlreadyInitialized();
         }
@@ -71,6 +80,7 @@ contract VotingSystemEngine {
         s_pollManager = IPollManager(pollManager);
         s_eligibilityModule = IEligibilityModule(eligibilityModule);
         s_voteStorage = IVoteStorage(voteStorage);
+        s_resultNFT = resultNFTAddress;
         s_initializationFlag = true;
     }
 
@@ -153,5 +163,57 @@ contract VotingSystemEngine {
         address owner = s_pollManager.getPollOwner(pollId);
         if (msg.sender != owner) revert VotingSystem__NotPollOwner();
         s_pollManager.setState(pollId, 2); // Set state to ENDED
+    }
+
+    function mintResultNFT(uint256 pollId) external checkPollValidity(pollId) onlyWhenInState(pollId, 2) {
+        if (s_resultNFT == address(0)) revert VotingSystem__NFTContractNotSet();
+
+        address pollOwner = s_pollManager.getPollOwner(pollId);
+        bool isOnWhitelist = s_eligibilityModule.isWhitelisted(pollId, msg.sender);
+
+        if (msg.sender != pollOwner && !isOnWhitelist) {
+            revert VotingSystem__NotAuthorizedToMint();
+        }
+
+        string memory title = s_pollManager.getPollTitle(pollId);
+        string[] memory options = s_pollManager.getPollOptions(pollId);
+
+        uint256[] memory results = s_voteStorage.getResults(pollId, options.length);
+
+        string memory tokenURI = _constructTokenURI(pollId, title, options, results);
+
+        ResultNFT(s_resultNFT).mintResult(msg.sender, tokenURI);
+    }
+
+    /**
+     * @dev Internal helper to build the base64 encoded JSON
+     */
+    function _constructTokenURI(uint256 pollId, string memory title, string[] memory options, uint256[] memory results)
+        internal
+        pure
+        returns (string memory)
+    {
+        string memory json = string.concat(
+            '{"name": "Poll #',
+            Strings.toString(pollId),
+            ' Results",',
+            '"description": "Results for poll: ',
+            title,
+            '",',
+            '"attributes": ['
+        );
+
+        for (uint256 i = 0; i < options.length; i++) {
+            json =
+                string.concat(json, '{"trait_type": "', options[i], '", "value": ', Strings.toString(results[i]), "}");
+
+            if (i < options.length - 1) {
+                json = string.concat(json, ",");
+            }
+        }
+
+        json = string.concat(json, "]}");
+
+        return string.concat("data:application/json;base64,", Base64.encode(bytes(json)));
     }
 }

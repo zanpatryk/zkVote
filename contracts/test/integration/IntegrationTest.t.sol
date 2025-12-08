@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {DeployVotingSystem} from "../../script/DeployVotingSystem.s.sol";
 import {VoteStorageV0} from "../../src/vote_storage/VoteStorageV0.sol";
 import {PollManager} from "../../src/poll_management/PollManager.sol";
 import {EligibilityModuleV0} from "../../src/eligibility/EligibilityModuleV0.sol";
 import {VotingSystemEngine} from "../../src/core/VotingSystemEngine.sol";
+import {ResultNFT} from "../../src/result_nft/ResultNFT.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 
 contract IntegrationTest is Test {
     DeployVotingSystem deployer;
@@ -16,6 +19,7 @@ contract IntegrationTest is Test {
     PollManager pollManager;
     EligibilityModuleV0 eligibilityModule;
     VotingSystemEngine vse;
+    ResultNFT resultNFT;
 
     address private alice = address(1001);
     address private bob = address(1002);
@@ -33,10 +37,12 @@ contract IntegrationTest is Test {
     error VotingSystem__InvalidOption();
     error VotingSystem__InvalidPollState();
     error VotingSystem__NotPollOwner();
+    error VotingSystem__NotAuthorizedToMint();
+    error VotingSystem__NFTContractNotSet();
 
     function setUp() external {
         deployer = new DeployVotingSystem();
-        (vse, pollManager, eligibilityModule, voteStorage, helperConfig) = deployer.run();
+        (vse, pollManager, eligibilityModule, voteStorage, resultNFT, helperConfig) = deployer.run();
     }
 
     /* Helper functions */
@@ -196,4 +202,93 @@ contract IntegrationTest is Test {
         uint256 voteId = vse.castVote(pollId, 1);
         assertEq(voteId, 1);
     }
+
+    function testRevertMintResultNFT() external {
+        uint256 pollId = _createPollAs(alice);
+
+        vm.prank(alice);
+        vse.startPoll(pollId);
+
+        vm.prank(alice);
+        vse.whitelistUser(pollId, bob);
+
+        vm.prank(bob);
+        vse.castVote(pollId, 0); // Bob votes "Yes"
+
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(VotingSystem__InvalidPollState.selector));
+        vse.mintResultNFT(pollId);
+
+        vm.prank(alice);
+        vse.endPoll(pollId);
+
+        vm.prank(charlie);
+        vm.expectRevert(abi.encodeWithSelector(VotingSystem__NotAuthorizedToMint.selector));
+        vse.mintResultNFT(pollId);
+    }
+
+    function testMintResultNFTAndVerifyMetadata() external {
+        uint256 pollId = _createPollAs(alice);
+        vm.prank(alice);
+        vse.startPoll(pollId);
+        vm.prank(alice);
+        vse.whitelistUser(pollId, bob);
+
+        vm.prank(bob);
+        vse.castVote(pollId, 0);
+
+        vm.prank(alice);
+        vse.endPoll(pollId);
+
+        vm.prank(bob);
+        vse.mintResultNFT(pollId);
+
+        string memory actualURI = resultNFT.tokenURI(1);
+        console.log("Actual URI:", actualURI);
+
+        string[] memory opts = new string[](2);
+        opts[0] = "Yes";
+        opts[1] = "No";
+
+        uint256[] memory res = new uint256[](2);
+        res[0] = 1; // 1 vote for Yes
+        res[1] = 0; // 0 votes for No
+
+        string memory expectedURI = _constructExpectedURI(pollId, "Do you like tests?", opts, res);
+
+        assertEq(actualURI, expectedURI, "Metadata does not match actual votes");
+    }
+
+    /**
+     * @dev Helper to replicate the logic inside VSE for verification.
+     * This ensures the JSON structure and Base64 encoding are correct.
+     */
+    function _constructExpectedURI(uint256 pollId, string memory title, string[] memory opts, uint256[] memory res)
+        internal
+        pure
+        returns (string memory)
+    {
+        string memory json = string.concat(
+            '{"name": "Poll #',
+            Strings.toString(pollId),
+            ' Results",',
+            '"description": "Results for poll: ',
+            title,
+            '",',
+            '"attributes": ['
+        );
+
+        for (uint256 i = 0; i < opts.length; i++) {
+            json = string.concat(json, '{"trait_type": "', opts[i], '", "value": ', Strings.toString(res[i]), "}");
+
+            if (i < opts.length - 1) {
+                json = string.concat(json, ",");
+            }
+        }
+
+        json = string.concat(json, "]}");
+
+        return string.concat("data:application/json;base64,", Base64.encode(bytes(json)));
+    }
 }
+
