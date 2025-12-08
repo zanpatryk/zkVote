@@ -8,3 +8,5 @@ anvil.log
 anvil.pid
 
 broadcast/
+
+script/benchmark/results

@@ -1,0 +1,6 @@
+{
+  "participants": 1000,
+  "batchUpload": true,
+  "gasCostPerGwei": "0.33",
+  "ethUsdRate": "3102.24"
+}

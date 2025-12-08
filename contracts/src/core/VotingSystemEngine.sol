@@ -14,6 +14,8 @@ error VotingSystem__InvalidNumberOfOptions();
 error VotingSystem__AddressNotWhitelisted(address user);
 error VotingSystem__InvalidPollId();
 error VotingSystem__InvalidOption();
+error VotingSystem__InvalidPollState();
+error VotingSystem__NotPollOwner();
 
 /**
  * @title Voting System
@@ -46,6 +48,14 @@ contract VotingSystemEngine {
         _;
     }
 
+    modifier onlyWhenInState(uint256 pollId, uint8 requiredState) {
+        uint8 currentState = s_pollManager.getState(pollId);
+        if (currentState != requiredState) {
+            revert VotingSystem__InvalidPollState();
+        }
+        _;
+    }
+
     /* Functions */
     constructor() {
         i_owner = msg.sender;
@@ -64,7 +74,7 @@ contract VotingSystemEngine {
         s_initializationFlag = true;
     }
 
-    function createPoll(string calldata title, string calldata description, string[] calldata options, address creator)
+    function createPoll(string calldata title, string calldata description, string[] calldata options)
         external
         returns (uint256 pollId)
     {
@@ -76,20 +86,37 @@ contract VotingSystemEngine {
             revert VotingSystem__InvalidNumberOfOptions();
         }
 
-        pollId = s_pollManager.createPoll(title, description, options, creator);
+        pollId = s_pollManager.createPoll(title, description, options, msg.sender);
 
         return pollId;
     }
 
-    function whitelistUser(uint256 pollId, address user) external checkPollValidity(pollId) {
+    function whitelistUser(uint256 pollId, address user) external checkPollValidity(pollId) onlyWhenInState(pollId, 1) {
+        if (msg.sender != s_pollManager.getPollOwner(pollId)) {
+            revert VotingSystem__NotPollOwner();
+        }
         s_eligibilityModule.addWhitelisted(pollId, user);
     }
 
-    function whitelistUsers(uint256 pollId, address[] calldata users) external checkPollValidity(pollId) {
+    function whitelistUsers(uint256 pollId, address[] calldata users)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 1)
+    {
+        if (msg.sender != s_pollManager.getPollOwner(pollId)) {
+            revert VotingSystem__NotPollOwner();
+        }
         s_eligibilityModule.addWhitelistedBatch(pollId, users);
     }
 
-    function removeWhitelisted(uint256 pollId, address user) external checkPollValidity(pollId) {
+    function removeWhitelisted(uint256 pollId, address user)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 1)
+    {
+        if (msg.sender != s_pollManager.getPollOwner(pollId)) {
+            revert VotingSystem__NotPollOwner();
+        }
         s_eligibilityModule.removeWhitelisted(pollId, user);
     }
 
@@ -97,7 +124,12 @@ contract VotingSystemEngine {
         return s_eligibilityModule.isWhitelisted(pollId, user);
     }
 
-    function castVote(uint256 pollId, uint256 optionIdx) external checkPollValidity(pollId) returns (uint256 voteId) {
+    function castVote(uint256 pollId, uint256 optionIdx)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 1)
+        returns (uint256 voteId)
+    {
         address voter = msg.sender;
         if (!s_eligibilityModule.isWhitelisted(pollId, voter)) {
             revert VotingSystem__AddressNotWhitelisted(voter);
@@ -109,5 +141,17 @@ contract VotingSystemEngine {
         }
 
         voteId = s_voteStorage.castVote(pollId, voter, abi.encode(optionIdx));
+    }
+
+    function startPoll(uint256 pollId) external checkPollValidity(pollId) onlyWhenInState(pollId, 0) {
+        address owner = s_pollManager.getPollOwner(pollId);
+        if (msg.sender != owner) revert VotingSystem__NotPollOwner();
+        s_pollManager.setState(pollId, 1); // Set state to ACTIVE
+    }
+
+    function endPoll(uint256 pollId) external checkPollValidity(pollId) onlyWhenInState(pollId, 1) {
+        address owner = s_pollManager.getPollOwner(pollId);
+        if (msg.sender != owner) revert VotingSystem__NotPollOwner();
+        s_pollManager.setState(pollId, 2); // Set state to ENDED
     }
 }

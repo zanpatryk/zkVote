@@ -15,6 +15,6 @@ interface IPollManager {
     function getPollOptionCount(uint256 pollId) external view returns (uint256);
     function getPollOption(uint256 pollId, uint256 index) external view returns (string memory);
     function getDescription(uint256 pollId) external view returns (string memory);
-
-    //function getVoterPolls(address voter) external view returns (uint256[] memory pollIds); - not sure if here
+    function getState(uint256 pollId) external view returns (uint8);
+    function setState(uint256 pollId, uint8 state) external;
 }
