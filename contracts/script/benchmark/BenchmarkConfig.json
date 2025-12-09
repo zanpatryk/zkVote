@@ -1,6 +1,7 @@
 {
   "participants": 1000,
   "batchUpload": true,
-  "gasCostPerGwei": "0.33",
-  "ethUsdRate": "3102.24"
+  "gasCostPerGwei": "0.35",
+  "ethUsdRate": "3122.18",
+  "testName": "_1000_high"
 }

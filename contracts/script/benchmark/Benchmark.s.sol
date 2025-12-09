@@ -216,7 +216,13 @@ contract Benchmark is Script {
         uint256 participants = vm.parseJsonUint(configRaw, ".participants");
         bool batchUpload = abi.decode(vm.parseJson(configRaw, ".batchUpload"), (bool));
 
-        string memory runNumber = toString(block.timestamp);
+        string memory testName = abi.decode(vm.parseJson(configRaw, ".testName"), (string));
+        string memory runNumber;
+        if (bytes(testName).length > 0) {
+            runNumber = testName;
+        } else {
+            runNumber = toString(block.timestamp);
+        }
 
         // fixed-point precision (6 decimal places)
         uint256 PRECISION = 1_000_000;
@@ -348,9 +354,9 @@ contract Benchmark is Script {
         string memory jsonHeader = string(
             abi.encodePacked(
                 "{\n",
-                '  "run": ',
+                '  "run": "',
                 runNumber,
-                ",\n",
+                '",\n',
                 '  "timestamp": ',
                 toString(block.timestamp),
                 ",\n",
