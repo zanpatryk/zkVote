@@ -1,7 +1,5 @@
 # zkVote
 
-# zkVote
-
 A voting application with privacy features.
 
 ## Prerequisites
