@@ -101,7 +101,7 @@ contract VotingSystemEngine {
         return pollId;
     }
 
-    function whitelistUser(uint256 pollId, address user) external checkPollValidity(pollId) onlyWhenInState(pollId, 1) {
+    function whitelistUser(uint256 pollId, address user) external checkPollValidity(pollId) onlyWhenInState(pollId, 0) {
         if (msg.sender != s_pollManager.getPollOwner(pollId)) {
             revert VotingSystem__NotPollOwner();
         }
@@ -111,7 +111,7 @@ contract VotingSystemEngine {
     function whitelistUsers(uint256 pollId, address[] calldata users)
         external
         checkPollValidity(pollId)
-        onlyWhenInState(pollId, 1)
+        onlyWhenInState(pollId, 0)
     {
         if (msg.sender != s_pollManager.getPollOwner(pollId)) {
             revert VotingSystem__NotPollOwner();
@@ -122,7 +122,7 @@ contract VotingSystemEngine {
     function removeWhitelisted(uint256 pollId, address user)
         external
         checkPollValidity(pollId)
-        onlyWhenInState(pollId, 1)
+        onlyWhenInState(pollId, 0)
     {
         if (msg.sender != s_pollManager.getPollOwner(pollId)) {
             revert VotingSystem__NotPollOwner();
