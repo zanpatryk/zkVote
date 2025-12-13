@@ -82,13 +82,13 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
       <div className="mt-6 flex gap-4">
         {isOwner ? (
           <Link href={`/poll/${pollId}/manage`}>
-            <span className="text-green-600 font-medium hover:underline">
+            <span className="text-black font-medium hover:underline">
               Manage Poll →
             </span>
           </Link>
         ) : (
           <Link href={`/poll/${pollId}`}>
-            <span className="text-blue-600 font-medium hover:underline">
+            <span className="text-black font-medium hover:underline">
               View Details →
             </span>
           </Link>
@@ -96,7 +96,7 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
 
         {showVoteButton && (
           <Link href={`/poll/${pollId}/vote`}>
-            <span className="text-indigo-600 font-medium hover:underline">
+            <span className="text-black font-medium hover:underline">
               Vote →
             </span>
           </Link>

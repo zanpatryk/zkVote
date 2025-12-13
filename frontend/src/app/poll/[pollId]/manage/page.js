@@ -6,6 +6,7 @@ import { useAccount } from 'wagmi'
 import { getPollById } from '@/lib/blockchain/engine/read'
 import PollDetails from '@/components/PollDetails'
 import WhitelistManager from '@/components/WhitelistManager'
+import PollStatusManager from '@/components/PollStatusManager.jsx'
 import { toast } from 'react-hot-toast'
 
 export default function ManagePollPage() {
@@ -13,32 +14,48 @@ export default function ManagePollPage() {
   const router = useRouter()
   const { address: userAddress, isConnected } = useAccount()
   const [isOwner, setIsOwner] = useState(false)
+  const [pollState, setPollState] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function checkOwnership() {
-      if (!isConnected || !userAddress || !pollId) {
-        setLoading(false)
-        return
-      }
-
-      try {
-        const poll = await getPollById(pollId)
-        if (poll && poll.creator.toLowerCase() === userAddress.toLowerCase()) {
-          setIsOwner(true)
-        } else {
-          setIsOwner(false)
-        }
-      } catch (error) {
-        console.error('Failed to check ownership:', error)
-        toast.error('Failed to verify poll ownership.')
-      } finally {
-        setLoading(false)
-      }
+  const fetchPollData = async () => {
+    if (!isConnected || !userAddress || !pollId) {
+      setLoading(false)
+      return
     }
 
-    checkOwnership()
+    try {
+      const poll = await getPollById(pollId)
+      if (poll && poll.creator.toLowerCase() === userAddress.toLowerCase()) {
+        setIsOwner(true)
+        setPollState(poll.state) // Store state
+      } else {
+        setIsOwner(false)
+      }
+    } catch (error) {
+      console.error('Failed to fetch poll data:', error)
+      toast.error('Failed to verify poll ownership.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPollData()
   }, [pollId, userAddress, isConnected])
+
+  // ... (render logic)
+
+        {pollState !== null && (
+          <section className="border-t pt-8">
+             <PollStatusManager 
+               pollId={pollId} 
+               status={Number(pollState)} 
+               onStatusChange={() => {
+                 fetchPollData()
+               }}
+             />
+          </section>
+        )}
 
   if (loading) {
     return (
@@ -89,6 +106,18 @@ export default function ManagePollPage() {
           <h2 className="text-2xl font-semibold mb-4">Poll Details</h2>
           <PollDetails pollId={pollId} />
         </section>
+
+        {pollState !== null && (
+          <section className="border-t pt-8">
+             <PollStatusManager 
+               pollId={pollId} 
+               status={Number(pollState)} 
+               onStatusChange={() => {
+                 fetchPollData()
+               }}
+             />
+          </section>
+        )}
 
         <section className="border-t pt-8">
           <h2 className="text-2xl font-semibold mb-4">Whitelist Management</h2>

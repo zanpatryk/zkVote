@@ -20,6 +20,11 @@ jest.mock('@/components/WhitelistManager', () => ({
   default: () => <div data-testid="whitelist-manager">Whitelist Manager Component</div>,
 }))
 
+jest.mock('@/components/PollStatusManager.jsx', () => ({
+  __esModule: true,
+  default: () => <div data-testid="poll-status-manager">Poll Status Manager Component</div>,
+}))
+
 jest.mock('wagmi', () => ({
   useAccount: jest.fn(),
 }))
@@ -81,13 +86,14 @@ describe('ManagePollPage', () => {
 
   it('renders management view if owner', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ creator: mockUserAddress.toLowerCase() }) // Is owner
+    read.getPollById.mockResolvedValue({ creator: mockUserAddress.toLowerCase(), state: 0 }) // Is owner
 
     render(<ManagePollPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Manage Poll')).toBeInTheDocument()
       expect(screen.getByTestId('poll-details')).toBeInTheDocument()
+      expect(screen.getByTestId('poll-status-manager')).toBeInTheDocument()
       expect(screen.getByTestId('whitelist-manager')).toBeInTheDocument()
     })
   })
