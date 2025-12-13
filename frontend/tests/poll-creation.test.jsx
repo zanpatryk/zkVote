@@ -116,6 +116,7 @@ describe('Integration Test: Poll Creation', () => {
   })
 
   it('handles creation errors', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
     mockUseAccount.mockReturnValue({ isConnected: true })
     mockCreatePoll.mockRejectedValue(new Error('Transaction failed'))
 
@@ -134,5 +135,7 @@ describe('Integration Test: Poll Creation', () => {
       expect(toast.error).toHaveBeenCalledWith('An unexpected error occurred.')
       expect(screen.getByText('Create Poll')).toBeInTheDocument() // Loading state cleared
     })
+    
+    consoleSpy.mockRestore()
   })
 })
