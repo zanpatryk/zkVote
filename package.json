@@ -7,7 +7,7 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "bun --filter frontend dev",
+    "dev:frontend": "bun --filter frontend dev",
     "dev:chain": "anvil",
     "build": "bun run build:contracts && bun --filter frontend build",
     "build:contracts": "cd contracts && make build && cd .. && bun run generate:abis",
