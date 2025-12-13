@@ -43,12 +43,13 @@ export default function CreatePollPage() {
         description: description.trim(),
         options: cleanOptions,
       })
-
+      
       // Redirect to the new whitelist page for the created poll
+      console.log('Poll created with ID:', pollId, 'Redirecting to whitelist...')
       router.push(`/poll/${pollId}/whitelist`)
     } catch (err) {
       console.error('Failed to create poll:', err)
-      toast.error(err.shortMessage || 'An unexpected error occurred.')
+      // Error toast is handled by functionality in write.js
     } finally {
       setIsSubmitting(false)
     }

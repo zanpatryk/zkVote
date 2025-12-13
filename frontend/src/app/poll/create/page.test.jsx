@@ -21,6 +21,10 @@ jest.mock('@/lib/blockchain/engine/write', () => ({
 jest.mock('react-hot-toast', () => ({
   toast: {
     error: jest.fn(),
+    success: jest.fn(),
+    loading: jest.fn(),
+    dismiss: jest.fn(),
+    promise: jest.fn((p) => p),
   },
 }))
 
@@ -52,7 +56,7 @@ describe('CreatePollPage', () => {
   })
 
   it('submits form successfully', async () => {
-    createPoll.mockResolvedValue(123n)
+    createPoll.mockResolvedValue(BigInt(123))
     render(<CreatePollPage />)
 
     fireEvent.change(screen.getByPlaceholderText('What is your favorite color?'), { target: { value: 'Test Poll' } })

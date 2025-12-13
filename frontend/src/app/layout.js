@@ -1,7 +1,8 @@
-import './globals.css'              
+import './globals.css'
 import Navbar from '@/components/Navbar.jsx'
 import Footer from '@/components/Footer.jsx'
 import Providers from '@/lib/providers/Providers'
+import { Toaster } from 'react-hot-toast'
 
 export const metadata = {
   title: 'zkVote',
@@ -20,6 +21,19 @@ export default function RootLayout({ children }) {
           </main>
 
           <Footer />
+          <Toaster 
+            position="bottom-right" 
+            toastOptions={{
+              style: {
+                background: '#333',
+                color: '#fff',
+                zIndex: 99999,
+              },
+              error: {
+                duration: 5000,
+              }
+            }}
+          />
         </Providers>
       </body>
     </html>

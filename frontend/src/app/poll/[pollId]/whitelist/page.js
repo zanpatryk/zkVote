@@ -11,7 +11,6 @@ export default function WhitelistPage() {
       <h1 className="text-4xl font-bold mb-10">Whitelist Voters</h1>
       <WhitelistManager 
         pollId={pollId} 
-        onSuccess={() => router.push('/poll')}
       />
     </div>
   )

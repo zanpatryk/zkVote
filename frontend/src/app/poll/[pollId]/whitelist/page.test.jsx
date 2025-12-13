@@ -204,7 +204,6 @@ describe('WhitelistPage', () => {
       await waitFor(() => {
         expect(whitelistUsers).toHaveBeenCalledWith(mockPollId, ['0x123'])
       })
-      expect(mockRouter.push).toHaveBeenCalledWith('/poll')
     })
   })
 })
