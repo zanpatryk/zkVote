@@ -94,13 +94,19 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
           </Link>
         )}
 
-        {showVoteButton && (
+        {state === 2 ? (
+          <Link href={`/poll/${pollId}/nft`}>
+            <span className="text-black font-medium hover:underline">
+              Mint Result NFT →
+            </span>
+          </Link>
+        ) : showVoteButton ? (
           <Link href={`/poll/${pollId}/vote`}>
             <span className="text-black font-medium hover:underline">
               Vote →
             </span>
           </Link>
-        )}
+        ) : null}
       </div>
     </div>
   )

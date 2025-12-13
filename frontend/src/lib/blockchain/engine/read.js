@@ -164,3 +164,68 @@ export async function getVote(voteId) {
     return null
   }
 }
+export async function getUserNFTs(userAddress) {
+  if (!userAddress) return []
+  const publicClient = getPublicClient(config)
+  
+  // Get ResultNFT address (contract stores it)
+  const resultNFTAddress = await publicClient.readContract({
+    address: votingSystemContract.address,
+    abi: votingSystemContract.abi,
+    functionName: 's_resultNFT',
+  })
+
+  // Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+  const transferEventAbi = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)')
+
+  try {
+    const logs = await publicClient.getLogs({
+      address: resultNFTAddress,
+      event: transferEventAbi,
+      args: {
+        to: userAddress
+      },
+      fromBlock: 'earliest'
+    })
+
+    const tokenIds = [...new Set(logs.map(log => log.args.tokenId))]
+
+    // Fetch metadata for each token
+    const nfts = await Promise.all(
+      tokenIds.map(async (tokenId) => {
+        try {
+          const tokenURI = await publicClient.readContract({
+            address: resultNFTAddress,
+            abi: [{
+              type: 'function',
+              name: 'tokenURI',
+              inputs: [{ name: 'tokenId', type: 'uint256' }],
+              outputs: [{ name: '', type: 'string' }],
+              stateMutability: 'view'
+            }],
+            functionName: 'tokenURI',
+            args: [tokenId]
+          })
+
+          // Parse base64 tokenURI
+          const jsonPart = tokenURI.replace('data:application/json;base64,', '')
+          if (!jsonPart) return { tokenId: tokenId.toString(), name: `NFT #${tokenId}`, description: 'No Metadata' }
+          const metadata = JSON.parse(atob(jsonPart))
+          
+          return {
+            tokenId: tokenId.toString(),
+            ...metadata
+          }
+        } catch (e) {
+          console.error(`Failed to fetch URI for token ${tokenId}`, e)
+          return { tokenId: tokenId.toString(), name: `NFT #${tokenId}`, error: true }
+        }
+      })
+    )
+
+    return nfts
+  } catch (err) {
+    console.error('getUserNFTs failed:', err)
+    return []
+  }
+}

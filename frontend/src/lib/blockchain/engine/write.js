@@ -201,3 +201,28 @@ export async function endPoll(pollId) {
     throw error
   }
 }
+
+export async function mintResultNFT(pollId) {
+  const { address } = getAccount(config)
+  if (!address) throw new Error('Wallet not connected')
+
+  try {
+    toast.loading('Minting Result NFT...', { id: 'nft' })
+
+    const hash = await writeContract(config, {
+      address: votingSystemContract.address,
+      abi: votingSystemContract.abi,
+      functionName: 'mintResultNFT',
+      args: [BigInt(pollId)],
+    })
+
+    toast.loading('Waiting for confirmation...', { id: 'nft' })
+    await waitForTransactionReceipt(config, { hash })
+
+    toast.success('NFT minted successfully!', { id: 'nft' })
+  } catch (error) {
+    console.error('mintResultNFT failed:', error)
+    toast.error(error.shortMessage || 'Failed to mint NFT', { id: 'nft' })
+    throw error
+  }
+}

@@ -46,6 +46,12 @@ describe('PollCard', () => {
     expect(screen.getByText('Ended')).toBeInTheDocument()
   })
 
+  it('shows Mint Result NFT link for Ended poll (state 2)', () => {
+    render(<PollCard {...defaultProps} state={2} />)
+    expect(screen.getByText('Mint Result NFT →')).toBeInTheDocument()
+    expect(screen.getByText('View Details →')).toBeInTheDocument()
+  })
+
   it('shows owner badge when isOwner is true', () => {
     render(<PollCard {...defaultProps} isOwner={true} />)
     expect(screen.getByText('OWNER')).toBeInTheDocument()
