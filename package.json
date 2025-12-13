@@ -17,7 +17,9 @@
     "test:ui:integration": "bun --filter frontend test:ui:integration",
     "deploy:local": "cd contracts && make deploy-anvil",
     "deploy:sepolia": "cd contracts && make deploy-sepolia",
+    "benchmarking:local": "cd contracts && make benchmark-anvil",
     "generate:abis": "bun scripts/generate-abis.js",
+    "setup": "git submodule update --init --recursive && bun install",
     "start": "bun --filter frontend start"
   }
 }
