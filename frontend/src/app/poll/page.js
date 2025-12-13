@@ -57,7 +57,7 @@ export default function PollsPage() {
           <div className="text-center py-20 text-xl text-gray-600">Loading your polls...</div>
         ) : polls.length === 0 ? (
           <div className="text-center py-20 text-xl text-gray-500 font-medium">
-            you have not created any polls yet
+            You have not created any polls yet
           </div>
         ) : (
           <div className="grid gap-6">
