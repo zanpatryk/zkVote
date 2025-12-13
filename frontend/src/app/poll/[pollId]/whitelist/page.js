@@ -1,7 +1,6 @@
-'use client'
-
-import { useRouter, useParams } from 'next/navigation'
+"use client"
 import WhitelistManager from '@/components/WhitelistManager'
+import { useParams, useRouter } from 'next/navigation'
 
 export default function WhitelistPage() {
   const { pollId } = useParams()

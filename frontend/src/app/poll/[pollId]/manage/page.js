@@ -1,0 +1,103 @@
+"use client"
+
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useAccount } from 'wagmi'
+import { getPollById } from '@/lib/blockchain/engine/read'
+import PollDetails from '@/components/PollDetails'
+import WhitelistManager from '@/components/WhitelistManager'
+import { toast } from 'react-hot-toast'
+
+export default function ManagePollPage() {
+  const { pollId } = useParams()
+  const router = useRouter()
+  const { address: userAddress, isConnected } = useAccount()
+  const [isOwner, setIsOwner] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function checkOwnership() {
+      if (!isConnected || !userAddress || !pollId) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const poll = await getPollById(pollId)
+        if (poll && poll.creator.toLowerCase() === userAddress.toLowerCase()) {
+          setIsOwner(true)
+        } else {
+          setIsOwner(false)
+        }
+      } catch (error) {
+        console.error('Failed to check ownership:', error)
+        toast.error('Failed to verify poll ownership.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkOwnership()
+  }, [pollId, userAddress, isConnected])
+
+  if (loading) {
+    return (
+      <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 text-center">
+        <p className="text-gray-600">Verifying ownership...</p>
+      </div>
+    )
+  }
+
+  if (!isConnected) {
+    return (
+      <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 text-center">
+        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+        <p className="text-gray-600 mb-6">Please connect your wallet to manage this poll.</p>
+      </div>
+    )
+  }
+
+  if (!isOwner) {
+    return (
+      <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+        <p className="text-gray-600 mb-6">You are not the owner of this poll.</p>
+        <button 
+          onClick={() => router.push(`/poll/${pollId}`)}
+          className="text-blue-600 hover:underline"
+        >
+          View Poll Details
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="pt-24 max-w-3xl mx-auto px-6 pb-32">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold">Manage Poll</h1>
+        <button 
+          onClick={() => router.push('/poll')}
+          className="text-gray-600 hover:text-black"
+        >
+          ← Back to Dashboard
+        </button>
+      </div>
+
+      <div className="space-y-12">
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Poll Details</h2>
+          <PollDetails pollId={pollId} />
+        </section>
+
+        <section className="border-t pt-8">
+          <h2 className="text-2xl font-semibold mb-4">Whitelist Management</h2>
+          <p className="text-gray-600 mb-6">
+            Add wallet addresses to allow them to vote in this poll.
+          </p>
+          <WhitelistManager pollId={pollId} />
+        </section>
+      </div>
+    </div>
+  )
+}

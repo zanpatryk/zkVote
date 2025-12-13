@@ -80,16 +80,16 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
       </div>
 
       <div className="mt-6 flex gap-4">
-        <Link href={`/poll/${pollId}`}>
-          <span className="text-blue-600 font-medium hover:underline">
-            View Details →
-          </span>
-        </Link>
-
-        {isOwner && (
-          <Link href={`/poll/${pollId}/whitelist`}>
+        {isOwner ? (
+          <Link href={`/poll/${pollId}/manage`}>
             <span className="text-green-600 font-medium hover:underline">
-              Whitelist users →
+              Manage Poll →
+            </span>
+          </Link>
+        ) : (
+          <Link href={`/poll/${pollId}`}>
+            <span className="text-blue-600 font-medium hover:underline">
+              View Details →
             </span>
           </Link>
         )}

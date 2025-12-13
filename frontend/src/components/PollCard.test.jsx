@@ -56,6 +56,18 @@ describe('PollCard', () => {
     expect(screen.queryByText('OWNER')).not.toBeInTheDocument()
   })
 
+  it('shows Manage Poll link for owner', () => {
+    render(<PollCard {...defaultProps} isOwner={true} />)
+    const manageLink = screen.getByText('Manage Poll →').closest('a')
+    expect(manageLink).toHaveAttribute('href', `/poll/${defaultProps.pollId}/manage`)
+  })
+
+  it('shows View Details link for non-owner', () => {
+    render(<PollCard {...defaultProps} isOwner={false} />)
+    const viewLink = screen.getByText('View Details →').closest('a')
+    expect(viewLink).toHaveAttribute('href', `/poll/${defaultProps.pollId}`)
+  })
+
   it('shows vote button when showVoteButton is true', () => {
     render(<PollCard {...defaultProps} showVoteButton={true} />)
     expect(screen.getByText('Vote →')).toBeInTheDocument()
