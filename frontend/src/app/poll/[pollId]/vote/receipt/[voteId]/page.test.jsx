@@ -1,10 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import VoteReceiptPage from './page'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 
 // Mock dependencies
 jest.mock('next/navigation', () => ({
   useParams: jest.fn(),
+  useSearchParams: jest.fn(),
 }))
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
@@ -18,18 +19,19 @@ describe('VoteReceiptPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     useParams.mockReturnValue({ pollId: mockPollId, voteId: mockVoteId })
+    useSearchParams.mockReturnValue({ get: jest.fn().mockReturnValue('0x123abc') })
   })
 
   it('renders success message', () => {
     render(<VoteReceiptPage />)
-    expect(screen.getByText('Vote receipt')).toBeInTheDocument()
-    expect(screen.getByText('Your vote has been successfully submitted.')).toBeInTheDocument()
+    expect(screen.getByText('Vote Submitted')).toBeInTheDocument()
+    expect(screen.getByText('Your vote has been successfully cast. Here is your receipt.')).toBeInTheDocument()
   })
 
   it('handles download button click', () => {
     render(<VoteReceiptPage />)
     
-    const downloadBtn = screen.getByText('Download receipt (.txt)')
+    const downloadBtn = screen.getByText('Download Receipt (.txt)')
     
     // Mock anchor click
     const link = { click: jest.fn() }

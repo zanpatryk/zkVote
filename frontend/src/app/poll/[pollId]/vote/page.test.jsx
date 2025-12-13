@@ -91,7 +91,7 @@ describe('VoteOnPoll Page', () => {
 
   it('handles option selection and submission', async () => {
     const mockVoteId = 'vote-123'
-    castVote.mockResolvedValue(mockVoteId)
+    castVote.mockResolvedValue({ voteId: mockVoteId, txHash: '0xabc' })
     
     render(<VoteOnPoll />)
     
@@ -111,7 +111,7 @@ describe('VoteOnPoll Page', () => {
     await waitFor(() => {
       expect(castVote).toHaveBeenCalledWith(mockPollId, { optionIndex: 0 })
     })
-    expect(mockRouter.push).toHaveBeenCalledWith(`/poll/${mockPollId}/vote/receipt/${mockVoteId}`)
+    expect(mockRouter.push).toHaveBeenCalledWith(`/poll/${mockPollId}/vote/receipt/${mockVoteId}?txHash=0xabc`)
   })
 
   it('shows error toast if disconnected when submitting', async () => {

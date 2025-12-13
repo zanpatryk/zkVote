@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import VoteCheckPage from './page'
 import { getVote, getPollById } from '@/lib/blockchain/engine/read'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 
 // Mock dependencies
 jest.mock('@/lib/blockchain/engine/read', () => ({
@@ -11,6 +11,7 @@ jest.mock('@/lib/blockchain/engine/read', () => ({
 
 jest.mock('next/navigation', () => ({
   useParams: jest.fn(),
+  useSearchParams: jest.fn(),
 }))
 
 describe('VoteCheckPage', () => {
@@ -27,6 +28,7 @@ describe('VoteCheckPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     useParams.mockReturnValue({ pollId: mockPollId, voteId: mockVoteId })
+    useSearchParams.mockReturnValue({ get: jest.fn() })
   })
 
   it('renders loading state initially', () => {
