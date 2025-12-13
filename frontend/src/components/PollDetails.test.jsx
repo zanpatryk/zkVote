@@ -6,6 +6,7 @@ import '@testing-library/jest-dom'
 // Mock dependencies
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getPollById: jest.fn(),
+  getPollResults: jest.fn(),
 }))
 
 describe('PollDetails', () => {
@@ -43,6 +44,25 @@ describe('PollDetails', () => {
       expect(screen.getByText('Test Description')).toBeInTheDocument()
       expect(screen.getByText('Option A')).toBeInTheDocument()
       expect(screen.getByText('Option B')).toBeInTheDocument()
+    })
+  })
+
+  it('renders poll data with results when showResults is true', async () => {
+    const mockPoll = {
+      title: 'Poll Results',
+      description: 'Desc',
+      options: ['Option 1', 'Option 2']
+    }
+    read.getPollById.mockResolvedValue(mockPoll)
+    read.getPollResults.mockResolvedValue(['5', '10'])
+
+    render(<PollDetails pollId="123" showResults={true} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Poll Results')).toBeInTheDocument()
+      expect(screen.getByText('Option 1')).toBeInTheDocument()
+      expect(screen.getByText('5 votes')).toBeInTheDocument()
+      expect(screen.getByText('10 votes')).toBeInTheDocument()
     })
   })
 

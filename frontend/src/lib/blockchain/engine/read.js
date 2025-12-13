@@ -229,3 +229,23 @@ export async function getUserNFTs(userAddress) {
     return []
   }
 }
+
+export async function getPollResults(pollId, optionCount) {
+  if (!pollId) return []
+  const publicClient = getPublicClient(config)
+  const { voteStorage } = await getModules()
+
+  try {
+    const results = await publicClient.readContract({
+      address: voteStorage,
+      abi: IVoteStorageABI,
+      functionName: 'getResults',
+      args: [BigInt(pollId), BigInt(optionCount)],
+    })
+    // Convert BigInts to strings
+    return results.map(r => r.toString()) 
+  } catch (err) {
+    console.error('getPollResults failed:', err)
+    return Array(optionCount).fill('0')
+  }
+}

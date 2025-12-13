@@ -10,6 +10,7 @@ import '@testing-library/jest-dom'
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getPollById: jest.fn(),
   isUserWhitelisted: jest.fn(),
+  getUserNFTs: jest.fn(),
 }))
 
 jest.mock('@/lib/blockchain/engine/write', () => ({
@@ -44,6 +45,8 @@ describe('MintNFTPage', () => {
     jest.clearAllMocks()
     useRouter.mockReturnValue({ push: mockPush, replace: mockReplace })
     useParams.mockReturnValue({ pollId: mockPollId })
+    // Default: not minted
+    read.getUserNFTs.mockResolvedValue([])
   })
 
   it('redirects if wallet not connected', async () => {
@@ -80,7 +83,7 @@ describe('MintNFTPage', () => {
     })
   })
 
-  it('shows mint button if owner', async () => {
+  it('shows mint button if owner (and not minted)', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
     read.getPollById.mockResolvedValue({ state: 2, creator: mockUserAddress.toLowerCase() }) // Ended, Owner
     
@@ -88,11 +91,11 @@ describe('MintNFTPage', () => {
     
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Mint Result NFT' })).toBeInTheDocument()
-      expect(screen.getByTestId('poll-details')).toBeInTheDocument()
+      expect(screen.queryByTestId('poll-details')).not.toBeInTheDocument()
     })
   })
 
-  it('shows mint button if whitelisted', async () => {
+  it('shows mint button if whitelisted (and not minted)', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
     read.getPollById.mockResolvedValue({ state: 2, creator: '0xOther' }) // Ended
     read.isUserWhitelisted.mockResolvedValue(true)
@@ -101,10 +104,11 @@ describe('MintNFTPage', () => {
     
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Mint Result NFT' })).toBeInTheDocument()
+      expect(screen.queryByTestId('poll-details')).not.toBeInTheDocument()
     })
   })
 
-  it('calls mintResultNFT when button clicked', async () => {
+  it('calls mintResultNFT when button clicked and shows results', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
     read.getPollById.mockResolvedValue({ state: 2, creator: mockUserAddress.toLowerCase() })
     
@@ -120,6 +124,23 @@ describe('MintNFTPage', () => {
     expect(screen.getByText('Minting...')).toBeInTheDocument()
     await waitFor(() => {
       expect(write.mintResultNFT).toHaveBeenCalledWith(mockPollId)
+      // Results appear after success
+      expect(screen.getByText('✓ NFT Badge Minted')).toBeInTheDocument()
+      expect(screen.getByTestId('poll-details')).toBeInTheDocument()
+    })
+  })
+
+  it('shows results immediately if already minted', async () => {
+    wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
+    read.getPollById.mockResolvedValue({ state: 2, creator: mockUserAddress.toLowerCase() })
+    read.getUserNFTs.mockResolvedValue([{ name: `Poll #${mockPollId} Results` }])
+
+    render(<MintNFTPage />)
+
+    await waitFor(() => {
+        expect(screen.getByText('✓ NFT Badge Minted')).toBeInTheDocument()
+        expect(screen.getByTestId('poll-details')).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: 'Mint Result NFT' })).not.toBeInTheDocument()
     })
   })
 })

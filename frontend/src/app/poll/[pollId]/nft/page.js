@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { getPollById, isUserWhitelisted } from '@/lib/blockchain/engine/read'
+import { getPollById, isUserWhitelisted, getUserNFTs } from '@/lib/blockchain/engine/read'
 import { mintResultNFT } from '@/lib/blockchain/engine/write'
 import PollDetails from '@/components/PollDetails'
 import { toast } from 'react-hot-toast'
@@ -17,6 +17,7 @@ export default function MintNFTPage() {
   const [canMint, setCanMint] = useState(false)
   const [poll, setPoll] = useState(null)
   const [minting, setMinting] = useState(false)
+  const [hasMinted, setHasMinted] = useState(false)
 
   useEffect(() => {
     async function checkEligibility() {
@@ -53,6 +54,12 @@ export default function MintNFTPage() {
         } else {
           setCanMint(false)
         }
+
+        // Check ownership
+        const userNFTs = await getUserNFTs(userAddress)
+        const owned = userNFTs.some(nft => nft.name === `Poll #${pollId} Results`)
+        setHasMinted(owned)
+
       } catch (error) {
         console.error('Failed to check eligibility:', error)
         toast.error('Failed to verify eligibility.')
@@ -69,6 +76,7 @@ export default function MintNFTPage() {
     setMinting(true)
     try {
       await mintResultNFT(pollId)
+      setHasMinted(true)
       // Optional: Redirect or show success state
     } catch (error) {
       console.error("Minting failed", error)
@@ -131,6 +139,7 @@ export default function MintNFTPage() {
         </div>
 
         <div className="flex justify-center">
+          {!hasMinted ? (
              <button
             onClick={handleMint}
             disabled={minting}
@@ -138,13 +147,20 @@ export default function MintNFTPage() {
           >
             {minting ? 'Minting...' : 'Mint Result NFT'}
           </button>
+          ) : (
+            <div className="text-black font-bold text-lg border-2 border-black bg-white px-6 py-3 rounded-xl shadow-sm">
+              ✓ NFT Badge Minted
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="opacity-75">
-        <h3 className="text-xl font-semibold mb-4 text-gray-400">Final Results Snapshot</h3>
-        <PollDetails pollId={pollId} />
-      </div>
+      {hasMinted && (
+        <div className="opacity-75">
+          <h3 className="text-xl font-semibold mb-4 text-gray-400">Final Results Snapshot</h3>
+          <PollDetails pollId={pollId} showResults={true} />
+        </div>
+      )}
     </div>
   )
 }
