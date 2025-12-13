@@ -23,7 +23,7 @@ export async function createPoll(pollDetails) {
       address: votingSystemContract.address,
       abi: votingSystemContract.abi,
       functionName: 'createPoll',
-      args: [title, description || '', options, address],
+      args: [title, description || '', options],
     })
 
     toast.loading('Waiting for confirmation...', { id: 'tx' })

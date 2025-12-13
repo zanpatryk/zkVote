@@ -1,0 +1,31 @@
+[
+  {
+    "type": "function",
+    "name": "measureCall",
+    "inputs": [
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "gasUsed",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "returnData",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  }
+]

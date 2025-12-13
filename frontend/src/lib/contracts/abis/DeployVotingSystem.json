@@ -38,6 +38,11 @@
         "internalType": "contract VoteStorageV0"
       },
       {
+        "name": "resultNFT",
+        "type": "address",
+        "internalType": "contract ResultNFT"
+      },
+      {
         "name": "helper",
         "type": "address",
         "internalType": "contract HelperConfig"
