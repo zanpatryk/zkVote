@@ -9,6 +9,7 @@
   "scripts": {
     "dev:frontend": "bun --filter frontend dev",
     "dev:chain": "anvil",
+    "dev:local": "bun scripts/start-local-env.js",
     "build": "bun run build:contracts && bun --filter frontend build",
     "build:contracts": "cd contracts && make build && cd .. && bun run generate:abis",
     "test:contracts": "cd contracts && make test",
