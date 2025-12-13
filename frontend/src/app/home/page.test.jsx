@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import HomePage from './page'
 import * as read from '@/lib/blockchain/engine/read'
 import '@testing-library/jest-dom'
@@ -27,15 +27,14 @@ describe('HomePage', () => {
     window.alert = jest.fn()
   })
 
-  it('renders default check vote tab', () => {
-    // Suppress console.error related to act() if needed, but improved logic avoids it
+  it('renders both sections', () => {
     read.getUserNFTs.mockResolvedValue([])
     render(<HomePage />)
     expect(screen.getByText('Check your vote')).toBeInTheDocument()
-    expect(screen.getByText('NFT Badges')).toBeInTheDocument()
+    expect(screen.getByText('Your Voting Badges')).toBeInTheDocument()
   })
 
-  it('switches to NFT badges tab and fetches data', async () => {
+  it('fetches and displays badges on mount', async () => {
     const mockNFTs = [
       {
         tokenId: '1',
@@ -48,28 +47,18 @@ describe('HomePage', () => {
 
     render(<HomePage />)
     
-    // Switch to badges tab
-    await act(async () => {
-      fireEvent.click(screen.getByText('NFT Badges'))
-    })
-
-
-
+    // Should happen automatically without tab switching
     await waitFor(() => {
       expect(screen.getByText('Poll #1 Badge')).toBeInTheDocument()
       expect(screen.getByText('You voted!')).toBeInTheDocument()
     })
   })
 
-  it('displays empty state when no badges found in tab', async () => {
+  it('displays empty state when no badges found', async () => {
     read.getUserNFTs.mockResolvedValue([])
     
     render(<HomePage />)
     
-    await act(async () => {
-      fireEvent.click(screen.getByText('NFT Badges'))
-    })
-
     await waitFor(() => {
       expect(screen.getByText('No Badges Yet')).toBeInTheDocument()
       expect(screen.getByText(/Participate/)).toBeInTheDocument()
@@ -85,9 +74,7 @@ describe('HomePage', () => {
     file.text = jest.fn().mockResolvedValue(fileContent)
     
     const input = screen.getByLabelText('Upload vote receipt')
-    await act(async () => {
-       fireEvent.change(input, { target: { files: [file] } })
-    })
+    fireEvent.change(input, { target: { files: [file] } }) // No act needed usually if fireEvent is used, or wrapped by lib
 
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/poll/123/vote/check/456')
@@ -103,9 +90,7 @@ describe('HomePage', () => {
     file.text = jest.fn().mockResolvedValue(fileContent)
     
     const input = screen.getByLabelText('Upload vote receipt')
-    await act(async () => {
-      fireEvent.change(input, { target: { files: [file] } })
-    })
+    fireEvent.change(input, { target: { files: [file] } })
 
     await waitFor(() => {
       expect(window.alert).toHaveBeenCalledWith('Could not read poll and vote IDs from this receipt file.')
