@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import VoteCheckPage from './page'
 import { getVote, getPollById } from '@/lib/blockchain/engine/read'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
@@ -78,6 +78,36 @@ describe('VoteCheckPage', () => {
     
     const txLink = screen.getByRole('link', { name: '0x123abc' })
     expect(txLink).toHaveAttribute('href', 'https://sepolia.etherscan.io/tx/0x123abc')
+  })
+
+  it('renders "View Active Poll" button when poll is active', async () => {
+    getVote.mockResolvedValue(mockVoteData)
+    getPollById.mockResolvedValue({ ...mockPollData, state: 1 })
+
+    render(<VoteCheckPage />)
+    
+    await waitFor(() => {
+        expect(screen.getByText('View Active Poll')).toBeInTheDocument()
+    })
+    
+    const activeBtn = screen.getByText('View Active Poll')
+    fireEvent.click(activeBtn)
+    expect(mockPush).toHaveBeenCalledWith(`/poll/${mockPollId}`)
+  })
+
+  it('renders "View Results & Mint NFT" button when poll is ended', async () => {
+    getVote.mockResolvedValue(mockVoteData)
+    getPollById.mockResolvedValue({ ...mockPollData, state: 2 })
+
+    render(<VoteCheckPage />)
+    
+    await waitFor(() => {
+        expect(screen.getByText('View Results & Mint NFT')).toBeInTheDocument()
+    })
+
+    const endedBtn = screen.getByText('View Results & Mint NFT')
+    fireEvent.click(endedBtn)
+    expect(mockPush).toHaveBeenCalledWith(`/poll/${mockPollId}/nft`)
   })
 
   it('renders error when vote is not found', async () => {

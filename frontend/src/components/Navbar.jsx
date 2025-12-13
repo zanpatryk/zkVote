@@ -57,6 +57,16 @@ export default function Navbar() {
             >
               Vote
             </Link>
+            <Link
+              href="/verify"
+              className={`font-medium text-lg transition ${
+                pathname === '/verify'
+                  ? 'text-black font-semibold'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Verify
+            </Link>
           </div>
         )}
 
