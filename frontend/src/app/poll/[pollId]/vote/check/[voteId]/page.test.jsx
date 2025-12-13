@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import VoteCheckPage from './page'
 import { getVote, getPollById } from '@/lib/blockchain/engine/read'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 
 // Mock dependencies
 jest.mock('@/lib/blockchain/engine/read', () => ({
@@ -12,6 +12,7 @@ jest.mock('@/lib/blockchain/engine/read', () => ({
 jest.mock('next/navigation', () => ({
   useParams: jest.fn(),
   useSearchParams: jest.fn(),
+  useRouter: jest.fn(),
 }))
 
 describe('VoteCheckPage', () => {
@@ -25,10 +26,13 @@ describe('VoteCheckPage', () => {
     options: ['Option A', 'Option B', 'Option C'],
   }
 
+  const mockPush = jest.fn()
+
   beforeEach(() => {
     jest.clearAllMocks()
     useParams.mockReturnValue({ pollId: mockPollId, voteId: mockVoteId })
     useSearchParams.mockReturnValue({ get: jest.fn() })
+    useRouter.mockReturnValue({ push: mockPush })
   })
 
   it('renders loading state initially', () => {
@@ -49,10 +53,31 @@ describe('VoteCheckPage', () => {
 
     expect(await screen.findByText(mockPollId)).toBeInTheDocument()
     expect(await screen.findByText(mockVoteId)).toBeInTheDocument()
+    
+    // Check Poll ID Link
+    const pollLink = screen.getByRole('link', { name: mockPollId })
+    expect(pollLink).toBeInTheDocument()
+    expect(pollLink).toHaveAttribute('href', `/poll/${mockPollId}`)
+
     expect(screen.getByText('Option B')).toBeInTheDocument() // Index 1
     
     // Check timestamp rendering (locale dependent, so checking partial match or existence)
     expect(screen.getByText('Timestamp')).toBeInTheDocument()
+  })
+
+  it('renders transaction hash link when present', async () => {
+    getVote.mockResolvedValue(mockVoteData)
+    getPollById.mockResolvedValue(mockPollData)
+    useSearchParams.mockReturnValue({ get: (key) => key === 'txHash' ? '0x123abc' : null })
+
+    render(<VoteCheckPage />)
+    
+    await waitFor(() => {
+        expect(screen.getByText('Transaction Hash')).toBeInTheDocument()
+    })
+    
+    const txLink = screen.getByRole('link', { name: '0x123abc' })
+    expect(txLink).toHaveAttribute('href', 'https://sepolia.etherscan.io/tx/0x123abc')
   })
 
   it('renders error when vote is not found', async () => {

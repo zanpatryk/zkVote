@@ -249,3 +249,34 @@ export async function getPollResults(pollId, optionCount) {
     return Array(optionCount).fill('0')
   }
 }
+
+export async function getVoteTransaction(pollId, userAddress) {
+  if (!pollId || !userAddress) return null
+  const publicClient = getPublicClient(config)
+  const { voteStorage } = await getModules()
+
+  // VoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId)
+  const eventAbi = parseAbiItem('event VoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId)')
+
+  try {
+    const logs = await publicClient.getLogs({
+      address: voteStorage,
+      event: eventAbi,
+      args: {
+        pollId: BigInt(pollId),
+        voter: userAddress
+      },
+      fromBlock: 'earliest'
+    })
+
+    if (logs.length > 0) {
+      // Return the most recent vote transaction
+      const log = logs[logs.length - 1]
+      return log.transactionHash
+    }
+    return null
+  } catch (err) {
+    console.error('getVoteTransaction failed:', err)
+    return null
+  }
+}

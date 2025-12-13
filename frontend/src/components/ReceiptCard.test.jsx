@@ -11,7 +11,12 @@ describe('ReceiptCard', () => {
     render(<ReceiptCard {...defaultProps} />)
     expect(screen.getByText('zkVote')).toBeInTheDocument()
     expect(screen.getByText('Vote Receipt')).toBeInTheDocument()
-    expect(screen.getByText('12345')).toBeInTheDocument()
+    
+    // Check Poll ID Link
+    const pollLink = screen.getByRole('link', { name: '12345' })
+    expect(pollLink).toBeInTheDocument()
+    expect(pollLink).toHaveAttribute('href', '/poll/12345')
+
     expect(screen.getByText('67890')).toBeInTheDocument()
     expect(screen.queryByText('Transaction Hash')).not.toBeInTheDocument()
   })

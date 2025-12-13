@@ -1,10 +1,12 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { getVote, getPollById } from '@/lib/blockchain/engine/read'
 
 export default function VoteCheckPage() {
+  const router = useRouter()
   const { pollId, voteId } = useParams()
   const searchParams = useSearchParams()
   const txHash = searchParams.get('txHash')
@@ -50,7 +52,15 @@ export default function VoteCheckPage() {
 
   return (
     <div className="pt-24 max-w-3xl mx-auto px-6 pb-32">
-      <h1 className="text-4xl font-bold mb-8">Vote Details</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold">Vote Details</h1>
+        <button 
+          onClick={() => router.push('/poll')}
+          className="text-gray-600 hover:text-black whitespace-nowrap"
+        >
+          ← Go Back
+        </button>
+      </div>
 
       {loading ? (
         <p className="text-gray-600">Loading data...</p>
@@ -60,7 +70,9 @@ export default function VoteCheckPage() {
         <div className="bg-white border-2 border-black rounded-2xl p-8 shadow-sm space-y-6">
           <div>
             <h2 className="text-lg font-semibold text-gray-500 mb-1">Poll ID</h2>
-            <p className="text-sm font-mono break-all">{pollId}</p>
+            <Link href={`/poll/${pollId}`} className="text-sm font-mono break-all hover:underline hover:text-black transition-colors block">
+              {pollId}
+            </Link>
           </div>
           
           <div>
@@ -71,9 +83,14 @@ export default function VoteCheckPage() {
           {txHash && (
             <div>
               <h2 className="text-lg font-semibold text-gray-500 mb-1">Transaction Hash</h2>
-              <p className="text-sm font-mono break-all hover:bg-gray-50 p-1 rounded transition select-all">
+              <a 
+                href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-mono break-all text-gray-600 hover:text-black underline decoration-dotted underline-offset-2 transition-colors block"
+              >
                 {txHash}
-              </p>
+              </a>
             </div>
           )}
 

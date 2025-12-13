@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 export default function ReceiptCard({ pollId, voteId, txHash }) {
   return (
     <div className="bg-white p-8 max-w-sm mx-auto shadow-lg border border-gray-200 relative mb-8 font-mono text-left">
@@ -13,7 +15,9 @@ export default function ReceiptCard({ pollId, voteId, txHash }) {
       <div className="space-y-4 mb-8">
         <div>
           <p className="text-xs text-gray-500 uppercase">Poll ID</p>
-          <p className="text-sm break-all">{pollId}</p>
+          <Link href={`/poll/${pollId}`} className="text-sm break-all hover:underline hover:text-black transition-colors block">
+            {pollId}
+          </Link>
         </div>
         
         <div>
@@ -28,7 +32,7 @@ export default function ReceiptCard({ pollId, voteId, txHash }) {
               href={`https://sepolia.etherscan.io/tx/${txHash}`}
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800 break-all underline decoration-dotted underline-offset-2"
+              className="text-sm text-gray-600 hover:text-black break-all underline decoration-dotted underline-offset-2 transition-colors"
             >
               {txHash}
             </a>

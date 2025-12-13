@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import VoteOnPoll from './page'
-import { getPollById, hasVoted } from '@/lib/blockchain/engine/read'
+import { getPollById, hasVoted, getVoteTransaction } from '@/lib/blockchain/engine/read'
 import { castVote } from '@/lib/blockchain/engine/write'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast'
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getPollById: jest.fn(),
   hasVoted: jest.fn(),
+  getVoteTransaction: jest.fn(), // Mock the new function
 }))
 
 jest.mock('@/lib/blockchain/engine/write', () => ({
@@ -50,6 +51,7 @@ describe('VoteOnPoll Page', () => {
     useAccount.mockReturnValue({ address: mockAddress, isConnected: true })
     getPollById.mockResolvedValue(mockPollData)
     hasVoted.mockResolvedValue(false)
+    getVoteTransaction.mockResolvedValue(null)
   })
 
   it('renders loading state initially', () => {
@@ -84,9 +86,25 @@ describe('VoteOnPoll Page', () => {
     render(<VoteOnPoll />)
     
     await waitFor(() => {
-      expect(screen.getByText('You have already voted in this poll.')).toBeInTheDocument()
+      expect(screen.getByText('Vote Confirmed')).toBeInTheDocument()
+      expect(screen.getByText('You have already cast your vote in this poll.')).toBeInTheDocument()
     })
     expect(screen.queryByText('Submit vote')).not.toBeInTheDocument()
+    expect(screen.queryByText('View Transaction')).not.toBeInTheDocument() // No tx hash yet
+  })
+  
+  it('shows block explorer link if user has voted and tx hash is found', async () => {
+    hasVoted.mockResolvedValue(true)
+    getVoteTransaction.mockResolvedValue('0xabcdef123456') // Mock tx hash
+    
+    render(<VoteOnPoll />)
+    
+    await waitFor(() => {
+      expect(screen.getByText('Vote Confirmed')).toBeInTheDocument()
+      const link = screen.getByRole('link', { name: /View Transaction/i })
+      expect(link).toBeInTheDocument()
+      expect(link).toHaveAttribute('href', 'https://sepolia.etherscan.io/tx/0xabcdef123456')
+    })
   })
 
   it('handles option selection and submission', async () => {

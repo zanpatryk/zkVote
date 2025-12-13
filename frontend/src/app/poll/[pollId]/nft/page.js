@@ -157,7 +157,7 @@ export default function MintNFTPage() {
 
       {hasMinted && (
         <div className="opacity-75">
-          <h3 className="text-xl font-semibold mb-4 text-gray-400">Final Results Snapshot</h3>
+          <h3 className="text-xl font-semibold mb-4 text-gray-400">Final Results</h3>
           <PollDetails pollId={pollId} showResults={true} />
         </div>
       )}
