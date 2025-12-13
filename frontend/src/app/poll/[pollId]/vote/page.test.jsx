@@ -40,6 +40,7 @@ describe('VoteOnPoll Page', () => {
     title: 'Test Poll',
     description: 'Test Description',
     options: ['Option 1', 'Option 2'],
+    state: 1, // Active
   }
 
   beforeEach(() => {

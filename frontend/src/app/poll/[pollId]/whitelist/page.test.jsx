@@ -12,6 +12,10 @@ jest.mock('@/lib/blockchain/engine/write', () => ({
   whitelistUsers: jest.fn(),
 }))
 
+jest.mock('@/lib/blockchain/engine/read', () => ({
+  isUserWhitelisted: jest.fn(),
+}))
+
 jest.mock('next/navigation', () => ({
   useParams: jest.fn(),
   useRouter: jest.fn(),

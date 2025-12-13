@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { getOwnedPolls } from '@/lib/blockchain/engine/read'
-import PollCard from '@/components/PollCard'
+import PollCard from '@/components/PollCard.jsx'
 import Link from 'next/link'
 
 export default function PollsPage() {

@@ -3,7 +3,7 @@
 import { useAccount } from 'wagmi'
 import { getWhitelistedPolls } from '@/lib/blockchain/engine/read'
 import { useQuery } from '@tanstack/react-query'
-import PollCard from '@/components/PollCard'
+import PollCard from '@/components/PollCard.jsx'
 
 export default function VotePage() {
   const { address, isConnected } = useAccount()

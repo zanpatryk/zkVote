@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import Navbar from '../src/components/Navbar'
+import Navbar from '../src/components/Navbar.jsx'
 import '@testing-library/jest-dom'
 
 // Mock next/navigation

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import PollCard, { formatDuration } from './PollCard'
+import PollCard, { formatDuration } from './PollCard.jsx'
 import '@testing-library/jest-dom'
 
 // Mock react-hot-toast
