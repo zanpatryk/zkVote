@@ -68,7 +68,7 @@ export default function PollsPage() {
                 title={poll.title} 
                 state={poll.state}
                 isOwner 
-                showVoteButton={poll.isWhitelisted}
+                showVoteButton={poll.isWhitelisted && poll.state === 1}
               />
             ))}
           </div>
