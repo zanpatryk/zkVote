@@ -16,6 +16,8 @@ export default function ManagePoll() {
       try {
         const data = await getPollById(pollId)
         if (!cancelled) setPoll(data)
+      } catch (error) {
+        console.error('Failed to load poll:', error)
       } finally {
         if (!cancelled) setLoading(false)
       }

@@ -29,7 +29,7 @@ export default function VoteCheckPage() {
           setPoll(pollData)
         }
       } catch (err) {
-        console.error(err)
+        console.error('Failed to load details:', err)
         setError('Failed to load details.')
       } finally {
         setLoading(false)
@@ -41,7 +41,7 @@ export default function VoteCheckPage() {
     }
   }, [pollId, voteId])
 
-  const optionText = vote && poll && poll.options && vote.optionIdx !== undefined
+  const optionText = vote && poll && poll.options && poll.options[Number(vote.optionIdx)]
     ? poll.options[Number(vote.optionIdx)]
     : 'Unknown Option'
 

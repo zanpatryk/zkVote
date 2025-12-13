@@ -158,9 +158,10 @@ export default function WhitelistPage() {
         {mode === 'batch' && (
           <div className="bg-white border-2 border-black p-8 rounded-2xl shadow-lg space-y-6">
             <div>
-              <label className="block text-lg font-medium mb-2">Upload File</label>
+              <label htmlFor="file-upload" className="block text-lg font-medium mb-2">Upload File</label>
               <p className="text-sm text-gray-500 mb-4">Upload a .txt file with addresses separated by newlines, commas, or spaces.</p>
               <input
+                id="file-upload"
                 type="file"
                 accept=".txt"
                 onChange={handleFileChange}
