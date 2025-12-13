@@ -11,9 +11,10 @@ export default function VoteChecker() {
 
     const text = await file.text()
 
-    // Expect lines like: "Poll ID: X" and "Vote ID: Y"
+    // Expect lines like: "Poll ID: X", "Vote ID: Y", "Tx Hash: Z"
     const pollMatch = text.match(/Poll ID:\s*((?:0x)?[0-9a-fA-F]+)/i)
     const voteMatch = text.match(/Vote ID:\s*((?:0x)?[0-9a-fA-F]+)/i)
+    const txMatch = text.match(/Tx Hash:\s*((?:0x)?[0-9a-fA-F]+)/i)
 
     if (!pollMatch || !voteMatch) {
       alert('Could not read poll and vote IDs from this receipt file.')
@@ -22,8 +23,10 @@ export default function VoteChecker() {
 
     const pollId = pollMatch[1]
     const voteId = voteMatch[1]
+    const txHash = txMatch ? txMatch[1] : null
 
-    router.push(`/poll/${pollId}/vote/check/${voteId}`)
+    const url = `/poll/${pollId}/vote/check/${voteId}${txHash ? `?txHash=${txHash}` : ''}`
+    router.push(url)
   }
 
   return (

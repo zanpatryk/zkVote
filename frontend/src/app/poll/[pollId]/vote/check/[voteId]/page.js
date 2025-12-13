@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { getVote, getPollById } from '@/lib/blockchain/engine/read'
 
 export default function VoteCheckPage() {
   const { pollId, voteId } = useParams()
+  const searchParams = useSearchParams()
+  const txHash = searchParams.get('txHash')
+
   const [vote, setVote] = useState(null)
   const [poll, setPoll] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -64,6 +67,15 @@ export default function VoteCheckPage() {
             <h2 className="text-lg font-semibold text-gray-500 mb-1">Vote ID</h2>
             <p className="text-sm font-mono break-all">{voteId}</p>
           </div>
+
+          {txHash && (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-500 mb-1">Transaction Hash</h2>
+              <p className="text-sm font-mono break-all hover:bg-gray-50 p-1 rounded transition select-all">
+                {txHash}
+              </p>
+            </div>
+          )}
 
           <div className="pt-6 border-t border-gray-200">
             <h2 className="text-lg font-semibold text-gray-500 mb-2">Selected Option</h2>

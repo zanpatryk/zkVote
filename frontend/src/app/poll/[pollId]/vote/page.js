@@ -70,8 +70,8 @@ export default function VoteOnPoll() {
 
     setSubmitting(true)
     try {
-      const voteId = await castVote(pollId, { optionIndex: selectedIndex })
-      router.push(`/poll/${pollId}/vote/receipt/${voteId}`)
+      const { voteId, txHash } = await castVote(pollId, { optionIndex: selectedIndex })
+      router.push(`/poll/${pollId}/vote/receipt/${voteId}?txHash=${txHash}`)
     } catch {
       // errors already toasted in castVote
     } finally {

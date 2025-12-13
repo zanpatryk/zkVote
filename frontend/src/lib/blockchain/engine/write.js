@@ -140,11 +140,11 @@ export async function castVote(pollId, voteDetails) {
       })
       const voteId = decodedEvent.args.voteId.toString()
       toast.success('Vote submitted!', { id: 'vote' })
-      return voteId
+      return { voteId, txHash: receipt.transactionHash }
     }
 
     toast.success('Vote submitted!', { id: 'vote' })
-    return null
+    return { voteId: null, txHash: receipt.transactionHash }
   } catch (error) {
     console.error('castVote failed:', error)
     toast.error(error.shortMessage || 'Failed to submit vote', { id: 'vote' })
