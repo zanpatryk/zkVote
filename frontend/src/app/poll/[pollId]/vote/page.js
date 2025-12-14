@@ -87,7 +87,7 @@ export default function VoteOnPoll() {
   }
 
   return (
-    <div className="pt-24 max-w-3xl mx-auto px-6 pb-32">
+    <div className="pt-12 md:pt-24 max-w-3xl mx-auto px-6 pb-16 md:pb-32">
       {loading ? (
         <p className="text-gray-600 font-serif italic text-xl text-center py-20">Loading poll...</p>
       ) : !poll ? (
@@ -96,7 +96,7 @@ export default function VoteOnPoll() {
         <div className="space-y-8">
           <div className="flex justify-between items-start">
             <div className="text-left">
-              <h1 className="text-5xl font-black font-serif mb-4 tracking-tight">{poll.title}</h1>
+              <h1 className="text-3xl md:text-5xl font-black font-serif mb-4 tracking-tight">{poll.title}</h1>
               {poll.description && (
                 <p className="text-xl text-gray-600 max-w-2xl font-medium">{poll.description}</p>
               )}
@@ -109,7 +109,7 @@ export default function VoteOnPoll() {
             </button>
           </div>
 
-          <div className="bg-white border-2 border-black p-10 rounded-lg shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <div className="bg-white border-2 border-black p-6 md:p-10 rounded-lg shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
 
           {poll.state !== 1 ? (
              <div className="bg-white border-2 border-black p-6 mb-6 rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">

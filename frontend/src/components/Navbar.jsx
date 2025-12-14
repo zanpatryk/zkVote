@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount } from 'wagmi'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function Navbar() {
   const { isConnected, address } = useAccount()
   const pathname = usePathname()
   const router = useRouter()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   // Redirect logic (connect → /home, disconnect → /)
   useEffect(() => {
@@ -23,9 +24,14 @@ export default function Navbar() {
     }
   }, [isConnected, address, pathname, router])
 
+  // Close menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false)
+  }, [pathname])
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b-2 border-black bg-white">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between relative">
         {/* Logo – left */}
         <Link
           href={isConnected ? '/home' : '/'}
@@ -34,9 +40,9 @@ export default function Navbar() {
           zkVote
         </Link>
 
-        {/* Only when connected */}
+        {/* Desktop Navigation - Centered */}
         {isConnected && (
-          <div className="absolute left-1/2 -translate-x-1/2 flex gap-10">
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 gap-10">
             <Link
               href="/poll"
               className={`font-medium text-lg transition ${
@@ -70,11 +76,65 @@ export default function Navbar() {
           </div>
         )}
 
-        {/* Connect button – right */}
-        <div className="flex items-center">
+        {/* Right Side: Connect Button + Mobile Menu Toggle */}
+        <div className="flex items-center gap-4">
           <ConnectButton showBalance={false} />
+
+          {isConnected && (
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden p-2 -mr-2 text-black hover:bg-gray-100 rounded-md transition"
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+              )}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      {isConnected && isMenuOpen && (
+        <div className="md:hidden border-t-2 border-black bg-white px-6 py-6 flex flex-col gap-6 shadow-xl">
+           <Link
+              href="/poll"
+              className={`text-xl font-medium transition ${
+                pathname.startsWith('/poll')
+                  ? 'text-black font-bold'
+                  : 'text-gray-600 hover:text-black'
+              }`}
+            >
+              Poll
+            </Link>
+            <Link
+              href="/vote"
+              className={`text-xl font-medium transition ${
+                pathname === '/vote'
+                  ? 'text-black font-bold'
+                  : 'text-gray-600 hover:text-black'
+              }`}
+            >
+              Vote
+            </Link>
+            <Link
+              href="/verify"
+              className={`text-xl font-medium transition ${
+                pathname === '/verify'
+                  ? 'text-black font-bold'
+                  : 'text-gray-600 hover:text-black'
+              }`}
+            >
+              Verify
+            </Link>
+        </div>
+      )}
     </nav>
   )
 }

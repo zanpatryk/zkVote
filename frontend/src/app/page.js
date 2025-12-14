@@ -75,12 +75,12 @@ export default function LandingPage() {
         <>
           {/* Stats Banner */}
           <div className="w-full max-w-5xl mb-24">
-            <div className="grid grid-cols-3 gap-8 border-2 border-black p-8 bg-black text-white">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 border-2 border-black p-8 bg-black text-white">
               <div className="text-center">
                 <p className="text-5xl font-black font-serif">100%</p>
                 <p className="text-sm uppercase tracking-widest mt-2 text-gray-400">On-Chain</p>
               </div>
-              <div className="text-center border-l border-r border-white/20">
+              <div className="text-center border-y py-8 md:py-0 md:border-y-0 md:border-l md:border-r border-white/20">
                 <p className="text-5xl font-black font-serif">ZK</p>
                 <p className="text-sm uppercase tracking-widest mt-2 text-gray-400">Privacy</p>
               </div>

@@ -44,10 +44,10 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
   }
 
   return (
-    <div className="p-8 bg-white border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all duration-200">
+    <div className="p-6 md:p-8 bg-white border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all duration-200">
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="text-3xl font-serif font-bold text-gray-900 leading-tight">
+          <h3 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 leading-tight">
             {title}
           </h3>
           <div className="mt-3 flex items-center gap-3 text-gray-600">
@@ -80,7 +80,7 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
         )}
       </div>
 
-      <div className="mt-8 flex gap-6 border-t-2 border-black/5 pt-6 items-center">
+      <div className="mt-8 flex flex-wrap gap-6 border-t-2 border-black/5 pt-6 items-center">
         {isOwner ? (
           <Link href={`/poll/${pollId}/manage`}>
             <span className="text-black font-semibold hover:underline decoration-2 underline-offset-4">

@@ -46,7 +46,7 @@ export default function PollDetails({ pollId, showResults = false }) {
   }
 
   return (
-    <div className="bg-white border-2 border-black p-8 rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative font-sans">
+    <div className="bg-white border-2 border-black p-6 md:p-8 rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative font-sans">
       {/* Header */}
       <div className="border-b-2 border-dashed border-gray-200 pb-6 mb-6">
         <p className="text-xs font-mono text-gray-500 uppercase mb-2">Poll Title</p>
