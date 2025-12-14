@@ -57,7 +57,7 @@ export default function PollStatusManager({ pollId, status, onStatusChange }) {
              <div>
                 <p className="text-xs font-mono uppercase tracking-wider text-gray-500">Current Status</p>
                 <p className="text-xl font-bold text-black border-b-2 border-black/10">
-                    {status === 0 ? 'CREATED (Not Started)' : 'ACTIVE (Voting Open)'}
+                    {status === 0 ? 'CREATED' : 'ACTIVE'}
                 </p>
              </div>
         </div>

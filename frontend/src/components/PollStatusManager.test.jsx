@@ -25,7 +25,7 @@ describe('PollStatusManager', () => {
   it('renders start button for Created state (0)', () => {
     render(<PollStatusManager pollId="123" status={0} />)
     expect(screen.getByText('Current Status')).toBeInTheDocument()
-    expect(screen.getByText('CREATED (Not Started)')).toBeInTheDocument()
+    expect(screen.getByText('CREATED')).toBeInTheDocument()
     expect(screen.getByText('Start Poll')).toBeInTheDocument()
     expect(screen.queryByText('End Poll')).not.toBeInTheDocument()
   })
@@ -33,7 +33,7 @@ describe('PollStatusManager', () => {
   it('renders end button for Active state (1)', () => {
     render(<PollStatusManager pollId="123" status={1} />)
     expect(screen.getByText('Current Status')).toBeInTheDocument()
-    expect(screen.getByText('ACTIVE (Voting Open)')).toBeInTheDocument()
+    expect(screen.getByText('ACTIVE')).toBeInTheDocument()
     expect(screen.getByText('End Poll')).toBeInTheDocument()
     expect(screen.queryByText('Start Poll')).not.toBeInTheDocument()
   })
