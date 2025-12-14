@@ -20,7 +20,7 @@ export default function Navbar() {
     if (isConnected && pathname === '/') {
       router.replace('/home')
     } else if (!isConnected && isProtectedRoute) {
-      router.replace('/restricted')
+      router.replace('/')
     }
   }, [isConnected, address, pathname, router])
 

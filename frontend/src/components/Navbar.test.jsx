@@ -81,7 +81,7 @@ describe('Navbar', () => {
     expect(replaceMock).toHaveBeenCalledWith('/home')
   })
 
-  it('redirects to /restricted if not connected and on protected route', () => {
+    it('redirects to / if not connected and on protected route', () => {
     const { useRouter } = require('next/navigation')
     const replaceMock = jest.fn()
     useRouter.mockReturnValue({ replace: replaceMock })
@@ -91,7 +91,7 @@ describe('Navbar', () => {
 
     render(<Navbar />)
 
-    expect(replaceMock).toHaveBeenCalledWith('/restricted')
+    expect(replaceMock).toHaveBeenCalledWith('/')
   })
 
   it('does not redirect if connected and on protected route', () => {

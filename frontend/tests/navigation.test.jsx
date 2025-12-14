@@ -70,7 +70,7 @@ describe('Integration Test: Navigation & Wallet', () => {
     render(<Navbar />)
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/restricted')
+      expect(mockReplace).toHaveBeenCalledWith('/')
     })
   })
 })
