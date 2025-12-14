@@ -4,6 +4,7 @@ import { useAccount } from 'wagmi'
 import { useEffect, useState } from 'react'
 import { getUserNFTs } from '@/lib/blockchain/engine/read'
 import PollCard from '@/components/PollCard'
+import VoteBallot from '@/components/VoteBallot'
 import ReceiptCard from '@/components/ReceiptCard'
 import NFTCard from '@/components/NFTCard'
 import { motion } from 'framer-motion'
@@ -30,6 +31,31 @@ const demoNFT = {
     { trait_type: "Date", value: "Dec 2024" },
     { trait_type: "Rarity", value: "Legendary" }
   ]
+}
+
+function DemoBallotWrapper() {
+  const [selectedIndex, setSelectedIndex] = useState(null)
+  
+  const demoBallotData = {
+    title: "Should we implement Quadratic Voting?",
+    description: "Quadratic voting allows users to express the intensity of their preferences, not just direction.",
+    options: ["Yes, implement it", "No, keep 1-person-1-vote"],
+    state: 1
+  }
+
+  return (
+    <div className="w-full max-w-lg mx-auto transform scale-90 md:scale-100 origin-top bg-white">
+      <VoteBallot 
+        poll={demoBallotData}
+        pollId="0x123...abc"
+        alreadyVoted={false}
+        submitting={false}
+        onSubmit={(e) => e.preventDefault()}
+        selectedIndex={selectedIndex}
+        setSelectedIndex={setSelectedIndex}
+      />
+    </div>
+  )
 }
 
 export default function LandingPage() {
@@ -145,12 +171,11 @@ export default function LandingPage() {
                   state={demoPoll.state}
                   isOwner={false}
                   showVoteButton={true}
-                  interactive={false}
                 />
               </div>
             </motion.div>
 
-            {/* Receipt Card Showcase */}
+            {/* Vote Ballot Showcase */}
             <motion.div 
                initial={{ opacity: 0, x: 50 }}
                whileInView={{ opacity: 1, x: 0 }}
@@ -161,11 +186,31 @@ export default function LandingPage() {
               <div className="flex items-start gap-4 lg:order-2">
                 <div className="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl flex-shrink-0">2</div>
                 <div>
+                  <h3 className="text-2xl font-bold font-serif mb-2">Cast Your Vote</h3>
+                  <p className="text-gray-600 text-lg">Experience a sleek, official ballot interface. Your vote is anonymized using Zero-Knowledge proofs before it ever hits the chain.</p>
+                </div>
+              </div>
+              <div className="lg:order-1 flex justify-center">
+                 <DemoBallotWrapper />
+              </div>
+            </motion.div>
+
+            {/* Receipt Card Showcase */}
+            <motion.div 
+               initial={{ opacity: 0, x: -50 }}
+               whileInView={{ opacity: 1, x: 0 }}
+               viewport={{ once: true }}
+               transition={{ duration: 0.6 }}
+               className="mb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl flex-shrink-0">3</div>
+                <div>
                   <h3 className="text-2xl font-bold font-serif mb-2">Get Vote Receipts</h3>
                   <p className="text-gray-600 text-lg">Every vote generates a downloadable receipt with poll ID, vote ID, and transaction hash. Use these IDs to independently verify your vote on the blockchain.</p>
                 </div>
               </div>
-              <div className="lg:order-1 flex justify-center lg:justify-end">
+              <div className="flex justify-center lg:justify-start">
                 <ReceiptCard 
                   pollId={demoReceipt.pollId}
                   voteId={demoReceipt.voteId}
@@ -177,20 +222,20 @@ export default function LandingPage() {
 
             {/* NFT Card Showcase */}
             <motion.div 
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
               className="mb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
             >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl flex-shrink-0">3</div>
+              <div className="flex items-start gap-4 lg:order-2">
+                <div className="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl flex-shrink-0">4</div>
                 <div>
                   <h3 className="text-2xl font-bold font-serif mb-2">Collect NFT Badges</h3>
                   <p className="text-gray-600 text-lg">Earn unique commemorative badges for each vote you cast. Build your collection of governance participation proof and display your voting history.</p>
                 </div>
               </div>
-              <div className="flex justify-center lg:justify-start">
+              <div className="flex justify-center lg:order-1 lg:justify-end">
                 <NFTCard nft={demoNFT} />
               </div>
             </motion.div>

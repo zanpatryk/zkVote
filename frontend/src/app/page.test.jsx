@@ -43,6 +43,12 @@ jest.mock('@/components/NFTCard', () => {
   }
 })
 
+jest.mock('@/components/VoteBallot', () => {
+  return function MockVoteBallot({ poll }) {
+    return <div data-testid="vote-ballot">{poll?.title || 'Ballot'}</div>
+  }
+})
+
 jest.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }) => <div {...props}>{children}</div>,
