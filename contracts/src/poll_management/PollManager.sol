@@ -6,11 +6,12 @@ import {IPollManager} from "../interfaces/IPollManager.sol";
 // Errors
 error PollManager__NotOwner();
 error PollManager__EmptyOption();
+error PollManager__InvalidState();
 
 /**
  * @title Poll Manager
  * @dev This contract manages polls within the voting system.
- * It allows for the creation and retrieval of polls.
+ * It allows for the creation, state handling and retrieval of polls.
  */
 
 contract PollManager is IPollManager {
@@ -111,19 +112,40 @@ contract PollManager is IPollManager {
         return s_polls[pollId].options[index];
     }
 
-    function getPoll(uint256 pollId) external view returns (
-        uint256 id,
-        address owner,
-        string memory title,
-        string memory description,
-        string[] memory options,
-        uint8 state
-    ) {
+    function getDescription(uint256 pollId) external view returns (string memory) {
+        return s_polls[pollId].description;
+    }
+
+    function getPollOptions(uint256 pollId) external view returns (string[] memory) {
+        return s_polls[pollId].options;
+    }
+
+    function getPoll(uint256 pollId)
+        external
+        view
+        returns (
+            uint256 id,
+            address owner,
+            string memory title,
+            string memory description,
+            string[] memory options,
+            uint8 state
+        )
+    {
         Poll storage p = s_polls[pollId];
         return (p.pollId, p.owner, p.title, p.description, p.options, uint8(p.state));
     }
 
-    function getDescription(uint256 pollId) external view returns (string memory) {
-        return s_polls[pollId].description;
+    /* Returns the state of the poll as an uint8 ( 0 - CREATED, 1 - ACTIVE, 2 - ENDED) */
+    function getState(uint256 pollId) external view returns (uint8) {
+        return uint8(s_polls[pollId].state);
+    }
+
+    /* Sets the state of the poll */
+    function setState(uint256 pollId, uint8 state) external ownerOnly {
+        if (state > uint8(State.ENDED)) {
+            revert PollManager__InvalidState();
+        }
+        s_polls[pollId].state = State(state);
     }
 }

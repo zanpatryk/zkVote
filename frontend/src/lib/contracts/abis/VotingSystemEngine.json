@@ -46,11 +46,6 @@
         "name": "options",
         "type": "string[]",
         "internalType": "string[]"
-      },
-      {
-        "name": "creator",
-        "type": "address",
-        "internalType": "address"
       }
     ],
     "outputs": [
@@ -60,6 +55,19 @@
         "internalType": "uint256"
       }
     ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "endPoll",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -93,6 +101,11 @@
         "name": "voteStorage",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "resultNFTAddress",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -121,6 +134,19 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "mintResultNFT",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -181,6 +207,19 @@
   },
   {
     "type": "function",
+    "name": "s_resultNFT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "s_voteStorage",
     "inputs": [],
     "outputs": [
@@ -191,6 +230,19 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "startPoll",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -271,7 +323,27 @@
   },
   {
     "type": "error",
+    "name": "VotingSystem__InvalidPollState",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__NFTContractNotSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__NotAuthorizedToMint",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "VotingSystem__NotOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__NotPollOwner",
     "inputs": []
   }
 ]

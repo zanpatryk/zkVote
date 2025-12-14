@@ -23,7 +23,7 @@ export async function createPoll(pollDetails) {
       address: votingSystemContract.address,
       abi: votingSystemContract.abi,
       functionName: 'createPoll',
-      args: [title, description || '', options, address],
+      args: [title, description || '', options],
     })
 
     toast.loading('Waiting for confirmation...', { id: 'tx' })
@@ -140,14 +140,89 @@ export async function castVote(pollId, voteDetails) {
       })
       const voteId = decodedEvent.args.voteId.toString()
       toast.success('Vote submitted!', { id: 'vote' })
-      return voteId
+      return { voteId, txHash: receipt.transactionHash }
     }
 
     toast.success('Vote submitted!', { id: 'vote' })
-    return null
+    return { voteId: null, txHash: receipt.transactionHash }
   } catch (error) {
     console.error('castVote failed:', error)
     toast.error(error.shortMessage || 'Failed to submit vote', { id: 'vote' })
+    throw error
+  }
+}
+
+export async function startPoll(pollId) {
+  const { address } = getAccount(config)
+  if (!address) throw new Error('Wallet not connected')
+
+  try {
+    toast.loading('Starting poll...', { id: 'status' })
+
+    const hash = await writeContract(config, {
+      address: votingSystemContract.address,
+      abi: votingSystemContract.abi,
+      functionName: 'startPoll',
+      args: [BigInt(pollId)],
+    })
+
+    toast.loading('Waiting for confirmation...', { id: 'status' })
+    await waitForTransactionReceipt(config, { hash })
+
+    toast.success('Poll started successfully!', { id: 'status' })
+  } catch (error) {
+    console.error('startPoll failed:', error)
+    toast.error(error.shortMessage || 'Failed to start poll', { id: 'status' })
+    throw error
+  }
+}
+
+export async function endPoll(pollId) {
+  const { address } = getAccount(config)
+  if (!address) throw new Error('Wallet not connected')
+
+  try {
+    toast.loading('Ending poll...', { id: 'status' })
+
+    const hash = await writeContract(config, {
+      address: votingSystemContract.address,
+      abi: votingSystemContract.abi,
+      functionName: 'endPoll',
+      args: [BigInt(pollId)],
+    })
+
+    toast.loading('Waiting for confirmation...', { id: 'status' })
+    await waitForTransactionReceipt(config, { hash })
+
+    toast.success('Poll ended successfully!', { id: 'status' })
+  } catch (error) {
+    console.error('endPoll failed:', error)
+    toast.error(error.shortMessage || 'Failed to end poll', { id: 'status' })
+    throw error
+  }
+}
+
+export async function mintResultNFT(pollId) {
+  const { address } = getAccount(config)
+  if (!address) throw new Error('Wallet not connected')
+
+  try {
+    toast.loading('Minting Result NFT...', { id: 'nft' })
+
+    const hash = await writeContract(config, {
+      address: votingSystemContract.address,
+      abi: votingSystemContract.abi,
+      functionName: 'mintResultNFT',
+      args: [BigInt(pollId)],
+    })
+
+    toast.loading('Waiting for confirmation...', { id: 'nft' })
+    await waitForTransactionReceipt(config, { hash })
+
+    toast.success('NFT minted successfully!', { id: 'nft' })
+  } catch (error) {
+    console.error('mintResultNFT failed:', error)
+    toast.error(error.shortMessage || 'Failed to mint NFT', { id: 'nft' })
     throw error
   }
 }

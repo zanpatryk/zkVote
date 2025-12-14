@@ -58,6 +58,22 @@ deploy-anvil:
 	  --private-key $(ANVIL_KEY) \
 	  --broadcast
 
+benchmark-anvil:
+	@echo "Running benchmark script on local anvil at $(ANVIL_RPC) with key $(ANVIL_KEY)..."
+	forge script script/benchmark/Benchmark.s.sol:Benchmark \
+	  --rpc-url $(ANVIL_RPC) \
+	  -vvvv
+
+benchmark-anvil-broadcast:
+	@echo "Running benchmark script on local anvil at $(ANVIL_RPC) with key $(ANVIL_KEY)..."
+	forge script script/benchmark/Benchmark.s.sol:Benchmark \
+	  --rpc-url $(ANVIL_RPC) \
+	   --private-key $(ANVIL_KEY) \
+	  --broadcast \
+	  -vvvv
+
+
+
 # Deploy to Sepolia (requires SEPOLIA_RPC_URL and PRIVATE_KEY set in env)
 deploy-sepolia:
 ifndef SEPOLIA_RPC_URL

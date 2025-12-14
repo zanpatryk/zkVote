@@ -164,3 +164,119 @@ export async function getVote(voteId) {
     return null
   }
 }
+export async function getUserNFTs(userAddress) {
+  if (!userAddress) return []
+  const publicClient = getPublicClient(config)
+  
+  // Get ResultNFT address (contract stores it)
+  const resultNFTAddress = await publicClient.readContract({
+    address: votingSystemContract.address,
+    abi: votingSystemContract.abi,
+    functionName: 's_resultNFT',
+  })
+
+  // Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+  const transferEventAbi = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)')
+
+  try {
+    const logs = await publicClient.getLogs({
+      address: resultNFTAddress,
+      event: transferEventAbi,
+      args: {
+        to: userAddress
+      },
+      fromBlock: 'earliest'
+    })
+
+    const tokenIds = [...new Set(logs.map(log => log.args.tokenId))]
+
+    // Fetch metadata for each token
+    const nfts = await Promise.all(
+      tokenIds.map(async (tokenId) => {
+        try {
+          const tokenURI = await publicClient.readContract({
+            address: resultNFTAddress,
+            abi: [{
+              type: 'function',
+              name: 'tokenURI',
+              inputs: [{ name: 'tokenId', type: 'uint256' }],
+              outputs: [{ name: '', type: 'string' }],
+              stateMutability: 'view'
+            }],
+            functionName: 'tokenURI',
+            args: [tokenId]
+          })
+
+          // Parse base64 tokenURI
+          const jsonPart = tokenURI.replace('data:application/json;base64,', '')
+          if (!jsonPart) return { tokenId: tokenId.toString(), name: `NFT #${tokenId}`, description: 'No Metadata' }
+          const metadata = JSON.parse(atob(jsonPart))
+          
+          return {
+            tokenId: tokenId.toString(),
+            ...metadata
+          }
+        } catch (e) {
+          console.error(`Failed to fetch URI for token ${tokenId}`, e)
+          return { tokenId: tokenId.toString(), name: `NFT #${tokenId}`, error: true }
+        }
+      })
+    )
+
+    return nfts
+  } catch (err) {
+    console.error('getUserNFTs failed:', err)
+    return []
+  }
+}
+
+export async function getPollResults(pollId, optionCount) {
+  if (!pollId) return []
+  const publicClient = getPublicClient(config)
+  const { voteStorage } = await getModules()
+
+  try {
+    const results = await publicClient.readContract({
+      address: voteStorage,
+      abi: IVoteStorageABI,
+      functionName: 'getResults',
+      args: [BigInt(pollId), BigInt(optionCount)],
+    })
+    // Convert BigInts to strings
+    return results.map(r => r.toString()) 
+  } catch (err) {
+    console.error('getPollResults failed:', err)
+    return Array(optionCount).fill('0')
+  }
+}
+
+export async function getVoteTransaction(pollId, userAddress) {
+  if (!pollId || !userAddress) return null
+  const publicClient = getPublicClient(config)
+  const { voteStorage } = await getModules()
+
+  // VoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId)
+  const eventAbi = parseAbiItem('event VoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId)')
+
+  try {
+    const logs = await publicClient.getLogs({
+      address: voteStorage,
+      event: eventAbi,
+      args: {
+        pollId: BigInt(pollId),
+        voter: userAddress
+      },
+      fromBlock: 'earliest'
+    })
+
+    if (logs.length > 0) {
+      // Return the most recent vote transaction
+      const log = logs[logs.length - 1]
+      return log.transactionHash
+    }
+    return null
+  } catch (err) {
+    console.error('getVoteTransaction failed:', err)
+    return null
+  }
+}

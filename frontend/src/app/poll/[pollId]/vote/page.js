@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { getPollById, hasVoted } from '@/lib/blockchain/engine/read'
+import { getPollById, hasVoted, getVoteTransaction } from '@/lib/blockchain/engine/read'
 import { castVote } from '@/lib/blockchain/engine/write'
 import { toast } from 'react-hot-toast'
+import { motion, AnimatePresence } from 'framer-motion'
+
+import VoteBallot from '@/components/VoteBallot'
 
 export default function VoteOnPoll() {
   const { pollId } = useParams()
@@ -17,6 +20,7 @@ export default function VoteOnPoll() {
   const [selectedIndex, setSelectedIndex] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [alreadyVoted, setAlreadyVoted] = useState(false)
+  const [voteTxHash, setVoteTxHash] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -28,8 +32,16 @@ export default function VoteOnPoll() {
 
         if (isConnected && address) {
           const voted = await hasVoted(pollId, address)
-          if (!cancelled) setAlreadyVoted(voted)
+          if (!cancelled) {
+            setAlreadyVoted(voted)
+            if (voted) {
+              const tx = await getVoteTransaction(pollId, address)
+              if (!cancelled) setVoteTxHash(tx)
+            }
+          }
         }
+      } catch (error) {
+        console.error('Failed to load poll data:', error)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -42,8 +54,6 @@ export default function VoteOnPoll() {
     }
   }, [pollId, isConnected, address])
 
-
-
   async function handleSubmit(e) {
     e.preventDefault()
 
@@ -53,8 +63,6 @@ export default function VoteOnPoll() {
     }
 
     if (!poll) return
-
-
 
     if (alreadyVoted) {
       toast.error('You have already voted in this poll')
@@ -68,8 +76,8 @@ export default function VoteOnPoll() {
 
     setSubmitting(true)
     try {
-      const voteId = await castVote(pollId, { optionIndex: selectedIndex })
-      router.push(`/poll/${pollId}/vote/receipt/${voteId}`)
+      const { voteId, txHash } = await castVote(pollId, { optionIndex: selectedIndex })
+      router.push(`/poll/${pollId}/vote/receipt/${voteId}?txHash=${txHash}`)
     } catch {
       // errors already toasted in castVote
     } finally {
@@ -78,77 +86,61 @@ export default function VoteOnPoll() {
   }
 
   return (
-    <div className="pt-24 max-w-3xl mx-auto px-6 pb-32">
-      {loading ? (
-        <p className="text-gray-600">Loading poll...</p>
-      ) : !poll ? (
-        <p className="text-red-600">Poll data could not be loaded.</p>
-      ) : (
-        <div className="bg-white border-2 border-black rounded-2xl p-6 shadow-sm">
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold mb-2">{poll.title}</h2>
-            {poll.description && (
-              <p className="text-gray-700">{poll.description}</p>
-            )}
-          </div>
-
-          {alreadyVoted ? (
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-yellow-700">
-                    You have already voted in this poll.
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <h3 className="font-medium mb-3">Choose your option</h3>
-                {poll.options && Array.isArray(poll.options) ? (
-                  <div className="space-y-2">
-                    {poll.options.map((opt, idx) => (
-                      <label
-                        key={idx}
-                        className={`flex items-center gap-3 px-4 py-3 border-2 rounded-xl cursor-pointer transition ${
-                          selectedIndex === idx
-                            ? 'border-black bg-gray-100'
-                            : 'border-black/40 hover:bg-gray-50'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="option"
-                          value={idx}
-                          checked={selectedIndex === idx}
-                          onChange={() => setSelectedIndex(idx)}
-                        />
-                        <span className="text-lg">{opt}</span>
-                      </label>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-600">No options found for this poll.</p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full bg-black text-white py-4 rounded-xl text-lg font-bold hover:bg-gray-800 disabled:opacity-50"
+    <div className="pt-12 md:pt-24 max-w-2xl mx-auto px-6 pb-16 md:pb-32 font-mono">
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.p 
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-gray-600 italic text-xl text-center py-20"
+          >
+            Loading ballot...
+          </motion.p>
+        ) : !poll ? (
+          <motion.p 
+            key="error"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-red-600 font-bold text-center py-20"
+          >
+            Poll data could not be loaded.
+          </motion.p>
+        ) : (
+          <motion.div 
+            key="content"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-8"
+          >
+            <div className="flex justify-between items-center mb-8">
+               <div className="flex items-center gap-2">
+                 <div className="w-3 h-3 bg-black rounded-full animate-pulse"></div>
+                 <span className="text-sm uppercase tracking-widest text-gray-500 font-bold">Secure Voting Terminal</span>
+               </div>
+              <button 
+                onClick={() => router.push('/poll')}
+                className="text-gray-500 hover:text-black whitespace-nowrap text-sm font-bold uppercase tracking-wider hover:underline"
               >
-                {submitting ? 'Submitting vote...' : 'Submit vote'}
+                [ Go Back ]
               </button>
-            </form>
-          )}
-        </div>
-      )}
+            </div>
+
+            <VoteBallot 
+              poll={poll}
+              pollId={pollId}
+              alreadyVoted={alreadyVoted}
+              voteTxHash={voteTxHash}
+              submitting={submitting}
+              onSubmit={handleSubmit}
+              selectedIndex={selectedIndex}
+              setSelectedIndex={setSelectedIndex}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

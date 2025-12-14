@@ -6,6 +6,7 @@ import { useAccount } from 'wagmi'
 import { createPoll } from '@/lib/blockchain/engine/write'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function CreatePollPage() {
   const router = useRouter()
@@ -43,95 +44,137 @@ export default function CreatePollPage() {
         description: description.trim(),
         options: cleanOptions,
       })
-
+      
       // Redirect to the new whitelist page for the created poll
+      console.log('Poll created with ID:', pollId, 'Redirecting to whitelist...')
       router.push(`/poll/${pollId}/whitelist`)
     } catch (err) {
       console.error('Failed to create poll:', err)
-      toast.error(err.shortMessage || 'An unexpected error occurred.')
+      // Error toast is handled by functionality in write.js
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="pt-24 max-w-3xl mx-auto px-6 pb-32">
-      {/* ← + Title */}
-      <div className="flex items-center gap-8 mb-10">
-        <h1 className="text-4xl font-bold">Create New Poll</h1>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Poll Title */}
+    <div className="pt-24 max-w-2xl mx-auto px-6 pb-32">
+      {/* Title */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-12 flex justify-between items-center"
+      >
         <div>
-          <label className="block text-lg font-medium mb-2">Poll Title</label>
+          <h1 className="text-5xl font-serif font-bold text-gray-900 mb-4">Create New Poll</h1>
+          <p className="text-lg text-gray-600">Launch a secure, tamper-proof vote.</p>
+        </div>
+        <Link href="/poll">
+          <button className="text-gray-600 hover:text-black font-medium transition flex items-center gap-2">
+            ← Back to Dashboard
+          </button>
+        </Link>
+      </motion.div>
+
+      <form onSubmit={handleSubmit} className="space-y-10">
+        {/* Poll Title */}
+        <motion.div
+           initial={{ opacity: 0, x: -20 }}
+           animate={{ opacity: 1, x: 0 }}
+           transition={{ delay: 0.1 }}
+        >
+          <label className="block text-xl font-serif font-bold text-gray-900 mb-3">Poll Question</label>
           <input
             type="text"
             required
             value={title}
             onChange={e => setTitle(e.target.value)}
-            className="w-full px-4 py-3 border-2 border-black rounded-xl text-lg"
-            placeholder="What is your favorite color?"
+            className="w-full px-5 py-4 border-2 border-black rounded-lg text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] outline-none transition-all placeholder-gray-400 font-medium"
+            placeholder="e.g., What is your favorite color?"
           />
-        </div>
+        </motion.div>
 
         {/* Description */}
-        <div>
-          <label className="block text-lg font-medium mb-2">Description (optional)</label>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+           <label className="block text-xl font-serif font-bold text-gray-900 mb-3">Description <span className="text-gray-400 font-sans text-base font-normal">(Optional)</span></label>
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
             rows={3}
-            className="w-full px-4 py-3 border-2 border-black rounded-xl text-lg"
-            placeholder="Add more context..."
+            className="w-full px-5 py-4 border-2 border-black rounded-lg text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] outline-none transition-all placeholder-gray-400 font-medium resize-none"
+            placeholder="Provide context for voters..."
           />
-        </div>
+        </motion.div>
 
         {/* Options */}
-        <div>
-          <label className="block text-lg font-medium mb-4">Options</label>
-          {options.map((opt, i) => (
-            <div key={i} className="flex gap-3 mb-3">
-              <input
-                type="text"
-                required={i < 2}
-                value={opt}
-                onChange={e => updateOption(i, e.target.value)}
-                className="flex-1 px-4 py-3 border-2 border-black rounded-xl text-lg"
-                placeholder={`Option ${i + 1}`}
-              />
-              {options.length > 2 && (
-                <button
-                  type="button"
-                  onClick={() => removeOption(i)}
-                  className="px-6 bg-red-500 text-white rounded-xl hover:bg-red-600"
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <label className="block text-xl font-serif font-bold text-gray-900 mb-4">Voting Options</label>
+          <div className="space-y-4">
+            <AnimatePresence initial={false}>
+              {options.map((opt, i) => (
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex gap-4"
                 >
-                  Remove
-                </button>
-              )}
-            </div>
-          ))}
-          <button
+                  <input
+                    type="text"
+                    required={i < 2}
+                    value={opt}
+                    onChange={e => updateOption(i, e.target.value)}
+                    className="flex-1 px-5 py-3 border-2 border-black rounded-lg text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] outline-none transition-all placeholder-gray-400 font-medium"
+                    placeholder={`Option ${i + 1}`}
+                  />
+                  {options.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => removeOption(i)}
+                      className="px-6 border-2 border-black bg-red-50 text-red-600 rounded-lg font-bold hover:bg-red-100 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             type="button"
             onClick={addOption}
-            className="mt-3 px-6 py-3 bg-gray-200 rounded-xl hover:bg-gray-300 font-medium"
+            className="mt-6 px-6 py-3 border-2 border-black bg-white rounded-lg font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-sm uppercase tracking-wide"
           >
-            + Add Option
-          </button>
-        </div>
-
-
+            + Add Another Option
+          </motion.button>
+        </motion.div>
 
         {/* Submit */}
-        <div className="pt-6">
-          <button
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="pt-8 border-t-2 border-black/5"
+        >
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-black text-white py-5 rounded-2xl text-xl font-bold hover:bg-gray-800 disabled:opacity-50 transition"
+            className="w-full bg-black text-white py-5 rounded-lg text-xl font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Creating...' : 'Create Poll'}
-          </button>
-        </div>
+            {isSubmitting ? 'Creating Poll...' : 'Launch Poll'}
+          </motion.button>
+        </motion.div>
       </form>
     </div>
   )
