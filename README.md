@@ -17,65 +17,58 @@ bun install
 
 ## Running the Project
 
-### 1. Start the Local Blockchain
+### Development Mode (Recommended)
 
-Start the local development chain (Anvil):
-
-```bash
-bun run dev:chain
-```
-
-Keep this terminal running.
-
-### 2. Deploy the Contract
-
-Open a new terminal and deploy the contracts to your local chain:
+To start the entire local environment (blockchain, contract deployment, and frontend) with a single command:
 
 ```bash
-bun run deploy:local
+bun run dev:local
 ```
 
-### 3. Configure Environment Variables
+This script will:
 
-Create a `.env.local` file in the `frontend` directory with the following content:
-
-```bash
-NEXT_PUBLIC_VOTING_SYSTEM_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
-NEXT_PUBLIC_POLL_MANAGER_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-NEXT_PUBLIC_ELIGIBILITY_MODULE_ADDRESS=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
-NEXT_PUBLIC_VOTE_STORAGE_ADDRESS=0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
-```
-
-### 4. Start the Frontend
-
-Start the frontend development server:
-
-```bash
-bun run dev
-```
+1. Start a local Anvil blockchain instance.
+2. Deploy the smart contracts to the local chain.
+3. Generate the necessary ABIs and configuration.
+4. Start the frontend development server.
 
 The application will be available at `http://localhost:3000`.
 
-### 5. Production Mode
+### Manual Setup (Advanced)
 
-To run the frontend in production mode:
+If you prefer to run services individually:
 
-1. Build the application:
+1. **Start Blockchain**: `bun run dev:chain`
+2. **Deploy Contracts**: `bun run deploy:local`
+3. **Start Frontend**: `bun run dev:frontend`
 
-```bash
-bun run build
-```
+### Production Build
 
-2. Start the production server:
-
-```bash
-bun run start
-```
+1. **Build**: `bun run build`
+2. **Start**: `bun run start`
 
 ## Testing
 
-Run the smart contract tests:
+### Smart Contracts
+
+Run the Forge tests for smart contracts:
 
 ```bash
 bun run test:contracts
+```
+
+### Frontend UI
+
+Run the frontend unit tests:
+
+```bash
+bun run test:ui
+```
+
+### Integration Tests
+
+Run the frontend integration tests:
+
+```bash
+bun run test:ui:integration
 ```
