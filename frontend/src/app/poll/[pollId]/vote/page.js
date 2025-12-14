@@ -109,10 +109,10 @@ export default function VoteOnPoll() {
             </button>
           </div>
 
-          <div className="bg-white border-2 border-black p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <div className="bg-white border-2 border-black p-10 rounded-lg shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
 
           {poll.state !== 1 ? (
-             <div className="bg-white border-2 border-black p-6 mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+             <div className="bg-white border-2 border-black p-6 mb-6 rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
                   <svg className="h-6 w-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -130,7 +130,7 @@ export default function VoteOnPoll() {
               </div>
             </div>
           ) : alreadyVoted ? (
-            <div className="text-center py-16 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <div className="text-center py-16 bg-white border-2 border-black rounded-lg shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
               <div className="inline-flex items-center justify-center w-24 h-24 rounded-full border-2 border-black bg-black text-white mb-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
                 <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -146,7 +146,7 @@ export default function VoteOnPoll() {
                   href={`https://sepolia.etherscan.io/tx/${voteTxHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-white border-2 border-black text-black font-bold text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-white border-2 border-black text-black font-bold text-lg rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
                 >
                   <span>View Transaction</span>
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export default function ReceiptCard({ pollId, voteId, txHash }) {
   return (
-    <div className="bg-white p-8 max-w-sm mx-auto shadow-lg border border-gray-200 relative mb-8 font-mono text-left">
+    <div className="bg-white p-8 max-w-sm mx-auto shadow-lg border border-gray-200 rounded-lg relative mb-8 font-mono text-left">
       {/* Receipt "holes" or decorative top/bottom could be added here, but keeping it clean for now */}
       
       <div className="text-center border-b-2 border-dashed border-gray-300 pb-6 mb-6">
