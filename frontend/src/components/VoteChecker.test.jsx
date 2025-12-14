@@ -18,7 +18,7 @@ describe('VoteChecker', () => {
 
   it('renders correctly', () => {
     render(<VoteChecker />)
-    expect(screen.getByText('Check your vote')).toBeInTheDocument()
+    expect(screen.getByText('Upload Receipt')).toBeInTheDocument()
     expect(screen.getByLabelText('Upload vote receipt')).toBeInTheDocument()
   })
 

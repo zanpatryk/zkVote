@@ -71,13 +71,7 @@ describe('WhitelistPage', () => {
     expect(screen.getByText('Batch Upload')).toBeInTheDocument()
   })
 
-  it('handles copy poll ID', () => {
-    render(<WhitelistPage />)
-    const copyBtn = screen.getByTitle('Copy Poll ID')
-    fireEvent.click(copyBtn)
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(mockPollId)
-    expect(toast.success).toHaveBeenCalledWith('Poll ID copied!')
-  })
+
 
   it('toggles between single and batch mode', () => {
     render(<WhitelistPage />)

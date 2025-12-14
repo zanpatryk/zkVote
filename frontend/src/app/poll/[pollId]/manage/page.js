@@ -91,24 +91,27 @@ export default function ManagePollPage() {
 
   return (
     <div className="pt-24 max-w-3xl mx-auto px-6 pb-32">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Manage Poll</h1>
+      <div className="flex justify-between items-center mb-12">
+        <div>
+           <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">Manage Poll</h1>
+           <p className="text-gray-500">Admin control panel.</p>
+        </div>
         <button 
           onClick={() => router.push('/poll')}
-          className="text-gray-600 hover:text-black"
+          className="text-gray-600 hover:text-black font-medium"
         >
           ← Back to Dashboard
         </button>
       </div>
 
-      <div className="space-y-12">
+      <div className="space-y-16">
         <section>
-          <h2 className="text-2xl font-semibold mb-4">Poll Details</h2>
+          <h2 className="text-3xl font-serif font-bold text-gray-900 mb-6 border-b-2 border-black pb-2">Poll Details</h2>
           <PollDetails pollId={pollId} />
         </section>
 
         {pollState !== null && (
-          <section className="border-t pt-8">
+          <section>
              <PollStatusManager 
                pollId={pollId} 
                status={Number(pollState)} 
@@ -119,11 +122,11 @@ export default function ManagePollPage() {
           </section>
         )}
 
-        <section className="border-t pt-8">
-          <h2 className="text-2xl font-semibold mb-4">Whitelist Management</h2>
-          <p className="text-gray-600 mb-6">
-            Add wallet addresses to allow them to vote in this poll.
-          </p>
+        <section>
+          <div className="mb-6 border-b-2 border-black pb-2">
+             <h2 className="text-3xl font-serif font-bold text-gray-900">Whitelist Management</h2>
+             <p className="text-gray-600 mt-1">Control who can vote in this poll.</p>
+          </div>
           <WhitelistManager pollId={pollId} />
         </section>
       </div>

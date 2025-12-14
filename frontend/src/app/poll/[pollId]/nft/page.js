@@ -120,21 +120,25 @@ export default function MintNFTPage() {
 
   return (
     <div className="pt-24 max-w-3xl mx-auto px-6 pb-32">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Mint Result NFT</h1>
+      <div className="flex justify-between items-center mb-12">
+        <div>
+            <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">Mint Result NFT</h1>
+            <p className="text-gray-500">Collect your voting history.</p>
+        </div>
         <button 
           onClick={() => router.push('/poll')}
-          className="text-gray-600 hover:text-black"
+          className="text-gray-600 hover:text-black font-medium"
         >
           ← Back to Dashboard
         </button>
       </div>
 
-      <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm mb-8">
-        <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold mb-2">Commemorative Result NFT</h2>
-            <p className="text-gray-500">
-                This poll has ended. As a participant or creator, you can mint an NFT containing the final results.
+      <div className="bg-white p-10 rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-12 text-center">
+        <div className="mb-10 max-w-lg mx-auto">
+            <div className="text-6xl mb-6">🏆</div>
+            <h2 className="text-3xl font-serif font-bold mb-4 text-gray-900">Commemorative Result NFT</h2>
+            <p className="text-lg text-gray-600 leading-relaxed">
+                This poll has ended. As a participant or creator, you can mint an NFT containing the final results as permanent proof of the outcome.
             </p>
         </div>
 
@@ -143,13 +147,13 @@ export default function MintNFTPage() {
              <button
             onClick={handleMint}
             disabled={minting}
-            className="px-8 py-3 bg-black text-white text-lg rounded-xl hover:bg-gray-800 disabled:opacity-50 transition shadow-lg"
+            className="px-10 py-4 bg-black text-white text-xl font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
           >
-            {minting ? 'Minting...' : 'Mint Result NFT'}
+            {minting ? 'Minting NFT...' : 'Mint Result NFT'}
           </button>
           ) : (
-            <div className="text-black font-bold text-lg border-2 border-black bg-white px-6 py-3 rounded-xl shadow-sm">
-              ✓ NFT Badge Minted
+            <div className="inline-flex items-center gap-2 text-green-700 font-bold text-lg border-2 border-green-700 bg-green-50 px-8 py-4 rounded-lg">
+              <span>✓</span> NFT Badge Minted Successfully
             </div>
           )}
         </div>

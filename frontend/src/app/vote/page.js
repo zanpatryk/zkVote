@@ -27,11 +27,14 @@ export default function VotePage() {
 
   return (
     <div className="pt-24 max-w-5xl mx-auto px-6 pb-32 relative">
-      {/* Title – outside the box */}
-      <h1 className="text-4xl font-bold mb-6 text-left">Vote on polls</h1>
+      {/* Title */}
+      <div className="mb-12">
+        <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">Vote on Polls</h1>
+        <p className="text-gray-500 text-lg">Participate in decentralized governance.</p>
+      </div>
 
       {/* Search & Filter Bar */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+      <div className="flex flex-col md:flex-row gap-4 mb-12">
         <StatusFilter 
           currentStatus={statusFilter} 
           onStatusChange={setStatusFilter} 
@@ -41,28 +44,30 @@ export default function VotePage() {
           <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <input
+           <input
             type="text"
             placeholder="Search polls to vote on..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-black/10 focus:border-black outline-none transition bg-white shadow-sm hover:border-black/30"
+            className="w-full pl-12 pr-4 py-4 rounded-lg border-2 border-black focus:border-black outline-none transition bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none placeholder-gray-400 font-medium"
           />
         </div>
       </div>
 
-      {/* The separated box */}
-      <div className="bg-white border-2 border-black rounded-3xl p-10 shadow-xl">
+      {/* Direct Grid - No Container */}
+      <div>
         {isLoading ? (
-          <div className="text-center py-20 text-xl text-gray-600">
+          <div className="text-center py-20 text-xl text-gray-600 font-serif italic">
             Loading polls...
           </div>
         ) : filteredPolls.length === 0 ? (
-          <div className="text-center py-20 text-xl text-gray-500 font-medium">
-             {polls.length === 0 ? "You are not whitelisted on any poll yet" : "No polls found matching your filters"}
+          <div className="text-center py-24 border-2 border-dashed border-gray-300 rounded-xl">
+             <p className="text-xl text-gray-400 font-serif italic">
+               {polls.length === 0 ? "You are not whitelisted on any poll yet." : "No polls found matching your filters."}
+             </p>
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid gap-8">
             {filteredPolls.map((poll) => (
               <PollCard 
                 key={poll.pollId} 

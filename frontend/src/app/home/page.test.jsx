@@ -30,7 +30,6 @@ describe('HomePage', () => {
   it('renders both sections', () => {
     read.getUserNFTs.mockResolvedValue([])
     render(<HomePage />)
-    expect(screen.getByText('Check your vote')).toBeInTheDocument()
     expect(screen.getByText('Your Voting Badges')).toBeInTheDocument()
   })
 
@@ -62,39 +61,6 @@ describe('HomePage', () => {
     await waitFor(() => {
       expect(screen.getByText('No Badges Yet')).toBeInTheDocument()
       expect(screen.getByText(/Participate/)).toBeInTheDocument()
-    })
-  })
-
-  it('handles file upload and redirects on success', async () => {
-    read.getUserNFTs.mockResolvedValue([])
-    render(<HomePage />)
-    
-    const fileContent = 'Poll ID: 123\nVote ID: 456'
-    const file = new File([fileContent], 'receipt.txt', { type: 'text/plain' })
-    file.text = jest.fn().mockResolvedValue(fileContent)
-    
-    const input = screen.getByLabelText('Upload vote receipt')
-    fireEvent.change(input, { target: { files: [file] } }) // No act needed usually if fireEvent is used, or wrapped by lib
-
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/poll/123/vote/check/456')
-    })
-  })
-
-  it('alerts on invalid file content', async () => {
-    read.getUserNFTs.mockResolvedValue([])
-    render(<HomePage />)
-    
-    const fileContent = 'Invalid content'
-    const file = new File([fileContent], 'receipt.txt', { type: 'text/plain' })
-    file.text = jest.fn().mockResolvedValue(fileContent)
-    
-    const input = screen.getByLabelText('Upload vote receipt')
-    fireEvent.change(input, { target: { files: [file] } })
-
-    await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith('Could not read poll and vote IDs from this receipt file.')
-      expect(mockPush).not.toHaveBeenCalled()
     })
   })
 })

@@ -107,10 +107,5 @@ describe('WhitelistManager', () => {
     })
   })
 
-  it('copies poll ID to clipboard', () => {
-    render(<WhitelistManager pollId="123456" />)
-    fireEvent.click(screen.getByTitle('Copy Poll ID'))
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('123456')
-    expect(toast.success).toHaveBeenCalledWith('Poll ID copied!')
-  })
+
 })

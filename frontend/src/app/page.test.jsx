@@ -13,6 +13,36 @@ jest.mock('wagmi', () => ({
   useAccount: jest.fn(),
 }))
 
+// Mock components to avoid viem import issues
+jest.mock('@/components/PollCard', () => {
+  return function MockPollCard({ title }) {
+    return <div data-testid="poll-card">{title}</div>
+  }
+})
+
+jest.mock('@/components/ReceiptCard', () => {
+  return function MockReceiptCard({ pollId }) {
+    return <div data-testid="receipt-card">Receipt for {pollId}</div>
+  }
+})
+
+jest.mock('@/components/NFTCard', () => {
+  return function MockNFTCard({ nft }) {
+    return (
+      <div data-testid="nft-card">
+        <span>{nft.name}</span>
+        <span>{nft.description}</span>
+        {nft.attributes?.map((attr, idx) => (
+          <div key={idx}>
+            <span>{attr.trait_type}:</span>
+            <span>{attr.value}</span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+})
+
 describe('LandingPage', () => {
   const mockUserAddress = '0xUser'
 
@@ -25,7 +55,7 @@ describe('LandingPage', () => {
     read.getUserNFTs.mockResolvedValue([])
     render(<LandingPage />)
     expect(screen.getByText('zkVote')).toBeInTheDocument()
-    expect(screen.getByText('Decentralized Voting System')).toBeInTheDocument()
+    expect(screen.getByText('Secure, transparent, and verifiable voting on the blockchain.')).toBeInTheDocument()
   })
 
   it('fetches and displays user badges when connected', async () => {

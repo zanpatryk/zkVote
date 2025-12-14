@@ -39,7 +39,7 @@ describe('CreatePollPage', () => {
   it('renders create poll form', () => {
     render(<CreatePollPage />)
     expect(screen.getByText('Create New Poll')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('What is your favorite color?')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('e.g., What is your favorite color?')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Option 1')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Option 2')).toBeInTheDocument()
   })
@@ -47,7 +47,7 @@ describe('CreatePollPage', () => {
   it('adds and removes options', () => {
     render(<CreatePollPage />)
     
-    fireEvent.click(screen.getByText('+ Add Option'))
+    fireEvent.click(screen.getByText('+ Add Another Option'))
     expect(screen.getByPlaceholderText('Option 3')).toBeInTheDocument()
 
     const removeButtons = screen.getAllByText('Remove')
@@ -59,11 +59,11 @@ describe('CreatePollPage', () => {
     createPoll.mockResolvedValue(BigInt(123))
     render(<CreatePollPage />)
 
-    fireEvent.change(screen.getByPlaceholderText('What is your favorite color?'), { target: { value: 'Test Poll' } })
+    fireEvent.change(screen.getByPlaceholderText('e.g., What is your favorite color?'), { target: { value: 'Test Poll' } })
     fireEvent.change(screen.getByPlaceholderText('Option 1'), { target: { value: 'Yes' } })
     fireEvent.change(screen.getByPlaceholderText('Option 2'), { target: { value: 'No' } })
 
-    fireEvent.click(screen.getByText('Create Poll'))
+    fireEvent.click(screen.getByText('Launch Poll'))
 
     await waitFor(() => {
       expect(createPoll).toHaveBeenCalledWith({

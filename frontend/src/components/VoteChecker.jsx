@@ -30,18 +30,26 @@ export default function VoteChecker() {
   }
 
   return (
-    <div className="bg-white border-2 border-black rounded-2xl p-8 shadow-sm text-left max-w-3xl mx-auto w-full">
-      <h2 className="text-2xl font-semibold mb-3">Check your vote</h2>
-      <p className="text-gray-600 mb-6">
-        Upload a vote receipt file (.txt) to view its details again.
-      </p>
-      <input
-        type="file"
-        accept=".txt"
-        onChange={handleFileChange}
-        aria-label="Upload vote receipt"
-        className="w-full text-sm file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-black hover:file:bg-gray-200 cursor-pointer"
-      />
+    <div className="bg-white border-2 border-black rounded-lg p-10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-left max-w-2xl mx-auto w-full">
+      <div className="mb-6">
+         <h2 className="text-2xl font-serif font-bold mb-2">Upload Receipt</h2>
+         <p className="text-gray-500">Select the <code className="bg-gray-100 px-1 rounded text-black">.txt</code> file required when you voted.</p>
+      </div>
+
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors group cursor-pointer relative">
+        <input
+            type="file"
+            accept=".txt"
+            onChange={handleFileChange}
+            aria-label="Upload vote receipt"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        />
+        <div className="pointer-events-none">
+             <span className="block text-4xl mb-2">📄</span>
+             <span className="text-lg font-medium text-gray-900 group-hover:underline">Click to upload receipt</span>
+             <p className="text-sm text-gray-500 mt-1">or drag and drop</p>
+        </div>
+      </div>
     </div>
   )
 }

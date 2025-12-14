@@ -37,7 +37,7 @@ describe('PollsPage', () => {
     render(<PollsPage />)
     
     await waitFor(() => {
-      expect(screen.getByText('You have not created any polls yet')).toBeInTheDocument()
+      expect(screen.getByText("You haven't created any polls yet.")).toBeInTheDocument()
     })
   })
 
@@ -63,7 +63,7 @@ describe('PollsPage', () => {
     render(<PollsPage />)
     
     await waitFor(() => {
-      expect(screen.getByText('You have not created any polls yet')).toBeInTheDocument()
+      expect(screen.getByText("You haven't created any polls yet.")).toBeInTheDocument()
     })
   })
 })

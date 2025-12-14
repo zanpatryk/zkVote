@@ -30,9 +30,9 @@ export default function StatusFilter({ currentStatus, onStatusChange }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full md:w-48 flex items-center justify-between px-6 py-4 rounded-2xl border-2 border-black/10 hover:border-black/30 bg-white transition outline-none text-left"
+        className="w-full md:w-48 flex items-center justify-between px-6 py-4 rounded-lg border-2 border-black bg-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] outline-none text-left"
       >
-        <span className="font-medium text-gray-700">{currentLabel}</span>
+        <span className="font-medium text-gray-900">{currentLabel}</span>
         <svg 
           className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
           fill="none" 
@@ -44,7 +44,7 @@ export default function StatusFilter({ currentStatus, onStatusChange }) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-full md:w-48 bg-white rounded-2xl border-2 border-black/10 shadow-xl overflow-hidden z-50">
+        <div className="absolute top-full right-0 mt-2 w-full md:w-48 bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-50">
           {options.map((option) => (
             <div
               key={option.value}
@@ -52,13 +52,13 @@ export default function StatusFilter({ currentStatus, onStatusChange }) {
                 onStatusChange(option.value)
                 setIsOpen(false)
               }}
-              className={`px-6 py-3 cursor-pointer transition hover:bg-gray-50 flex items-center justify-between ${
-                currentStatus === option.value ? 'bg-gray-50 font-semibold' : 'text-gray-600'
+              className={`px-6 py-3 cursor-pointer transition hover:bg-gray-100 flex items-center justify-between border-b border-gray-100 last:border-0 ${
+                currentStatus === option.value ? 'bg-black text-white hover:bg-black/90' : 'text-gray-700'
               }`}
             >
-              {option.label}
+              <span className={currentStatus === option.value ? 'font-bold' : ''}>{option.label}</span>
               {currentStatus === option.value && (
-                <span className="text-black">✓</span>
+                <span className="text-white">✓</span>
               )}
             </div>
           ))}

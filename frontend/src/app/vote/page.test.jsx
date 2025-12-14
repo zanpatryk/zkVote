@@ -37,7 +37,7 @@ describe('VotePage', () => {
   it('renders empty state', () => {
     useQuery.mockReturnValue({ isLoading: false, data: [] })
     render(<VotePage />)
-    expect(screen.getByText('You are not whitelisted on any poll yet')).toBeInTheDocument()
+    expect(screen.getByText('You are not whitelisted on any poll yet.')).toBeInTheDocument()
   })
 
   it('renders list of polls', () => {
@@ -49,7 +49,7 @@ describe('VotePage', () => {
     
     render(<VotePage />)
     
-    expect(screen.getByText('Vote on polls')).toBeInTheDocument()
+    expect(screen.getByText('Vote on Polls')).toBeInTheDocument()
     expect(screen.getAllByTestId('poll-card')).toHaveLength(2)
     expect(screen.getByText('Poll 1 - 1 - 1')).toBeInTheDocument()
     expect(screen.getByText('Poll 2 - 2 - 0')).toBeInTheDocument()

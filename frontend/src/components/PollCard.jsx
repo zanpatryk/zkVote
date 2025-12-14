@@ -44,21 +44,21 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
   }
 
   return (
-    <div className="p-8 bg-gray-50 border border-gray-300 rounded-2xl hover:bg-gray-100 hover:border-gray-500 transition-all">
+    <div className="p-8 bg-white border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all duration-200">
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="text-2xl font-semibold text-gray-900">
+          <h3 className="text-3xl font-serif font-bold text-gray-900 leading-tight">
             {title}
           </h3>
-          <div className="mt-2 flex items-center gap-2 text-gray-600">
-            <span className="text-gray-500 font-mono text-sm bg-gray-100 px-2 py-1 rounded" title={pollId.toString()}>
+          <div className="mt-3 flex items-center gap-3 text-gray-600">
+            <span className="text-xs font-mono uppercase tracking-wider text-gray-500 border border-black/20 px-2 py-1 rounded-sm" title={pollId.toString()}>
             ID: {pollId.toString().length <= 8
               ? pollId.toString()
               : `${pollId.toString().slice(0, 4)}...${pollId.toString().slice(-4)}`}
-          </span>
+            </span>
             <button
               onClick={handleCopy}
-              className="p-1 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1 hover:bg-gray-100 rounded-md transition-colors border border-transparent hover:border-gray-200"
               title="Copy Poll ID"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -67,43 +67,44 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
             </button>
           </div>
           {statusLabel && statusValue && (
-            <p className="mt-1 text-sm text-gray-500">
-              {statusLabel}: <span className="font-medium">{statusValue}</span>
-            </p>
+            <div className="mt-3 flex items-center gap-2">
+                 <span className={`w-2 h-2 rounded-full ${state === 1 ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                 <p className="text-sm font-medium uppercase tracking-wide text-gray-600">{statusValue}</p>
+            </div>
           )}
         </div>
         {isOwner && (
-          <span className="bg-black text-white text-xs px-3 py-1 rounded-full">
-            OWNER
+          <span className="bg-black text-white text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black">
+            Owner
           </span>
         )}
       </div>
 
-      <div className="mt-6 flex gap-4">
+      <div className="mt-8 flex gap-6 border-t-2 border-black/5 pt-6 items-center">
         {isOwner ? (
           <Link href={`/poll/${pollId}/manage`}>
-            <span className="text-black font-medium hover:underline">
-              Manage Poll →
+            <span className="text-black font-semibold hover:underline decoration-2 underline-offset-4">
+              Manage Poll
             </span>
           </Link>
         ) : (
           <Link href={`/poll/${pollId}`}>
-            <span className="text-black font-medium hover:underline">
-              View Details →
+            <span className="text-black font-semibold hover:underline decoration-2 underline-offset-4">
+              View Details
             </span>
           </Link>
         )}
 
         {state === 2 ? (
           <Link href={`/poll/${pollId}/nft`}>
-            <span className="text-black font-medium hover:underline">
-              Mint Result NFT →
+            <span className="text-black font-semibold hover:underline decoration-2 underline-offset-4">
+              Mint Result NFT
             </span>
           </Link>
         ) : showVoteButton ? (
           <Link href={`/poll/${pollId}/vote`}>
-            <span className="text-black font-medium hover:underline">
-              Vote →
+            <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">
+              Vote Now
             </span>
           </Link>
         ) : null}

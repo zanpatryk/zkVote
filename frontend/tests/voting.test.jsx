@@ -51,7 +51,7 @@ describe('Integration Test: Voting Page', () => {
 
     render(<VotePage />)
 
-    expect(screen.getByText('You are not whitelisted on any poll yet')).toBeInTheDocument()
+    expect(screen.getByText('You are not whitelisted on any poll yet.')).toBeInTheDocument()
   })
 
   it('renders whitelisted polls', () => {
@@ -85,6 +85,6 @@ describe('Integration Test: Voting Page', () => {
     // Should show empty state or handle gracefully
     // Based on code: enabled: isConnected && !!address
     // So data will be []
-    expect(screen.getByText('You are not whitelisted on any poll yet')).toBeInTheDocument()
+    expect(screen.getByText('You are not whitelisted on any poll yet.')).toBeInTheDocument()
   })
 })

@@ -23,9 +23,9 @@ export default function VoteReceiptPage() {
   }
 
   return (
-    <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 text-center">
-      <h1 className="text-4xl font-bold mb-4">Vote Submitted</h1>
-      <p className="text-lg text-gray-700 mb-12">
+    <div className="pt-32 max-w-3xl mx-auto px-6 pb-32 text-center">
+      <h1 className="text-5xl font-black font-serif mb-6 tracking-tight">Vote Submitted</h1>
+      <p className="text-xl text-gray-600 mb-12 font-medium max-w-xl mx-auto">
         Your vote has been successfully cast. Here is your receipt.
       </p>
 
@@ -38,7 +38,7 @@ export default function VoteReceiptPage() {
       <button
         type="button"
         onClick={handleDownload}
-        className="bg-black text-white px-8 py-3 rounded-full font-semibold hover:bg-gray-800 transition shadow-md mt-4"
+        className="bg-black text-white px-8 py-4 rounded-lg text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all mt-8"
       >
         Download Receipt (.txt)
       </button>

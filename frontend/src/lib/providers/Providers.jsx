@@ -16,11 +16,58 @@ const queryClient = new QueryClient({
   },
 }) 
 
+// Custom RainbowKit theme - Premium Monochrome
+const customTheme = {
+  fonts: {
+    body: 'ui-sans-serif, system-ui, sans-serif',
+  },
+  radii: {
+    connectButton: '8px',
+    menuButton: '8px',
+    modal: '12px',
+    modalMobile: '12px',
+  },
+  shadows: {
+    connectButton: '4px 4px 0px 0px rgba(0, 0, 0, 1)',
+    dialog: '8px 8px 0px 0px rgba(0, 0, 0, 1)',
+  },
+  colors: {
+    accentColor: '#000000',
+    accentColorForeground: '#ffffff',
+    actionButtonBorder: 'rgba(0, 0, 0, 1)',
+    actionButtonBorderMobile: 'rgba(0, 0, 0, 1)',
+    actionButtonSecondaryBackground: '#ffffff',
+    closeButton: '#000000',
+    closeButtonBackground: '#ffffff',
+    connectButtonBackground: '#ffffff',
+    connectButtonBackgroundError: '#ff0000',
+    connectButtonInnerBackground: '#ffffff',
+    connectButtonText: '#000000',
+    connectButtonTextError: '#ffffff',
+    connectionIndicator: '#000000',
+    error: '#ff0000',
+    generalBorder: '#000000',
+    generalBorderDim: 'rgba(0, 0, 0, 0.3)',
+    menuItemBackground: '#ffffff',
+    modalBackdrop: 'rgba(0, 0, 0, 0.5)',
+    modalBackground: '#ffffff',
+    modalBorder: '#000000',
+    modalText: '#000000',
+    modalTextDim: 'rgba(0, 0, 0, 0.6)',
+    modalTextSecondary: 'rgba(0, 0, 0, 0.6)',
+    profileAction: '#ffffff',
+    profileActionHover: '#f5f5f5',
+    profileForeground: '#ffffff',
+    selectedOptionBorder: '#000000',
+    standby: '#000000',
+  },
+}
+
 export default function Providers({ children }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
+        <RainbowKitProvider theme={customTheme}>
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>

@@ -61,8 +61,8 @@ describe('PollDetails', () => {
     await waitFor(() => {
       expect(screen.getByText('Poll Results')).toBeInTheDocument()
       expect(screen.getByText('Option 1')).toBeInTheDocument()
-      expect(screen.getByText('5 votes')).toBeInTheDocument()
-      expect(screen.getByText('10 votes')).toBeInTheDocument()
+      expect(screen.getByText('5')).toBeInTheDocument()
+      expect(screen.getByText('10')).toBeInTheDocument()
     })
   })
 

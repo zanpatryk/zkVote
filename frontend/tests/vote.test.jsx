@@ -57,7 +57,7 @@ describe('VoteOnPoll', () => {
     render(<VoteOnPoll />)
 
     await waitFor(() => {
-      expect(screen.getByText('Voting is not active for this poll.')).toBeInTheDocument()
+      expect(screen.getByText('Voting is not active')).toBeInTheDocument()
       expect(screen.getByText('This poll has not started yet.')).toBeInTheDocument()
       expect(screen.queryByText('Submit vote')).not.toBeInTheDocument()
     })
@@ -74,7 +74,7 @@ describe('VoteOnPoll', () => {
     render(<VoteOnPoll />)
 
     await waitFor(() => {
-      expect(screen.getByText('Voting is not active for this poll.')).toBeInTheDocument()
+      expect(screen.getByText('Voting is not active')).toBeInTheDocument()
       expect(screen.getByText('This poll has ended.')).toBeInTheDocument()
       expect(screen.queryByText('Submit vote')).not.toBeInTheDocument()
     })
@@ -93,7 +93,7 @@ describe('VoteOnPoll', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Submit vote')).toBeInTheDocument()
-      expect(screen.queryByText('Voting is not active for this poll.')).not.toBeInTheDocument()
+      expect(screen.queryByText('Voting is not active')).not.toBeInTheDocument()
     })
   })
 })

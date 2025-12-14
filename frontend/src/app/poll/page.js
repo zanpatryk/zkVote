@@ -52,17 +52,20 @@ export default function PollsPage() {
 
   return (
     <div className="pt-24 max-w-5xl mx-auto px-6 pb-32 relative">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-4xl font-bold">Your polls</h1>
+      <div className="flex items-center justify-between mb-12">
+        <div>
+          <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">My Polls</h1>
+          <p className="text-gray-500 text-lg">Manage your secure voting events.</p>
+        </div>
         <Link href="/poll/create">
-          <button className="bg-black text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-800 transition">
-            Create new poll
+          <button className="bg-black text-white px-8 py-4 rounded-lg text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
+            + Create New Poll
           </button>
         </Link>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+      <div className="flex flex-col md:flex-row gap-4 mb-12">
         <StatusFilter 
           currentStatus={statusFilter} 
           onStatusChange={setStatusFilter} 
@@ -77,20 +80,22 @@ export default function PollsPage() {
             placeholder="Search your polls..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-black/10 focus:border-black outline-none transition bg-white shadow-sm hover:border-black/30"
+            className="w-full pl-12 pr-4 py-4 rounded-lg border-2 border-black focus:border-black outline-none transition bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none placeholder-gray-400 font-medium"
           />
         </div>
       </div>
 
-      <div className="bg-white border-2 border-black rounded-3xl p-10 shadow-xl">
+      <div>
         {isLoading ? (
-          <div className="text-center py-20 text-xl text-gray-600">Loading your polls...</div>
+          <div className="text-center py-20 text-xl text-gray-600 font-serif italic">Loading your polls...</div>
         ) : filteredPolls.length === 0 ? (
-          <div className="text-center py-20 text-xl text-gray-500 font-medium">
-            {polls.length === 0 ? "You have not created any polls yet" : "No polls found matching your filters"}
+          <div className="text-center py-24 border-2 border-dashed border-gray-300 rounded-xl">
+             <p className="text-xl text-gray-400 font-serif italic">
+                {polls.length === 0 ? "You haven't created any polls yet." : "No polls match your search."}
+             </p>
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid gap-8">
             {filteredPolls.map((poll) => (
               <PollCard 
                 key={poll.pollId} 

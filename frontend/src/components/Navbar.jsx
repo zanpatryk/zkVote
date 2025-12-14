@@ -24,12 +24,12 @@ export default function Navbar() {
   }, [isConnected, address, pathname, router])
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-white">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b-2 border-black bg-white">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Logo – left */}
         <Link
           href={isConnected ? '/home' : '/'}
-          className="text-2xl font-bold hover:opacity-80 transition"
+          className="text-3xl font-serif font-black tracking-tight hover:opacity-80 transition"
         >
           zkVote
         </Link>
@@ -41,8 +41,8 @@ export default function Navbar() {
               href="/poll"
               className={`font-medium text-lg transition ${
                 pathname.startsWith('/poll')
-                  ? 'text-black font-semibold'
-                  : 'text-gray-500 hover:text-gray-800'
+                  ? 'text-black font-bold border-b-2 border-black'
+                  : 'text-gray-500 hover:text-black'
               }`}
             >
               Poll
@@ -51,8 +51,8 @@ export default function Navbar() {
               href="/vote"
               className={`font-medium text-lg transition ${
                 pathname === '/vote'
-                  ? 'text-black font-semibold'
-                  : 'text-gray-500 hover:text-gray-800'
+                  ? 'text-black font-bold border-b-2 border-black'
+                  : 'text-gray-500 hover:text-black'
               }`}
             >
               Vote
@@ -61,8 +61,8 @@ export default function Navbar() {
               href="/verify"
               className={`font-medium text-lg transition ${
                 pathname === '/verify'
-                  ? 'text-black font-semibold'
-                  : 'text-gray-500 hover:text-gray-800'
+                  ? 'text-black font-bold border-b-2 border-black'
+                  : 'text-gray-500 hover:text-black'
               }`}
             >
               Verify

@@ -88,11 +88,11 @@ describe('Integration Test: Poll Creation', () => {
     const form = container.querySelector('form')
 
     // Fill Title
-    const titleInput = screen.getByPlaceholderText('What is your favorite color?')
+    const titleInput = screen.getByPlaceholderText('e.g., What is your favorite color?')
     fireEvent.change(titleInput, { target: { value: 'Best Framework?' } })
 
     // Fill Description
-    const descInput = screen.getByPlaceholderText('Add more context...')
+    const descInput = screen.getByPlaceholderText('Provide context for voters...')
     fireEvent.change(descInput, { target: { value: 'React vs Vue' } })
 
     // Fill Options
@@ -122,7 +122,7 @@ describe('Integration Test: Poll Creation', () => {
     const form = container.querySelector('form')
 
     // Fill minimal valid form
-    fireEvent.change(screen.getByPlaceholderText('What is your favorite color?'), { target: { value: 'Test' } })
+    fireEvent.change(screen.getByPlaceholderText('e.g., What is your favorite color?'), { target: { value: 'Test' } })
     const optionInputs = screen.getAllByPlaceholderText(/Option \d/)
     fireEvent.change(optionInputs[0], { target: { value: 'A' } })
     fireEvent.change(optionInputs[1], { target: { value: 'B' } })
@@ -132,7 +132,7 @@ describe('Integration Test: Poll Creation', () => {
     await waitFor(() => {
       // toast.promise handles the error display internally, so we verify mockCreatePoll was called
       expect(mockCreatePoll).toHaveBeenCalled()
-      expect(screen.getByText('Create Poll')).toBeInTheDocument() // Loading state cleared
+      expect(screen.getByText('Launch Poll')).toBeInTheDocument() // Loading state cleared
     })
     
     consoleSpy.mockRestore()

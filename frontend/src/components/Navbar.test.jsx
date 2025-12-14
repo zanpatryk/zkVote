@@ -62,10 +62,10 @@ describe('Navbar', () => {
     render(<Navbar />)
 
     const pollLink = screen.getByText('Poll')
-    expect(pollLink).toHaveClass('text-black', 'font-semibold')
+    expect(pollLink).toHaveClass('text-black', 'font-bold')
     
     const voteLink = screen.getByText('Vote')
-    expect(voteLink).not.toHaveClass('text-black', 'font-semibold')
+    expect(voteLink).not.toHaveClass('text-black', 'font-bold')
   })
 
   it('redirects to /home if connected and on root page', () => {

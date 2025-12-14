@@ -56,27 +56,27 @@ export default function VoteCheckPage() {
 
   return (
     <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 font-mono text-left">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold font-sans">Vote Details</h1>
+      <div className="flex justify-between items-center mb-12">
+        <h1 className="text-4xl font-black font-serif tracking-tight">Vote Details</h1>
         <button 
           onClick={() => router.push('/poll')}
-          className="text-gray-600 hover:text-black whitespace-nowrap font-sans"
+          className="text-gray-500 hover:text-black whitespace-nowrap font-medium transition-colors"
         >
           ← Go Back
         </button>
       </div>
 
       {loading ? (
-        <p className="text-gray-600 font-sans">Loading data...</p>
+        <p className="text-gray-600 font-serif italic text-xl text-center py-20">Loading data...</p>
       ) : error ? (
-        <p className="text-red-600 font-sans">{error}</p>
+        <p className="text-red-600 font-serif font-bold text-center py-20">{error}</p>
       ) : (
-        <div className="bg-white p-8 max-w-sm mx-auto shadow-lg border border-gray-200 relative mb-8">
+        <div className="bg-white p-8 max-w-md mx-auto border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative mb-12">
           
            {/* Receipt Header */}
            <div className="text-center border-b-2 border-dashed border-gray-300 pb-6 mb-6">
-            <h2 className="text-2xl font-bold uppercase tracking-wider font-sans">zkVote</h2>
-            <p className="text-sm text-gray-500 mt-1">Verified Record</p>
+            <h2 className="text-3xl font-black font-serif tracking-tight uppercase">zkVote</h2>
+            <p className="text-sm text-gray-500 mt-2 font-medium uppercase tracking-widest">Verified Record</p>
            </div>
 
           <div className="space-y-4 mb-8">
@@ -120,25 +120,25 @@ export default function VoteCheckPage() {
           </div>
           
            {/* Action Button */}
-           <div className="mt-8 pt-6 border-t-2 border-dashed border-gray-300 text-center font-sans">
+           <div className="mt-8 pt-8 border-t-2 border-dashed border-gray-300 text-center font-sans space-y-4">
               {isActive ? (
                 <button
                   onClick={() => router.push(`/poll/${pollId}`)}
-                  className="w-full bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition shadow-md"
+                  className="w-full bg-black text-white px-6 py-4 text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
                 >
                   View Active Poll
                 </button>
               ) : isEnded ? (
                  <button
                   onClick={() => router.push(`/poll/${pollId}/nft`)}
-                  className="w-full bg-black text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition shadow-md"
+                  className="w-full bg-black text-white px-6 py-4 text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
                 >
                   View Results & Mint NFT
                 </button>
               ) : (
                  <button
                   onClick={() => router.push(`/poll/${pollId}`)}
-                  className="w-full border-2 border-black text-black px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 transition"
+                  className="w-full bg-white text-black px-6 py-4 text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
                 >
                   Return to Poll
                 </button>

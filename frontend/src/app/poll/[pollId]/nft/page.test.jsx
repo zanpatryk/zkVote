@@ -121,11 +121,11 @@ describe('MintNFTPage', () => {
     const button = screen.getByRole('button', { name: 'Mint Result NFT' })
     fireEvent.click(button)
 
-    expect(screen.getByText('Minting...')).toBeInTheDocument()
+    expect(screen.getByText('Minting NFT...')).toBeInTheDocument()
     await waitFor(() => {
       expect(write.mintResultNFT).toHaveBeenCalledWith(mockPollId)
       // Results appear after success
-      expect(screen.getByText('✓ NFT Badge Minted')).toBeInTheDocument()
+      expect(screen.getByText(/NFT Badge Minted Successfully/)).toBeInTheDocument()
       expect(screen.getByTestId('poll-details')).toBeInTheDocument()
     })
   })
@@ -138,7 +138,7 @@ describe('MintNFTPage', () => {
     render(<MintNFTPage />)
 
     await waitFor(() => {
-        expect(screen.getByText('✓ NFT Badge Minted')).toBeInTheDocument()
+        expect(screen.getByText(/NFT Badge Minted Successfully/)).toBeInTheDocument()
         expect(screen.getByTestId('poll-details')).toBeInTheDocument()
         expect(screen.queryByRole('button', { name: 'Mint Result NFT' })).not.toBeInTheDocument()
     })

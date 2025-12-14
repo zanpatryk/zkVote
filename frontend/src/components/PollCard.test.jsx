@@ -48,35 +48,35 @@ describe('PollCard', () => {
 
   it('shows Mint Result NFT link for Ended poll (state 2)', () => {
     render(<PollCard {...defaultProps} state={2} />)
-    expect(screen.getByText('Mint Result NFT →')).toBeInTheDocument()
-    expect(screen.getByText('View Details →')).toBeInTheDocument()
+    expect(screen.getByText('Mint Result NFT')).toBeInTheDocument()
+    expect(screen.getByText('View Details')).toBeInTheDocument()
   })
 
   it('shows owner badge when isOwner is true', () => {
     render(<PollCard {...defaultProps} isOwner={true} />)
-    expect(screen.getByText('OWNER')).toBeInTheDocument()
+    expect(screen.getByText('Owner')).toBeInTheDocument()
   })
 
   it('does not show owner badge when isOwner is false', () => {
     render(<PollCard {...defaultProps} isOwner={false} />)
-    expect(screen.queryByText('OWNER')).not.toBeInTheDocument()
+    expect(screen.queryByText('Owner')).not.toBeInTheDocument()
   })
 
   it('shows Manage Poll link for owner', () => {
     render(<PollCard {...defaultProps} isOwner={true} />)
-    const manageLink = screen.getByText('Manage Poll →').closest('a')
+    const manageLink = screen.getByText('Manage Poll').closest('a')
     expect(manageLink).toHaveAttribute('href', `/poll/${defaultProps.pollId}/manage`)
   })
 
   it('shows View Details link for non-owner', () => {
     render(<PollCard {...defaultProps} isOwner={false} />)
-    const viewLink = screen.getByText('View Details →').closest('a')
+    const viewLink = screen.getByText('View Details').closest('a')
     expect(viewLink).toHaveAttribute('href', `/poll/${defaultProps.pollId}`)
   })
 
   it('shows vote button when showVoteButton is true', () => {
     render(<PollCard {...defaultProps} showVoteButton={true} />)
-    expect(screen.getByText('Vote →')).toBeInTheDocument()
+    expect(screen.getByText('Vote Now')).toBeInTheDocument()
   })
 
   it('copies poll ID to clipboard on click', () => {
