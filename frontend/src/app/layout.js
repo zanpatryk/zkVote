@@ -24,12 +24,30 @@ export default function RootLayout({ children }) {
           <Toaster 
             position="bottom-right" 
             toastOptions={{
+              className: '',
               style: {
-                background: '#333',
-                color: '#fff',
+                border: '2px solid #000',
+                padding: '16px',
+                color: '#000',
+                borderRadius: '8px', 
+                boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)',
+                background: '#fff',
+                fontSize: '14px',
+                fontWeight: '500', 
+                fontFamily: 'serif',
                 zIndex: 99999,
               },
+              success: {
+                iconTheme: {
+                  primary: '#000',
+                  secondary: '#fff',
+                },
+              },
               error: {
+                iconTheme: {
+                  primary: '#000',
+                  secondary: '#fff',
+                },
                 duration: 5000,
               }
             }}
