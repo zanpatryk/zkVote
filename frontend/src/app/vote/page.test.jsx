@@ -21,6 +21,11 @@ jest.mock('@/components/PollCard', () => ({ pollId, title, state }) => (
   </div>
 ))
 
+jest.mock('framer-motion', () => ({
+  motion: { div: 'div', button: 'button' },
+  AnimatePresence: ({ children }) => children,
+}))
+
 describe('VotePage', () => {
   const { useQuery } = require('@tanstack/react-query')
 

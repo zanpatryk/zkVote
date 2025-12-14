@@ -2,6 +2,10 @@ import { render, screen } from '@testing-library/react'
 import NotFound from './not-found'
 import '@testing-library/jest-dom'
 
+jest.mock('framer-motion', () => ({
+  motion: { div: 'div' },
+}))
+
 describe('NotFound', () => {
   it('renders the 404 content', () => {
     render(<NotFound />)

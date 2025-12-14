@@ -36,6 +36,11 @@ jest.mock('viem', () => ({
   isAddress: jest.fn(),
 }))
 
+jest.mock('framer-motion', () => ({
+  motion: { div: 'div', button: 'button', form: 'form' },
+  AnimatePresence: ({ children }) => children,
+}))
+
 // Mock navigator.clipboard
 Object.assign(navigator, {
   clipboard: {

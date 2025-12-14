@@ -28,6 +28,11 @@ jest.mock('react-hot-toast', () => ({
   },
 }))
 
+jest.mock('framer-motion', () => ({
+  motion: { div: 'div', button: 'button' },
+  AnimatePresence: ({ children }) => children,
+}))
+
 describe('CreatePollPage', () => {
   const { createPoll } = require('@/lib/blockchain/engine/write')
   const { toast } = require('react-hot-toast')

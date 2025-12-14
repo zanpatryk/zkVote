@@ -2,6 +2,10 @@ import { render, screen } from '@testing-library/react'
 import RestrictedPage from './page'
 import '@testing-library/jest-dom'
 
+jest.mock('framer-motion', () => ({
+  motion: { div: 'div' },
+}))
+
 describe('RestrictedPage', () => {
   it('renders restricted access message', () => {
     render(<RestrictedPage />)

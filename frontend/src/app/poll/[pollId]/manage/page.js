@@ -8,6 +8,7 @@ import PollDetails from '@/components/PollDetails'
 import WhitelistManager from '@/components/WhitelistManager'
 import PollStatusManager from '@/components/PollStatusManager.jsx'
 import { toast } from 'react-hot-toast'
+import { motion } from 'framer-motion'
 
 export default function ManagePollPage() {
   const { pollId } = useParams()
@@ -91,7 +92,11 @@ export default function ManagePollPage() {
 
   return (
     <div className="pt-24 max-w-3xl mx-auto px-6 pb-32">
-      <div className="flex justify-between items-center mb-12">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex justify-between items-center mb-12"
+      >
         <div>
            <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">Manage Poll</h1>
            <p className="text-gray-500">Admin control panel.</p>
@@ -102,16 +107,24 @@ export default function ManagePollPage() {
         >
           ← Back to Dashboard
         </button>
-      </div>
+      </motion.div>
 
       <div className="space-y-16">
-        <section>
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
           <h2 className="text-3xl font-serif font-bold text-gray-900 mb-6 border-b-2 border-black pb-2">Poll Details</h2>
           <PollDetails pollId={pollId} />
-        </section>
+        </motion.section>
 
         {pollState !== null && (
-          <section>
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
              <PollStatusManager 
                pollId={pollId} 
                status={Number(pollState)} 
@@ -119,16 +132,20 @@ export default function ManagePollPage() {
                  fetchPollData()
                }}
              />
-          </section>
+          </motion.section>
         )}
 
-        <section>
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <div className="mb-6 border-b-2 border-black pb-2">
              <h2 className="text-3xl font-serif font-bold text-gray-900">Whitelist Management</h2>
              <p className="text-gray-600 mt-1">Control who can vote in this poll.</p>
           </div>
           <WhitelistManager pollId={pollId} />
-        </section>
+        </motion.section>
       </div>
     </div>
   )

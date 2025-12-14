@@ -23,6 +23,11 @@ jest.mock('@rainbow-me/rainbowkit', () => ({
   ConnectButton: () => <button>Connect Wallet</button>,
 }))
 
+jest.mock('framer-motion', () => ({
+  motion: { div: 'div' },
+  AnimatePresence: ({ children }) => children,
+}))
+
 describe('Navbar', () => {
   const { useAccount } = require('wagmi')
   const { usePathname } = require('next/navigation')

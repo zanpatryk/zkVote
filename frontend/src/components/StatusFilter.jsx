@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function StatusFilter({ currentStatus, onStatusChange }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -43,8 +44,15 @@ export default function StatusFilter({ currentStatus, onStatusChange }) {
         </svg>
       </button>
 
+      <AnimatePresence>
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-full md:w-48 bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-50">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: -10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: -10 }}
+          transition={{ duration: 0.2 }}
+          className="absolute top-full right-0 mt-2 w-full md:w-48 bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-50"
+        >
           {options.map((option) => (
             <div
               key={option.value}
@@ -62,8 +70,9 @@ export default function StatusFilter({ currentStatus, onStatusChange }) {
               )}
             </div>
           ))}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   )
 }

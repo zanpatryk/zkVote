@@ -18,6 +18,11 @@ jest.mock('@/components/PollCard', () => ({ pollId, title, state, showVoteButton
   </div>
 ))
 
+jest.mock('framer-motion', () => ({
+  motion: { div: 'div', button: 'button' },
+  AnimatePresence: ({ children }) => children,
+}))
+
 describe('PollsPage', () => {
   const { getOwnedPolls, isUserWhitelisted } = require('@/lib/blockchain/engine/read')
   const { useAccount } = require('wagmi')

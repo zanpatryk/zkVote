@@ -8,6 +8,10 @@ jest.mock('next/navigation', () => ({
   useSearchParams: jest.fn(),
 }))
 
+jest.mock('framer-motion', () => ({
+  motion: { div: 'div', button: 'button' },
+}))
+
 // Mock URL.createObjectURL and URL.revokeObjectURL
 global.URL.createObjectURL = jest.fn()
 global.URL.revokeObjectURL = jest.fn()

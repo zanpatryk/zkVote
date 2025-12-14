@@ -8,6 +8,12 @@ jest.mock('wagmi', () => ({
   useAccount: () => mockUseAccount(),
 }))
 
+// Mock framer-motion
+jest.mock('framer-motion', () => ({
+  motion: { div: 'div', button: 'button' },
+  AnimatePresence: ({ children }) => children,
+}))
+
 // Mock React Query
 const mockUseQuery = jest.fn()
 jest.mock('@tanstack/react-query', () => ({

@@ -10,5 +10,5 @@ export const wagmiConfig = getDefaultConfig({
   projectId,
   chains: supportedChains,
   transports,
-  ssr: true,
+  ssr: false,
 })

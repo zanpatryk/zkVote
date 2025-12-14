@@ -6,6 +6,7 @@ import { getUserNFTs } from '@/lib/blockchain/engine/read'
 import PollCard from '@/components/PollCard'
 import ReceiptCard from '@/components/ReceiptCard'
 import NFTCard from '@/components/NFTCard'
+import { motion } from 'framer-motion'
 
 // Demo data for showcase
 const demoPoll = {
@@ -56,7 +57,12 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col items-center min-h-screen pt-32 px-6 pb-32">
       {/* Hero Section */}
-      <div className="text-center mb-24">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="text-center mb-24"
+      >
         <div className="inline-block mb-6 px-4 py-2 border-2 border-black text-sm font-bold uppercase tracking-widest">
           Decentralized Governance
         </div>
@@ -69,12 +75,18 @@ export default function LandingPage() {
             Connect your wallet to create polls, cast votes, and earn commemorative NFT badges.
           </p>
         )}
-      </div>
+      </motion.div>
 
       {!isConnected && (
         <>
           {/* Stats Banner */}
-          <div className="w-full max-w-5xl mb-24">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="w-full max-w-5xl mb-24"
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 border-2 border-black p-8 bg-black text-white">
               <div className="text-center">
                 <p className="text-5xl font-black font-serif">100%</p>
@@ -89,15 +101,36 @@ export default function LandingPage() {
                 <p className="text-sm uppercase tracking-widest mt-2 text-gray-400">Badges</p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Experience Section */}
           <div className="w-full max-w-6xl mb-24">
-            <h2 className="text-5xl font-black font-serif mb-4 text-center tracking-tight">Experience the Platform</h2>
-            <p className="text-xl text-gray-600 text-center mb-16 max-w-2xl mx-auto">See what zkVote looks like from the inside. Real components, real experience.</p>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-5xl font-black font-serif mb-4 text-center tracking-tight"
+            >
+              Experience the Platform
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-xl text-gray-600 text-center mb-16 max-w-2xl mx-auto"
+            >
+              See what zkVote looks like from the inside. Real components, real experience.
+            </motion.p>
             
             {/* Poll Card Showcase */}
-            <div className="mb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="mb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+            >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl flex-shrink-0">1</div>
                 <div>
@@ -114,10 +147,16 @@ export default function LandingPage() {
                   showVoteButton={true}
                 />
               </div>
-            </div>
+            </motion.div>
 
             {/* Receipt Card Showcase */}
-            <div className="mb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div 
+               initial={{ opacity: 0, x: 50 }}
+               whileInView={{ opacity: 1, x: 0 }}
+               viewport={{ once: true }}
+               transition={{ duration: 0.6 }}
+               className="mb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+            >
               <div className="flex items-start gap-4 lg:order-2">
                 <div className="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl flex-shrink-0">2</div>
                 <div>
@@ -132,10 +171,16 @@ export default function LandingPage() {
                   txHash={demoReceipt.txHash}
                 />
               </div>
-            </div>
+            </motion.div>
 
             {/* NFT Card Showcase */}
-            <div className="mb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="mb-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+            >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl flex-shrink-0">3</div>
                 <div>
@@ -146,38 +191,49 @@ export default function LandingPage() {
               <div className="flex justify-center lg:justify-start">
                 <NFTCard nft={demoNFT} />
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* How It Works */}
           <div className="w-full max-w-5xl mb-24">
-            <h2 className="text-4xl font-black font-serif mb-12 text-center tracking-tight">How It Works</h2>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl font-black font-serif mb-12 text-center tracking-tight"
+            >
+              How It Works
+            </motion.h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="border-2 border-black p-6 bg-white">
-                <div className="text-4xl font-black font-serif mb-4">01</div>
-                <h3 className="text-lg font-bold mb-2">Connect</h3>
-                <p className="text-gray-600 text-sm">Link your wallet to access the platform</p>
-              </div>
-              <div className="border-2 border-black p-6 bg-white">
-                <div className="text-4xl font-black font-serif mb-4">02</div>
-                <h3 className="text-lg font-bold mb-2">Create or Vote</h3>
-                <p className="text-gray-600 text-sm">Start a poll or participate in governance</p>
-              </div>
-              <div className="border-2 border-black p-6 bg-white">
-                <div className="text-4xl font-black font-serif mb-4">03</div>
-                <h3 className="text-lg font-bold mb-2">Verify</h3>
-                <p className="text-gray-600 text-sm">Check any vote on the blockchain</p>
-              </div>
-              <div className="border-2 border-black p-6 bg-white">
-                <div className="text-4xl font-black font-serif mb-4">04</div>
-                <h3 className="text-lg font-bold mb-2">Collect</h3>
-                <p className="text-gray-600 text-sm">Mint your participation NFT badge</p>
-              </div>
+              {[
+                { step: "01", title: "Connect", desc: "Link your wallet to access the platform" },
+                { step: "02", title: "Create or Vote", desc: "Start a poll or participate in governance" },
+                { step: "03", title: "Verify", desc: "Check any vote on the blockchain" },
+                { step: "04", title: "Collect", desc: "Mint your participation NFT badge" }
+              ].map((item, index) => (
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="border-2 border-black p-6 bg-white"
+                >
+                  <div className="text-4xl font-black font-serif mb-4">{item.step}</div>
+                  <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+                  <p className="text-gray-600 text-sm">{item.desc}</p>
+                </motion.div>
+              ))}
             </div>
           </div>
 
           {/* CTA Section */}
-          <div className="w-full max-w-5xl text-center border-2 border-black p-16 bg-black text-white">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="w-full max-w-5xl text-center border-2 border-black p-16 bg-black text-white"
+          >
             <h2 className="text-4xl font-black font-serif mb-6 tracking-tight">Ready to Vote?</h2>
             <p className="text-xl text-gray-400 mb-8 max-w-xl mx-auto">
               Join the future of decentralized governance. Connect your wallet to get started.
@@ -185,7 +241,7 @@ export default function LandingPage() {
             <div className="inline-block px-8 py-4 border-2 border-white text-lg font-bold uppercase tracking-wider">
               Connect Wallet Above ↑
             </div>
-          </div>
+          </motion.div>
         </>
       )}
 

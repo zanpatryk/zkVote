@@ -43,6 +43,15 @@ jest.mock('@/components/NFTCard', () => {
   }
 })
 
+jest.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+    h2: ({ children, ...props }) => <h2 {...props}>{children}</h2>,
+    p: ({ children, ...props }) => <p {...props}>{children}</p>,
+  },
+  AnimatePresence: ({ children }) => <>{children}</>,
+}))
+
 describe('LandingPage', () => {
   const mockUserAddress = '0xUser'
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAccount } from 'wagmi'
 import { whitelistUser, whitelistUsers } from '@/lib/blockchain/engine/write'
 import { isUserWhitelisted } from '@/lib/blockchain/engine/read'
@@ -95,33 +96,62 @@ export default function WhitelistManager({ pollId, onSuccess }) {
 
       <div className="space-y-8">
         {/* Mode Toggle */}
-        <div className="flex rounded-lg border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex rounded-lg border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+        >
           <button
             onClick={() => setMode('single')}
-            className={`flex-1 py-3 font-bold text-lg transition ${
+            className={`flex-1 py-3 font-bold text-lg transition relative ${
               mode === 'single'
-                ? 'bg-black text-white'
+                ? 'text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
-            Single Address
+             {mode === 'single' && (
+                <motion.div 
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-black"
+                  initial={false}
+                  transition={{ type: "spring", bounce: 0, duration: 0.2 }}
+                />
+             )}
+            <span className="relative z-10">Single Address</span>
           </button>
           <div className="w-0.5 bg-black"></div>
           <button
             onClick={() => setMode('batch')}
-            className={`flex-1 py-3 font-bold text-lg transition ${
+            className={`flex-1 py-3 font-bold text-lg transition relative ${
               mode === 'batch'
-                ? 'bg-black text-white'
+                ? 'text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
-            Batch Upload
+             {mode === 'batch' && (
+                <motion.div 
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-black"
+                  initial={false}
+                  transition={{ type: "spring", bounce: 0, duration: 0.2 }}
+                />
+             )}
+            <span className="relative z-10">Batch Upload</span>
           </button>
-        </div>
+        </motion.div>
 
         {/* Single Address Input */}
+        <AnimatePresence mode="wait">
         {mode === 'single' && (
-          <form onSubmit={handleSingleAddressSubmit} className="space-y-6 bg-white border-2 border-black p-8 rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <motion.form 
+            key="single"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+            onSubmit={handleSingleAddressSubmit} 
+            className="space-y-6 bg-white border-2 border-black p-8 rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+          >
             <div>
               <label className="block text-xl font-serif font-bold mb-3">Whitelist Single Address</label>
               <input
@@ -132,19 +162,28 @@ export default function WhitelistManager({ pollId, onSuccess }) {
                 placeholder="0x..."
               />
             </div>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
               type="submit"
               disabled={isSubmitting}
               className="w-full bg-black text-white py-4 rounded-lg text-lg font-bold hover:bg-gray-800 disabled:opacity-50 transition shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
             >
               {isSubmitting ? 'Whitelisting...' : 'Whitelist Address'}
-            </button>
-          </form>
+            </motion.button>
+          </motion.form>
         )}
 
         {/* File Upload */}
         {mode === 'batch' && (
-          <div className="bg-white border-2 border-black p-8 rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] space-y-6">
+          <motion.div 
+            key="batch"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="bg-white border-2 border-black p-8 rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] space-y-6"
+          >
             <div>
               <label htmlFor="file-upload" className="block text-xl font-serif font-bold mb-2">Upload File</label>
               <p className="text-sm text-gray-500 mb-4">Upload a .txt file with addresses separated by newlines, commas, or spaces.</p>
@@ -163,22 +202,29 @@ export default function WhitelistManager({ pollId, onSuccess }) {
             </div>
 
             {batchAddresses.length > 0 && (
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="bg-green-50 p-4 rounded-lg border border-green-200"
+              >
                 <p className="text-green-800 font-medium">
                   Ready to whitelist {batchAddresses.length} addresses.
                 </p>
-              </div>
+              </motion.div>
             )}
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
               onClick={handleBatchSubmit}
               disabled={isSubmitting || batchAddresses.length === 0}
               className="w-full bg-black text-white py-4 rounded-lg text-lg font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
             >
               {isSubmitting ? 'Whitelisting...' : `Whitelist ${batchAddresses.length} Users`}
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
     </div>
   )

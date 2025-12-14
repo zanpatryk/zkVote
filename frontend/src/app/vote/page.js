@@ -7,6 +7,7 @@ import PollCard from '@/components/PollCard.jsx'
 
 import { useState } from 'react'
 import StatusFilter from '@/components/StatusFilter.jsx'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function VotePage() {
   const { address, isConnected } = useAccount()
@@ -28,13 +29,22 @@ export default function VotePage() {
   return (
     <div className="pt-24 max-w-5xl mx-auto px-6 pb-32 relative">
       {/* Title */}
-      <div className="mb-12">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-12"
+      >
         <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">Vote on Polls</h1>
         <p className="text-gray-500 text-lg">Participate in decentralized governance.</p>
-      </div>
+      </motion.div>
 
       {/* Search & Filter Bar */}
-      <div className="flex flex-col md:flex-row gap-4 mb-12">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex flex-col md:flex-row gap-4 mb-12"
+      >
         <StatusFilter 
           currentStatus={statusFilter} 
           onStatusChange={setStatusFilter} 
@@ -52,7 +62,7 @@ export default function VotePage() {
             className="w-full pl-12 pr-4 py-4 rounded-lg border-2 border-black focus:border-black outline-none transition bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none placeholder-gray-400 font-medium"
           />
         </div>
-      </div>
+      </motion.div>
 
       {/* Direct Grid - No Container */}
       <div>
@@ -67,18 +77,33 @@ export default function VotePage() {
              </p>
           </div>
         ) : (
-          <div className="grid gap-8">
-            {filteredPolls.map((poll) => (
-              <PollCard 
-                key={poll.pollId} 
-                pollId={poll.pollId} 
-                title={poll.title} 
-                state={poll.state}
-                isOwner={poll.creator === address}
-                showVoteButton 
-              />
-            ))}
-          </div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="grid gap-8"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredPolls.map((poll) => (
+                <motion.div
+                  layout
+                  key={poll.pollId}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PollCard 
+                    pollId={poll.pollId} 
+                    title={poll.title} 
+                    state={poll.state}
+                    isOwner={poll.creator === address}
+                    showVoteButton 
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
     </div>

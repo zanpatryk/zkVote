@@ -6,6 +6,7 @@ import { getOwnedPolls } from '@/lib/blockchain/engine/read'
 import PollCard from '@/components/PollCard.jsx'
 import Link from 'next/link'
 import StatusFilter from '@/components/StatusFilter.jsx'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function PollsPage() {
   const { address, isConnected } = useAccount()
@@ -52,7 +53,11 @@ export default function PollsPage() {
 
   return (
     <div className="pt-24 max-w-5xl mx-auto px-6 pb-32 relative">
-      <div className="flex items-center justify-between mb-12">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between mb-12"
+      >
         <div>
           <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">My Polls</h1>
           <p className="text-gray-500 text-lg">Manage your secure voting events.</p>
@@ -62,10 +67,15 @@ export default function PollsPage() {
             + Create New Poll
           </button>
         </Link>
-      </div>
+      </motion.div>
 
       {/* Search & Filter Bar */}
-      <div className="flex flex-col md:flex-row gap-4 mb-12">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex flex-col md:flex-row gap-4 mb-12"
+      >
         <StatusFilter 
           currentStatus={statusFilter} 
           onStatusChange={setStatusFilter} 
@@ -83,7 +93,7 @@ export default function PollsPage() {
             className="w-full pl-12 pr-4 py-4 rounded-lg border-2 border-black focus:border-black outline-none transition bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none placeholder-gray-400 font-medium"
           />
         </div>
-      </div>
+      </motion.div>
 
       <div>
         {isLoading ? (
@@ -95,18 +105,33 @@ export default function PollsPage() {
              </p>
           </div>
         ) : (
-          <div className="grid gap-8">
-            {filteredPolls.map((poll) => (
-              <PollCard 
-                key={poll.pollId} 
-                pollId={poll.pollId} 
-                title={poll.title} 
-                state={poll.state}
-                isOwner 
-                showVoteButton={poll.isWhitelisted && poll.state === 1}
-              />
-            ))}
-          </div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="grid gap-8"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredPolls.map((poll, index) => (
+                <motion.div
+                  layout
+                  key={poll.pollId}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PollCard 
+                    pollId={poll.pollId} 
+                    title={poll.title} 
+                    state={poll.state}
+                    isOwner 
+                    showVoteButton={poll.isWhitelisted && poll.state === 1}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
     </div>
