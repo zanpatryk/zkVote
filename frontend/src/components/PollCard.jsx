@@ -101,7 +101,7 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
               Mint Result NFT
             </span>
           </Link>
-        ) : showVoteButton ? (
+        ) : showVoteButton && state === 1 ? (
           <Link href={`/poll/${pollId}/vote`}>
             <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">
               Vote Now

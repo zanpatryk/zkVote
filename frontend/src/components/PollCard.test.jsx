@@ -74,9 +74,15 @@ describe('PollCard', () => {
     expect(viewLink).toHaveAttribute('href', `/poll/${defaultProps.pollId}`)
   })
 
-  it('shows vote button when showVoteButton is true', () => {
-    render(<PollCard {...defaultProps} showVoteButton={true} />)
+  it('shows vote button when showVoteButton is true and state is Active (1)', () => {
+    // Must be Active (1) to show vote button
+    render(<PollCard {...defaultProps} state={1} showVoteButton={true} />)
     expect(screen.getByText('Vote Now')).toBeInTheDocument()
+  })
+
+  it('does not show vote button when state is Created (0) even if showVoteButton is true', () => {
+    render(<PollCard {...defaultProps} state={0} showVoteButton={true} />)
+    expect(screen.queryByText('Vote Now')).not.toBeInTheDocument()
   })
 
   it('copies poll ID to clipboard on click', () => {
