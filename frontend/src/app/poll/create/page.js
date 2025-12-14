@@ -62,10 +62,17 @@ export default function CreatePollPage() {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-12"
+        className="mb-12 flex justify-between items-center"
       >
-        <h1 className="text-5xl font-serif font-bold text-gray-900 mb-4">Create New Poll</h1>
-        <p className="text-lg text-gray-600">Launch a secure, tamper-proof vote.</p>
+        <div>
+          <h1 className="text-5xl font-serif font-bold text-gray-900 mb-4">Create New Poll</h1>
+          <p className="text-lg text-gray-600">Launch a secure, tamper-proof vote.</p>
+        </div>
+        <Link href="/poll">
+          <button className="text-gray-600 hover:text-black font-medium transition flex items-center gap-2">
+            ← Back to Dashboard
+          </button>
+        </Link>
       </motion.div>
 
       <form onSubmit={handleSubmit} className="space-y-10">

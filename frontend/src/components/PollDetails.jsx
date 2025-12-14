@@ -93,28 +93,51 @@ export default function PollDetails({ pollId, showResults = false }) {
           >
              <p className="text-xs font-mono text-gray-500 uppercase mb-4">Options</p>
             <ul className="space-y-3">
-              {poll.options.map((opt, idx) => (
-                <motion.li 
-                  key={idx} 
-                  variants={{
-                    hidden: { opacity: 0, x: -10 },
-                    show: { opacity: 1, x: 0 }
-                  }}
-                  className="flex justify-between items-center group"
-                >
-                  <span className="font-medium text-lg px-3 py-2 bg-gray-50 flex-grow rounded-l-lg border-y border-l border-gray-100 group-hover:bg-gray-100 transition">{opt}</span>
-                  {showResults && results[idx] !== undefined && (
-                     <motion.span 
-                       initial={{ scale: 0 }}
-                       animate={{ scale: 1 }}
-                       transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.5 + (idx * 0.1) }}
-                       className="font-mono font-bold bg-black text-white px-4 py-2 rounded-r-lg border border-black min-w-[3rem] text-center"
-                     >
-                       {Number(results[idx])}
-                     </motion.span>
-                  )}
-                </motion.li>
-              ))}
+              {(() => {
+                 const votes = results.map(r => Number(r || 0))
+                 const maxVotes = Math.max(...votes, 0)
+                 // Only highlight if there are votes
+                 const hasVotes = maxVotes > 0
+
+                 return poll.options.map((opt, idx) => {
+                   const voteCount = Number(results[idx] || 0)
+                   const isWinner = showResults && hasVotes && voteCount === maxVotes
+
+                   return (
+                    <motion.li 
+                      key={idx} 
+                      variants={{
+                        hidden: { opacity: 0, x: -10 },
+                        show: { opacity: 1, x: 0 }
+                      }}
+                      className="flex justify-between items-center group"
+                    >
+                      <span className={`font-medium text-lg px-3 py-2 flex-grow rounded-l-lg border-y border-l transition flex items-center gap-2 ${
+                        isWinner 
+                          ? 'bg-yellow-50 border-yellow-400 text-black' 
+                          : 'bg-gray-50 border-gray-100 group-hover:bg-gray-100'
+                      }`}>
+                        {isWinner && <span>🏆</span>}
+                        {opt}
+                      </span>
+                      {showResults && results[idx] !== undefined && (
+                        <motion.span 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.5 + (idx * 0.1) }}
+                          className={`font-mono font-bold px-4 py-2 rounded-r-lg border min-w-[3rem] text-center ${
+                             isWinner
+                               ? 'bg-yellow-400 text-black border-yellow-400'
+                               : 'bg-black text-white border-black'
+                          }`}
+                        >
+                          {Number(results[idx])}
+                        </motion.span>
+                      )}
+                    </motion.li>
+                   )
+                 })
+              })()}
             </ul>
           </motion.div>
         )}

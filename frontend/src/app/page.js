@@ -145,6 +145,7 @@ export default function LandingPage() {
                   state={demoPoll.state}
                   isOwner={false}
                   showVoteButton={true}
+                  interactive={false}
                 />
               </div>
             </motion.div>
@@ -169,6 +170,7 @@ export default function LandingPage() {
                   pollId={demoReceipt.pollId}
                   voteId={demoReceipt.voteId}
                   txHash={demoReceipt.txHash}
+                  interactive={false}
                 />
               </div>
             </motion.div>

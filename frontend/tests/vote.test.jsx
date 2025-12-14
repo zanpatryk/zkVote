@@ -43,7 +43,7 @@ describe('VoteOnPoll', () => {
      wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
      read.getPollById.mockReturnValue(new Promise(() => {}))
      render(<VoteOnPoll />)
-     expect(screen.getByText('Loading poll...')).toBeInTheDocument()
+     expect(screen.getByText('Loading ballot...')).toBeInTheDocument()
   })
 
   it('shows "Voting is not active" if poll is Created (state 0)', async () => {
@@ -57,9 +57,9 @@ describe('VoteOnPoll', () => {
     render(<VoteOnPoll />)
 
     await waitFor(() => {
-      expect(screen.getByText('Voting is not active')).toBeInTheDocument()
+      expect(screen.getByText('Voting Closed')).toBeInTheDocument()
       expect(screen.getByText('This poll has not started yet.')).toBeInTheDocument()
-      expect(screen.queryByText('Submit vote')).not.toBeInTheDocument()
+      expect(screen.queryByText('Cast Vote')).not.toBeInTheDocument()
     })
   })
 
@@ -74,9 +74,9 @@ describe('VoteOnPoll', () => {
     render(<VoteOnPoll />)
 
     await waitFor(() => {
-      expect(screen.getByText('Voting is not active')).toBeInTheDocument()
+      expect(screen.getByText('Voting Closed')).toBeInTheDocument()
       expect(screen.getByText('This poll has ended.')).toBeInTheDocument()
-      expect(screen.queryByText('Submit vote')).not.toBeInTheDocument()
+      expect(screen.queryByText('Cast Vote')).not.toBeInTheDocument()
     })
   })
 
@@ -92,8 +92,8 @@ describe('VoteOnPoll', () => {
     render(<VoteOnPoll />)
 
     await waitFor(() => {
-      expect(screen.getByText('Submit vote')).toBeInTheDocument()
-      expect(screen.queryByText('Voting is not active')).not.toBeInTheDocument()
+      expect(screen.getByText('Cast Vote')).toBeInTheDocument()
+      expect(screen.queryByText('Voting Closed')).not.toBeInTheDocument()
     })
   })
 })

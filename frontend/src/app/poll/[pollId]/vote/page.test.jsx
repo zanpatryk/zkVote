@@ -57,7 +57,7 @@ describe('VoteOnPoll Page', () => {
   it('renders loading state initially', () => {
     getPollById.mockReturnValue(new Promise(() => {}))
     render(<VoteOnPoll />)
-    expect(screen.getByText('Loading poll...')).toBeInTheDocument()
+    expect(screen.getByText('Loading ballot...')).toBeInTheDocument()
   })
 
   it('renders poll details and options when loaded', async () => {
@@ -86,11 +86,11 @@ describe('VoteOnPoll Page', () => {
     render(<VoteOnPoll />)
     
     await waitFor(() => {
-      expect(screen.getByText('Vote Confirmed')).toBeInTheDocument()
-      expect(screen.getByText('You have already cast your vote in this poll.')).toBeInTheDocument()
+      expect(screen.getByText('Vote Cast')).toBeInTheDocument()
+      expect(screen.getByText('You have already voted.')).toBeInTheDocument()
     })
-    expect(screen.queryByText('Submit vote')).not.toBeInTheDocument()
-    expect(screen.queryByText('View Transaction')).not.toBeInTheDocument() // No tx hash yet
+    expect(screen.queryByText('Cast Vote')).not.toBeInTheDocument()
+    expect(screen.queryByText('View Receipt')).not.toBeInTheDocument() // No tx hash yet
   })
   
   it('shows block explorer link if user has voted and tx hash is found', async () => {
@@ -100,8 +100,8 @@ describe('VoteOnPoll Page', () => {
     render(<VoteOnPoll />)
     
     await waitFor(() => {
-      expect(screen.getByText('Vote Confirmed')).toBeInTheDocument()
-      const link = screen.getByRole('link', { name: /View Transaction/i })
+      expect(screen.getByText('Vote Cast')).toBeInTheDocument()
+      const link = screen.getByRole('link', { name: /View Receipt/i })
       expect(link).toBeInTheDocument()
       expect(link).toHaveAttribute('href', 'https://sepolia.etherscan.io/tx/0xabcdef123456')
     })
@@ -123,7 +123,7 @@ describe('VoteOnPoll Page', () => {
     expect(radio).toBeChecked()
 
     // Submit
-    const submitBtn = screen.getByText('Submit vote')
+    const submitBtn = screen.getByText('Cast Vote')
     fireEvent.click(submitBtn)
 
     await waitFor(() => {
@@ -140,7 +140,7 @@ describe('VoteOnPoll Page', () => {
       expect(screen.getByText(mockPollData.title)).toBeInTheDocument()
     })
 
-    const submitBtn = screen.getByText('Submit vote')
+    const submitBtn = screen.getByText('Cast Vote')
     fireEvent.click(submitBtn)
 
     expect(toast.error).toHaveBeenCalledWith('Please connect your wallet first')
@@ -154,7 +154,7 @@ describe('VoteOnPoll Page', () => {
       expect(screen.getByText(mockPollData.title)).toBeInTheDocument()
     })
 
-    const submitBtn = screen.getByText('Submit vote')
+    const submitBtn = screen.getByText('Cast Vote')
     fireEvent.click(submitBtn)
 
     expect(toast.error).toHaveBeenCalledWith('Please select an option to vote for')
@@ -173,7 +173,7 @@ describe('VoteOnPoll Page', () => {
     const radio = screen.getAllByRole('radio')[0]
     fireEvent.click(radio)
     
-    const submitBtn = screen.getByText('Submit vote')
+    const submitBtn = screen.getByText('Cast Vote')
     fireEvent.click(submitBtn)
 
     await waitFor(() => {
@@ -181,7 +181,7 @@ describe('VoteOnPoll Page', () => {
     })
     
     // Should reset submitting state
-    expect(screen.getByText('Submit vote')).toBeInTheDocument()
+    expect(screen.getByText('Cast Vote')).toBeInTheDocument()
     expect(mockRouter.push).not.toHaveBeenCalled()
   })
 })

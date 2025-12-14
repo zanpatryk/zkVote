@@ -175,7 +175,7 @@ export default function MintNFTPage() {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring" }}
-              className="inline-flex items-center gap-2 text-green-700 font-bold text-lg border-2 border-green-700 bg-green-50 px-8 py-4 rounded-lg"
+              className="inline-flex items-center gap-2 text-black font-bold text-lg border-2 border-black bg-gray-100 px-8 py-4 rounded-lg"
             >
               <span>✓</span> NFT Badge Minted Successfully
             </motion.div>

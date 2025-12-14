@@ -19,7 +19,7 @@ const queryClient = new QueryClient({
 // Custom RainbowKit theme - Premium Monochrome
 const customTheme = {
   fonts: {
-    body: 'ui-sans-serif, system-ui, sans-serif',
+    body: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
   },
   radii: {
     connectButton: '8px',

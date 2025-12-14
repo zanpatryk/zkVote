@@ -56,13 +56,16 @@ export default function VoteCheckPage() {
   const isEnded = poll?.state === 2
 
   return (
-    <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 font-mono text-left">
+    <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 text-left">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex justify-between items-center mb-12"
       >
-        <h1 className="text-4xl font-black font-serif tracking-tight">Vote Details</h1>
+        <div>
+          <h1 className="text-4xl font-black font-serif tracking-tight mb-2">Vote Details</h1>
+          <p className="text-gray-500 text-lg">Verify your vote on the blockchain.</p>
+        </div>
         <button 
           onClick={() => router.push('/poll')}
           className="text-gray-500 hover:text-black whitespace-nowrap font-medium transition-colors"
@@ -103,7 +106,7 @@ export default function VoteCheckPage() {
               transition={{ delay: 0.4 }}
             >
               <p className="text-xs text-gray-500 uppercase">Poll ID</p>
-              <Link href={`/poll/${pollId}`} className="text-sm break-all hover:underline hover:text-black transition-colors block">
+              <Link href={`/poll/${pollId}`} className="text-sm break-all font-mono hover:underline hover:text-black transition-colors block">
                 {pollId}
               </Link>
             </motion.div>
@@ -114,7 +117,7 @@ export default function VoteCheckPage() {
               transition={{ delay: 0.5 }}
             >
               <p className="text-xs text-gray-500 uppercase">Vote ID</p>
-              <p className="text-sm break-all">{voteId}</p>
+              <p className="text-sm break-all font-mono">{voteId}</p>
             </motion.div>
 
             {txHash && (
@@ -128,7 +131,7 @@ export default function VoteCheckPage() {
                   href={`https://sepolia.etherscan.io/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-gray-600 hover:text-black break-all underline decoration-dotted underline-offset-2 transition-colors block"
+                  className="text-sm text-gray-600 font-mono hover:text-black break-all underline decoration-dotted underline-offset-2 transition-colors block"
                 >
                   {txHash}
                 </a>

@@ -56,7 +56,7 @@ export default function Navbar() {
                 <div key={link.href} className="relative">
                   <Link
                     href={link.href}
-                    className={`font-medium text-lg transition-colors px-1 py-1 ${
+                    className={`font-serif font-medium text-lg transition-colors px-1 py-1 ${
                       active ? 'text-black font-bold' : 'text-gray-500 hover:text-black'
                     }`}
                   >
@@ -113,7 +113,7 @@ export default function Navbar() {
                  <Link
                     key={link.href}
                     href={link.href}
-                    className={`text-xl font-medium transition ${
+                    className={`font-serif text-xl font-medium transition ${
                       link.isActive(pathname)
                         ? 'text-black font-bold'
                         : 'text-gray-600 hover:text-black'
