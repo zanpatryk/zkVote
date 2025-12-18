@@ -47,9 +47,6 @@ export default function VoteBallot({
           animate={{ opacity: 1 }}
           className="text-center py-8 border-2 border-black bg-gray-50"
         >
-          <div className="inline-block border-2 border-black rounded-full p-4 mb-4 bg-white">
-             <span className="text-4xl">🗳️</span>
-          </div>
           <h3 className="text-2xl font-black uppercase mb-2">Vote Cast</h3>
           <p className="text-sm text-gray-600 mb-6 uppercase tracking-wide">You have already voted.</p>
           

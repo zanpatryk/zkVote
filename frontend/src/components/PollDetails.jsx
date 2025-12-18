@@ -117,7 +117,6 @@ export default function PollDetails({ pollId, showResults = false }) {
                           ? 'bg-yellow-50 border-yellow-400 text-black' 
                           : 'bg-gray-50 border-gray-100 group-hover:bg-gray-100'
                       }`}>
-                        {isWinner && <span>🏆</span>}
                         {opt}
                       </span>
                       {showResults && results[idx] !== undefined && (

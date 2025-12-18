@@ -196,7 +196,6 @@ export default function WhitelistManager({ pollId, onSuccess }) {
                   disabled={isSubmitting}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
-                 <span className="text-3xl block mb-2">📂</span>
                  <p className="font-medium text-gray-700">Click to Select File</p>
               </div>
             </div>

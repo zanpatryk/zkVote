@@ -75,7 +75,6 @@ export default function NFTDashboard() {
           transition={{ duration: 0.5 }}
           className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-black"
         >
-            <div className="text-5xl mb-4 opacity-50">📭</div>
             <h1 className="text-2xl font-serif font-bold mb-2 text-gray-900">No Badges Yet</h1>
             <p className="text-gray-600">Participate in completed polls to earn your first NFT badge!</p>
         </motion.div>

@@ -45,7 +45,6 @@ export default function VoteChecker() {
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
         <div className="pointer-events-none">
-             <span className="block text-4xl mb-2">📄</span>
              <span className="text-lg font-medium text-gray-900 group-hover:underline">Click to upload receipt</span>
              <p className="text-sm text-gray-500 mt-1">or drag and drop</p>
         </div>

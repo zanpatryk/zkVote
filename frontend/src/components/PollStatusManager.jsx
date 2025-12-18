@@ -83,7 +83,6 @@ export default function PollStatusManager({ pollId, status, onStatusChange }) {
         )}
       </div>
       <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 flex gap-3">
-        <span className="text-xl">ℹ️</span>
         <p className="leading-relaxed">
            {status === 0 
           ? 'Once started, whitelisted users will be able to cast their votes. The poll cannot be modified after starting.'

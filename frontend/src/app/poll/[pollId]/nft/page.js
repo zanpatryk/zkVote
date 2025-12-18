@@ -145,14 +145,6 @@ export default function MintNFTPage() {
         className="bg-white p-10 rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-12 text-center"
       >
         <div className="mb-10 max-w-lg mx-auto">
-            <motion.div 
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", delay: 0.2, bounce: 0.5 }}
-              className="text-6xl mb-6 inline-block"
-            >
-              🏆
-            </motion.div>
             <h2 className="text-3xl font-serif font-bold mb-4 text-gray-900">Commemorative Result NFT</h2>
             <p className="text-lg text-gray-600 leading-relaxed">
                 This poll has ended. As a participant or creator, you can mint an NFT containing the final results as permanent proof of the outcome.
@@ -177,7 +169,7 @@ export default function MintNFTPage() {
               transition={{ type: "spring" }}
               className="inline-flex items-center gap-2 text-black font-bold text-lg border-2 border-black bg-gray-100 px-8 py-4 rounded-lg"
             >
-              <span>✓</span> NFT Badge Minted Successfully
+              NFT Badge Minted Successfully
             </motion.div>
           )}
         </div>
