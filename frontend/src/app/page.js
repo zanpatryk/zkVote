@@ -81,7 +81,7 @@ export default function LandingPage() {
   }, [address, isConnected])
 
   return (
-    <div className="flex flex-col items-center min-h-screen pt-32 px-6 pb-32">
+    <div className="flex flex-col items-center pt-32 px-6 pb-32">
       {/* Hero Section */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

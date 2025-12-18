@@ -5,21 +5,13 @@ import { motion } from 'framer-motion'
 
 export default function RestrictedPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
+    <div className="flex-grow flex flex-col items-center justify-center bg-white px-4">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="text-center max-w-lg"
       >
-        <motion.div
-           initial={{ scale: 0.8, rotate: -10 }}
-           animate={{ scale: 1, rotate: 0 }}
-           transition={{ type: "spring", stiffness: 200, damping: 15 }}
-           className="text-8xl mb-8 block"
-        >
-          🔒
-        </motion.div>
         
         <h1 className="text-6xl font-black font-serif text-black mb-6 tracking-tight">Restricted Access</h1>
         <p className="text-xl text-gray-600 mb-10 font-medium">
