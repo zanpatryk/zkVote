@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev:frontend": "bun --filter frontend dev",
-    "dev:chain": "anvil",
+    "dev:chain": "anvil --code-size-limit 50000",
     "dev:local": "bun scripts/start-local-env.js",
     "build": "bun run build:contracts && bun --filter frontend build",
     "build:contracts": "cd contracts && make build && cd .. && bun run generate:abis",
@@ -20,7 +20,7 @@
     "deploy:sepolia": "cd contracts && make deploy-sepolia",
     "benchmarking:local": "cd contracts && make benchmark-anvil",
     "generate:abis": "bun scripts/generate-abis.js",
-    "setup": "git submodule update --init --recursive && bun install",
+    "setup": "git submodule update --init --recursive && bun install && cd frontend && bun run download:circuits",
     "start": "bun --filter frontend start"
   }
 }
