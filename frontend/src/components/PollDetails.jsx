@@ -110,12 +110,12 @@ export default function PollDetails({ pollId, showResults = false }) {
                         hidden: { opacity: 0, x: -10 },
                         show: { opacity: 1, x: 0 }
                       }}
-                      className="flex justify-between items-center group"
+                      className="flex justify-between items-stretch group"
                     >
-                      <span className={`font-medium text-lg px-3 py-2 flex-grow rounded-l-lg border-y border-l transition flex items-center gap-2 ${
+                      <span className={`font-medium text-lg px-3 py-2 flex-grow rounded-l-lg border-y-2 border-l-2 transition flex items-center gap-2 ${
                         isWinner 
-                          ? 'bg-yellow-50 border-yellow-400 text-black' 
-                          : 'bg-gray-50 border-gray-100 group-hover:bg-gray-100'
+                          ? 'bg-black text-white border-black font-black' 
+                          : 'bg-gray-50 border-gray-100 text-gray-400'
                       }`}>
                         {opt}
                       </span>
@@ -124,10 +124,10 @@ export default function PollDetails({ pollId, showResults = false }) {
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.5 + (idx * 0.1) }}
-                          className={`font-mono font-bold px-4 py-2 rounded-r-lg border min-w-[3rem] text-center ${
+                          className={`font-mono font-bold px-4 py-2 rounded-r-lg border-2 min-w-[4rem] text-center text-lg flex items-center justify-center ${
                              isWinner
-                               ? 'bg-yellow-400 text-black border-yellow-400'
-                               : 'bg-black text-white border-black'
+                               ? 'bg-white text-black border-black'
+                               : 'bg-gray-100 text-gray-400 border-gray-100'
                           }`}
                         >
                           {Number(results[idx])}
