@@ -1,0 +1,53 @@
+[
+  {
+    "type": "function",
+    "name": "IS_SCRIPT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "run",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "vse",
+        "type": "address",
+        "internalType": "contract VotingSystemEngine"
+      },
+      {
+        "name": "pollManager",
+        "type": "address",
+        "internalType": "contract PollManager"
+      },
+      {
+        "name": "eligibilityModule",
+        "type": "address",
+        "internalType": "contract EligibilityModuleV0"
+      },
+      {
+        "name": "voteStorage",
+        "type": "address",
+        "internalType": "contract VoteStorageV0"
+      },
+      {
+        "name": "resultNFT",
+        "type": "address",
+        "internalType": "contract ResultNFT"
+      },
+      {
+        "name": "helper",
+        "type": "address",
+        "internalType": "contract HelperConfig"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  }
+]

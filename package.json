@@ -7,16 +7,20 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "bun --filter frontend dev",
-    "dev:chain": "anvil --block-time 2",
+    "dev:frontend": "bun --filter frontend dev",
+    "dev:chain": "anvil",
+    "dev:local": "bun scripts/start-local-env.js",
     "build": "bun run build:contracts && bun --filter frontend build",
-    "build:contracts": "cd contracts && forge build && cd .. && bun run generate:abis",
-    "test:contracts": "cd contracts && forge test -vvv",
-    "deploy:local": "cd contracts && forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --verify",
+    "build:contracts": "cd contracts && make build && cd .. && bun run generate:abis",
+    "test:contracts": "cd contracts && make test",
+    "test:ui": "bun --filter frontend test:ui",
+    "test:ui:coverage": "bun --filter frontend test:ui:coverage",
+    "test:ui:integration": "bun --filter frontend test:ui:integration",
+    "deploy:local": "cd contracts && make deploy-anvil",
+    "deploy:sepolia": "cd contracts && make deploy-sepolia",
+    "benchmarking:local": "cd contracts && make benchmark-anvil",
     "generate:abis": "bun scripts/generate-abis.js",
+    "setup": "git submodule update --init --recursive && bun install",
     "start": "bun --filter frontend start"
-  },
-  "devDependencies": {
-    "prettier": "latest"
   }
 }

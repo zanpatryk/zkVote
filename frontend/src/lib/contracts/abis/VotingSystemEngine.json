@@ -1,0 +1,349 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "castVote",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "optionIdx",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "voteId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createPoll",
+    "inputs": [
+      {
+        "name": "title",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "options",
+        "type": "string[]",
+        "internalType": "string[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "endPoll",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "i_owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "initialize",
+    "inputs": [
+      {
+        "name": "pollManager",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "eligibilityModule",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "voteStorage",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "resultNFTAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isWhitelisted",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "mintResultNFT",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "removeWhitelisted",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "s_eligibilityModule",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IEligibilityModule"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "s_initializationFlag",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "s_pollManager",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IPollManager"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "s_resultNFT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "s_voteStorage",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IVoteStorage"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "startPoll",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "whitelistUser",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "whitelistUsers",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "users",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__AddressNotWhitelisted",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__AlreadyInitialized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__EmptyTitle",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__InvalidAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__InvalidNumberOfOptions",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__InvalidOption",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__InvalidPollId",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__InvalidPollState",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__NFTContractNotSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__NotAuthorizedToMint",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__NotOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "VotingSystem__NotPollOwner",
+    "inputs": []
+  }
+]

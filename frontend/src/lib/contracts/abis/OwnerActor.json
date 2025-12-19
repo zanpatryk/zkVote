@@ -1,0 +1,135 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "vse_",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createPoll",
+    "inputs": [
+      {
+        "name": "title",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "options",
+        "type": "string[]",
+        "internalType": "string[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "endPoll",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "removeWhitelisted",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "startPoll",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "vse",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract VotingSystemEngine"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "whitelistUser",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "whitelistUsers",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "users",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  }
+]

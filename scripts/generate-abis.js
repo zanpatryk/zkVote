@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 const artifactsDir = path.join(import.meta.dir, "../contracts/out");
-const targetDir = path.join(import.meta.dir, "../frontend/src/contracts/abis");
+const targetDir = path.join(import.meta.dir, "../frontend/src/lib/contracts/abis");
 
 if (!fs.existsSync(targetDir)) {
   fs.mkdirSync(targetDir, { recursive: true });
