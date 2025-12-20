@@ -6,6 +6,7 @@ import { useSignMessage, useAccount } from 'wagmi'
 import { registerVoter, castVoteWithProof } from '@/lib/blockchain/engine/write'
 import { getGroupMembers, getMerkleTreeDepth } from '@/lib/blockchain/engine/read'
 import { toast } from 'react-hot-toast'
+import { toastTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 export function useSemaphore() {
   const { address } = useAccount()
@@ -102,13 +103,12 @@ export function useSemaphore() {
     } catch (error) {
       console.error('ZK Vote failed:', error)
       
-      // Specifically catch double voting error (custom error 0xaef0604b)
-      if (error.message?.includes('0xaef0604b')) {
-        toast.error('You have already cast a vote in this poll!', { id: 'vote' })
+      const message = toastTransactionError(error, 'Failed to cast ZK vote', { id: 'vote' })
+      
+      if (message.includes('already cast')) {
         return { alreadyVoted: true }
       }
       
-      toast.error(error.message || 'Failed to generate proof', { id: 'vote' })
       return null
     } finally {
       setIsCastingVote(false)

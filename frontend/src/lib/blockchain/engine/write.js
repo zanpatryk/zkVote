@@ -9,6 +9,7 @@ import PollManagerABI from '@/lib/contracts/abis/PollManager.json'
 import IVoteStorageABI from '@/lib/contracts/abis/IVoteStorage.json'
 import { decodeEventLog, encodeEventTopics, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { toast } from 'react-hot-toast'
+import { toastTransactionError } from '../utils/error-handler'
 
 export async function createPoll(pollDetails) {
   const { address } = getAccount(config)
@@ -68,7 +69,7 @@ export async function createPoll(pollDetails) {
     return pollId
   } catch (error) {
     console.error('createPoll failed:', error)
-    toast.error(error.shortMessage || 'Failed to create poll', { id: 'tx' })
+    toastTransactionError(error, 'Failed to create poll', { id: 'tx' })
     throw error
   }
 }
@@ -90,7 +91,7 @@ export async function whitelistUser(pollId, user) {
     toast.success(`User whitelisted successfully!`, { id: 'whitelist' })
   } catch (error) {
     console.error('whitelistUser failed:', error)
-    toast.error(error.shortMessage || 'Failed to whitelist user', { id: 'whitelist' })
+    toastTransactionError(error, 'Failed to whitelist user', { id: 'whitelist' })
     throw error
   }
 }
@@ -112,7 +113,7 @@ export async function whitelistUsers(pollId, users) {
     toast.success(`Users whitelisted successfully!`, { id: 'whitelist' })
   } catch (error) {
     console.error('whitelistUsers failed:', error)
-    toast.error(error.shortMessage || 'Failed to whitelist users', { id: 'whitelist' })
+    toastTransactionError(error, 'Failed to whitelist users', { id: 'whitelist' })
     throw error
   }
 }
@@ -161,7 +162,7 @@ export async function castVote(pollId, voteDetails) {
     return { voteId: null, txHash: receipt.transactionHash }
   } catch (error) {
     console.error('castVote failed:', error)
-    toast.error(error.shortMessage || 'Failed to submit vote', { id: 'vote' })
+    toastTransactionError(error, 'Failed to submit vote', { id: 'vote' })
     throw error
   }
 }
@@ -228,7 +229,7 @@ export async function castVoteWithProof(pollId, voteDetails, proofData) {
     }
   } catch (error) {
     console.error('castVoteWithProof failed:', error)
-    toast.error(error.shortMessage || 'Failed to submit secure vote', { id: 'vote' })
+    toastTransactionError(error, 'Failed to submit secure vote', { id: 'vote' })
     throw error
   }
 }
@@ -253,7 +254,7 @@ export async function startPoll(pollId) {
     toast.success('Poll started successfully!', { id: 'status' })
   } catch (error) {
     console.error('startPoll failed:', error)
-    toast.error(error.shortMessage || 'Failed to start poll', { id: 'status' })
+    toastTransactionError(error, 'Failed to start poll', { id: 'status' })
     throw error
   }
 }
@@ -278,7 +279,7 @@ export async function endPoll(pollId) {
     toast.success('Poll ended successfully!', { id: 'status' })
   } catch (error) {
     console.error('endPoll failed:', error)
-    toast.error(error.shortMessage || 'Failed to end poll', { id: 'status' })
+    toastTransactionError(error, 'Failed to end poll', { id: 'status' })
     throw error
   }
 }
@@ -303,7 +304,7 @@ export async function mintResultNFT(pollId) {
     toast.success('NFT minted successfully!', { id: 'nft' })
   } catch (error) {
     console.error('mintResultNFT failed:', error)
-    toast.error(error.shortMessage || 'Failed to mint NFT', { id: 'nft' })
+    toastTransactionError(error, 'Failed to mint NFT', { id: 'nft' })
     throw error
   }
 }
@@ -328,7 +329,7 @@ export async function registerVoter(pollId, identityCommitment) {
     toast.success('Identity registered successfully!', { id: 'register' })
   } catch (error) {
     console.error('registerVoter failed:', error)
-    toast.error(error.shortMessage || 'Failed to register identity', { id: 'register' })
+    toastTransactionError(error, 'Failed to register identity', { id: 'register' })
     throw error
   }
 }

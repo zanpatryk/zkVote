@@ -71,7 +71,7 @@ describe('LandingPage', () => {
     read.getUserNFTs.mockResolvedValue([])
     render(<LandingPage />)
     expect(screen.getByText('zkVote')).toBeInTheDocument()
-    expect(screen.getByText('Secure, transparent, and verifiable voting on the blockchain.')).toBeInTheDocument()
+    expect(screen.getByText('Privacy-preserving, transparent, and verifiable voting on the blockchain.')).toBeInTheDocument()
   })
 
   it('hides title when connected', () => {
