@@ -25,7 +25,26 @@ jest.mock('next/navigation', () => ({
 }))
 
 jest.mock('react-hot-toast', () => ({
-  toast: { error: jest.fn() },
+  toast: { error: jest.fn(), success: jest.fn(), loading: jest.fn() },
+}))
+
+jest.mock('@semaphore-protocol/identity', () => ({
+  Identity: jest.fn().mockImplementation(() => ({
+    commitment: { toString: () => '123' }
+  })),
+}))
+
+jest.mock('@/hooks/useSemaphore', () => ({
+  useSemaphore: jest.fn().mockReturnValue({
+    identity: null,
+    createIdentity: jest.fn(),
+    register: jest.fn(),
+    castVote: jest.fn(),
+    downloadIdentity: jest.fn(),
+    isLoadingIdentity: false,
+    isRegistering: false,
+    isCastingVote: false,
+  }),
 }))
 
 describe('VoteOnPoll', () => {
@@ -90,6 +109,20 @@ describe('VoteOnPoll', () => {
     read.hasVoted.mockResolvedValue(false)
     
     render(<VoteOnPoll />)
+
+    // First expect Identity Upload
+    await waitFor(() => {
+      expect(screen.getByText('Authenticate Identity')).toBeInTheDocument()
+    })
+
+    // Simulate file upload
+    const file = new File(['{"privateKey":"secret123","commitment":"789"}'], 'identity.json', { type: 'application/json' })
+    file.text = jest.fn().mockResolvedValue('{"privateKey":"secret123","commitment":"789"}')
+    const input = screen.getByLabelText('Upload Identity File')
+    
+    // We need fireEvent to trigger change
+    const { fireEvent } = require('@testing-library/react')
+    fireEvent.change(input, { target: { files: [file] } })
 
     await waitFor(() => {
       expect(screen.getByText('Cast Vote')).toBeInTheDocument()

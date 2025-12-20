@@ -30,7 +30,7 @@
       {
         "name": "eligibilityModule",
         "type": "address",
-        "internalType": "contract EligibilityModuleV0"
+        "internalType": "contract SemaphoreEligibilityModule"
       },
       {
         "name": "voteStorage",

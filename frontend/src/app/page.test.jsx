@@ -66,11 +66,19 @@ describe('LandingPage', () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
   })
 
-  it('renders title', () => {
+  it('renders title when not connected', () => {
+    wagmi.useAccount.mockReturnValue({ isConnected: false })
     read.getUserNFTs.mockResolvedValue([])
     render(<LandingPage />)
     expect(screen.getByText('zkVote')).toBeInTheDocument()
     expect(screen.getByText('Secure, transparent, and verifiable voting on the blockchain.')).toBeInTheDocument()
+  })
+
+  it('hides title when connected', () => {
+    wagmi.useAccount.mockReturnValue({ isConnected: true })
+    read.getUserNFTs.mockResolvedValue([])
+    render(<LandingPage />)
+    expect(screen.queryByText('zkVote')).not.toBeInTheDocument()
   })
 
   it('fetches and displays user badges when connected', async () => {

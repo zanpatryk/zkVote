@@ -14,6 +14,7 @@ export default function CreatePollPage() {
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [depth, setDepth] = useState(16)
   const [options, setOptions] = useState(['', ''])
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -38,11 +39,15 @@ export default function CreatePollPage() {
 
     setIsSubmitting(true)
 
+    // Enforce safe bounds just in case
+    const safeDepth = Math.max(16, Math.min(depth, 32))
+
     try {
       const pollId = await createPoll({
         title: title.trim(),
         description: description.trim(),
         options: cleanOptions,
+        merkleTreeDepth: safeDepth,
       })
       
       // Redirect to the new whitelist page for the created poll
@@ -107,6 +112,63 @@ export default function CreatePollPage() {
             className="w-full px-5 py-4 border-2 border-black rounded-lg text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] outline-none transition-all placeholder-gray-400 font-medium resize-none"
             placeholder="Provide context for voters..."
           />
+        </motion.div>
+
+        {/* Voter Capacity */}
+        <motion.div
+           initial={{ opacity: 0, x: -20 }}
+           animate={{ opacity: 1, x: 0 }}
+           transition={{ delay: 0.25 }}
+        >
+          <label className="block text-xl font-serif font-bold text-gray-900 mb-2">
+            Voter Capacity
+          </label>
+          <p className="text-sm text-gray-500 max-w-lg mb-4">
+            Larger capacity results in larger fees, verification time, and proof sizes.
+          </p>
+          
+          <div className="p-6 border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white">
+            <input
+              type="range"
+              min="16"
+              max="32"
+              step="1"
+              value={depth}
+              onChange={e => setDepth(parseInt(e.target.value))}
+              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black border-2 border-black"
+            />
+            <div className="mt-4 flex justify-between items-center">
+               <div className="flex gap-2">
+                 <button
+                   type="button"
+                   onClick={() => setDepth(d => Math.max(d - 1, 16))}
+                   className="w-10 h-10 flex items-center justify-center border-2 border-black bg-white hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+                   aria-label="Decrease depth"
+                 >
+                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                     <path d="M12 21l-12-18h24z" />
+                   </svg>
+                 </button>
+                 <button
+                   type="button"
+                   onClick={() => setDepth(d => Math.min(d + 1, 32))}
+                   className="w-10 h-10 flex items-center justify-center border-2 border-black bg-white hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+                   aria-label="Increase depth"
+                 >
+                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                     <path d="M12 3l12 18h-24z" />
+                   </svg>
+                 </button>
+               </div>
+
+               <div className="text-right">
+                 <p className="text-3xl font-black font-serif tabular-nums">
+                   {(Math.pow(2, depth)).toLocaleString()} 
+                 </p>
+                 <p className="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Max Participants</p>
+               </div>
+            </div>
+          </div>
         </motion.div>
 
         {/* Options */}

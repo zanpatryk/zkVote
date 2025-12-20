@@ -1,16 +1,5 @@
 [
   {
-    "type": "constructor",
-    "inputs": [
-      {
-        "name": "owner",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
     "type": "function",
     "name": "addWhitelisted",
     "inputs": [
@@ -60,19 +49,6 @@
   },
   {
     "type": "function",
-    "name": "i_owner",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "initPoll",
     "inputs": [
       {
@@ -93,7 +69,7 @@
         "internalType": "bool"
       }
     ],
-    "stateMutability": "pure"
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -108,6 +84,30 @@
         "name": "data",
         "type": "bytes",
         "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isRegistered",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [
@@ -145,6 +145,35 @@
   },
   {
     "type": "function",
+    "name": "registerIdentity",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "identityCommitment",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "removeWhitelisted",
     "inputs": [
       {
@@ -168,8 +197,42 @@
     "stateMutability": "nonpayable"
   },
   {
+    "type": "function",
+    "name": "verifyVote",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "vote",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "nullifierHash",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "proof",
+        "type": "uint256[8]",
+        "internalType": "uint256[8]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
     "type": "event",
-    "name": "EligibilityModuleV0__AddressRemovedFromWhitelist",
+    "name": "RemovedWhitelisted",
     "inputs": [
       {
         "name": "user",
@@ -188,7 +251,7 @@
   },
   {
     "type": "event",
-    "name": "EligibilityModuleV0__AddressWhitelisted",
+    "name": "Whitelisted",
     "inputs": [
       {
         "name": "user",
@@ -207,17 +270,27 @@
   },
   {
     "type": "error",
-    "name": "EligibilityModuleV0__AlreadyWhitelisted",
+    "name": "SemaphoreEligibilityModule__GroupAlreadyExists",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "EligibilityModuleV0__NotOwner",
+    "name": "SemaphoreEligibilityModule__GroupDoesNotExist",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "EligibilityModuleV0__NotWhitelisted",
+    "name": "SemaphoreEligibilityModule__NotOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SemaphoreEligibilityModule__UserAlreadyRegistered",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SemaphoreEligibilityModule__UserNotWhitelisted",
     "inputs": []
   }
 ]

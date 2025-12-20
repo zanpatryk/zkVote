@@ -7,7 +7,7 @@ import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { votingSystemContract } from '@/lib/contracts/VotingSystemEngine'
 import PollManagerABI from '@/lib/contracts/abis/PollManager.json'
 import IVoteStorageABI from '@/lib/contracts/abis/IVoteStorage.json'
-import { decodeEventLog, encodeEventTopics } from 'viem'
+import { decodeEventLog, encodeEventTopics, encodeAbiParameters, parseAbiParameters } from 'viem'
 import { toast } from 'react-hot-toast'
 
 export async function createPoll(pollDetails) {
@@ -17,13 +17,21 @@ export async function createPoll(pollDetails) {
   try {
     toast.loading('Creating poll...', { id: 'tx' })
 
-    const { title, description, options } = pollDetails
+    const { title, description, options, merkleTreeDepth } = pollDetails
+    
+    // Default to depth 20 if not provided, ensuring valid ZK tree depth
+    const depth = merkleTreeDepth ? BigInt(merkleTreeDepth) : BigInt(20)
+    
+    const eligibilityConfig = encodeAbiParameters(
+      parseAbiParameters('uint256'),
+      [depth]
+    )
 
     const hash = await writeContract(config, {
       address: votingSystemContract.address,
       abi: votingSystemContract.abi,
       functionName: 'createPoll',
-      args: [title, description || '', options],
+      args: [title, description || '', options, eligibilityConfig],
     })
 
     toast.loading('Waiting for confirmation...', { id: 'tx' })
@@ -34,6 +42,12 @@ export async function createPoll(pollDetails) {
       abi: PollManagerABI,
       eventName: 'PollCreated',
     })
+
+
+
+    if (receipt.status === 'reverted' || receipt.status === 0) {
+        throw new Error('Transaction REVERTED on chain.')
+    }
 
     const pollCreatedLog = receipt.logs.find(log => log.topics[0] === pollCreatedTopic[0])
 
@@ -152,6 +166,63 @@ export async function castVote(pollId, voteDetails) {
   }
 }
 
+export async function castVoteWithProof(pollId, voteDetails, proofData) {
+  const { address } = getAccount(config)
+  if (!address) throw new Error('Wallet not connected')
+
+  try {
+    toast.loading('Verifying proof & Casting vote...', { id: 'vote' })
+
+    const { optionIndex } = voteDetails
+    const { nullifier, points: proof } = proofData
+
+    // proof is likely an array of strings/bigints from Semaphore
+    // Contract expects uint256[8]
+    const formattedProof = proof.map(p => BigInt(p))
+
+    const hash = await writeContract(config, {
+      address: votingSystemContract.address,
+      abi: votingSystemContract.abi,
+      functionName: 'castVoteWithProof',
+      args: [
+          BigInt(pollId), 
+          BigInt(optionIndex), 
+          BigInt(nullifier), 
+          formattedProof
+      ],
+    })
+
+    toast.loading('Waiting for confirmation...', { id: 'vote' })
+    const receipt = await waitForTransactionReceipt(config, { hash })
+
+    toast.success('Secure ZK Vote submitted!', { id: 'vote' })
+
+    const voteCastedTopic = encodeEventTopics({
+      abi: IVoteStorageABI,
+      eventName: 'VoteCasted',
+    })
+
+    const voteCastedLog = receipt.logs.find(log => log.topics[0] === voteCastedTopic[0])
+
+    if (voteCastedLog) {
+       const decodedEvent = decodeEventLog({
+        abi: IVoteStorageABI,
+        eventName: 'VoteCasted',
+        data: voteCastedLog.data,
+        topics: voteCastedLog.topics,
+      })
+      const voteId = decodedEvent.args.voteId.toString()
+      return { voteId, txHash: receipt.transactionHash }
+    }
+
+    return { voteId: null, txHash: receipt.transactionHash }
+  } catch (error) {
+    console.error('castVoteWithProof failed:', error)
+    toast.error(error.shortMessage || 'Failed to submit secure vote', { id: 'vote' })
+    throw error
+  }
+}
+
 export async function startPoll(pollId) {
   const { address } = getAccount(config)
   if (!address) throw new Error('Wallet not connected')
@@ -223,6 +294,31 @@ export async function mintResultNFT(pollId) {
   } catch (error) {
     console.error('mintResultNFT failed:', error)
     toast.error(error.shortMessage || 'Failed to mint NFT', { id: 'nft' })
+    throw error
+  }
+}
+
+export async function registerVoter(pollId, identityCommitment) {
+  const { address } = getAccount(config)
+  if (!address) throw new Error('Wallet not connected')
+
+  try {
+    toast.loading('Registering identity...', { id: 'register' })
+
+    const hash = await writeContract(config, {
+      address: votingSystemContract.address,
+      abi: votingSystemContract.abi,
+      functionName: 'registerVoter',
+      args: [BigInt(pollId), BigInt(identityCommitment)],
+    })
+
+    toast.loading('Waiting for confirmation...', { id: 'register' })
+    await waitForTransactionReceipt(config, { hash })
+
+    toast.success('Identity registered successfully!', { id: 'register' })
+  } catch (error) {
+    console.error('registerVoter failed:', error)
+    toast.error(error.shortMessage || 'Failed to register identity', { id: 'register' })
     throw error
   }
 }

@@ -83,25 +83,25 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col items-center pt-32 px-6 pb-32">
       {/* Hero Section */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="text-center mb-24"
-      >
-        <div className="inline-block mb-6 px-4 py-2 border-2 border-black text-sm font-bold uppercase tracking-widest">
-          Decentralized Governance
-        </div>
-        <h1 className="text-8xl md:text-9xl font-black font-serif mb-8 tracking-tight">zkVote</h1>
-        <p className="text-2xl md:text-3xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed">
-          Secure, transparent, and verifiable voting on the blockchain.
-        </p>
-        {!isConnected && (
+      {!isConnected && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-24"
+        >
+          <div className="inline-block mb-6 px-4 py-2 border-2 border-black text-sm font-bold uppercase tracking-widest">
+            Decentralized Governance
+          </div>
+          <h1 className="text-8xl md:text-9xl font-black font-serif mb-8 tracking-tight">zkVote</h1>
+          <p className="text-2xl md:text-3xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed">
+            Secure, transparent, and verifiable voting on the blockchain.
+          </p>
           <p className="text-lg text-gray-500 mt-8 max-w-xl mx-auto">
             Connect your wallet to create polls, cast votes, and earn commemorative NFT badges.
           </p>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
 
       {!isConnected && (
         <>
