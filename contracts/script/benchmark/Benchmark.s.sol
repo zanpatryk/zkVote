@@ -33,7 +33,7 @@ contract OwnerActor {
         external
         returns (uint256)
     {
-        return vse.createPoll(title, description, options);
+        return vse.createPoll(title, description, options, "");
     }
 
     function startPoll(uint256 pollId) external {

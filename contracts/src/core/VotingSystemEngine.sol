@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {IPollManager} from "../interfaces/IPollManager.sol";
 import {IEligibilityModule} from "../interfaces/IEligibilityModule.sol";
+import {ISemaphoreEligibilityModule} from "../interfaces/ISemaphoreEligibilityModule.sol";
 import {IVoteStorage} from "../interfaces/IVoteStorage.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
@@ -84,7 +85,7 @@ contract VotingSystemEngine {
         s_initializationFlag = true;
     }
 
-    function createPoll(string calldata title, string calldata description, string[] calldata options)
+    function createPoll(string calldata title, string calldata description, string[] calldata options, bytes calldata eligibilityConfig)
         external
         returns (uint256 pollId)
     {
@@ -97,6 +98,8 @@ contract VotingSystemEngine {
         }
 
         pollId = s_pollManager.createPoll(title, description, options, msg.sender);
+        
+        s_eligibilityModule.initPoll(pollId, eligibilityConfig);
 
         return pollId;
     }
@@ -149,6 +152,36 @@ contract VotingSystemEngine {
         if (optionIdx >= optionCount) {
             revert VotingSystem__InvalidOption();
         }
+
+        voteId = s_voteStorage.castVote(pollId, voter, abi.encode(optionIdx));
+    }
+    
+    function registerVoter(uint256 pollId, uint256 identityCommitment)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 0)
+    {
+        if (!s_eligibilityModule.isWhitelisted(pollId, msg.sender)) {
+            revert VotingSystem__AddressNotWhitelisted(msg.sender);
+        }
+        
+        ISemaphoreEligibilityModule(address(s_eligibilityModule)).registerIdentity(pollId, identityCommitment, msg.sender);
+    }
+
+    function castVoteWithProof(uint256 pollId, uint256 optionIdx, uint256 nullifierHash, uint256[8] calldata proof)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 1)
+        returns (uint256 voteId)
+    {
+        uint256 optionCount = s_pollManager.getPollOptionCount(pollId);
+        if (optionIdx >= optionCount) {
+            revert VotingSystem__InvalidOption();
+        }
+
+        ISemaphoreEligibilityModule(address(s_eligibilityModule)).verifyVote(pollId, optionIdx, nullifierHash, proof);
+
+        address voter = address(uint160(nullifierHash));
 
         voteId = s_voteStorage.castVote(pollId, voter, abi.encode(optionIdx));
     }

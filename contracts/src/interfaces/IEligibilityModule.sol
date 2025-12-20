@@ -17,4 +17,5 @@ interface IEligibilityModule {
     function addWhitelistedBatch(uint256 pollId, address[] calldata users) external returns (bool);
     function removeWhitelisted(uint256 pollId, address user) external returns (bool);
     function isEligibleToVote(uint256 pollId, bytes calldata data) external view returns (bool);
+    function initPoll(uint256 pollId, bytes calldata config) external returns (bool);
 }
