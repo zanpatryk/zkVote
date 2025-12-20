@@ -134,7 +134,6 @@ export function useSemaphore() {
       const voterAddress = getAddress(`0x${(BigInt(manualNullifierHash) & ((1n << 160n) - 1n)).toString(16).padStart(40, '0')}`)
       
       console.log('Peeking vote status for derived address:', voterAddress)
-      const voted = await hasVoted(pollId, voterAddress)
       console.log('On-chain result for peek:', voted)
       
       return { voted, voterAddress }

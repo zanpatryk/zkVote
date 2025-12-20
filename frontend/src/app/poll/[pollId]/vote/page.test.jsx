@@ -125,7 +125,12 @@ describe('VoteOnPoll Page', () => {
   })
 
   it('handles vote submission with loaded identity', async () => {
-    mockCastVote.mockResolvedValue({ voteId: 'v1', txHash: '0xabc' })
+    mockCastVote.mockResolvedValue({ 
+      voteId: 'v1', 
+      txHash: '0xabc', 
+      nullifier: 'n123', 
+      proof: ['p1', 'p2'] 
+    })
     render(<VoteOnPoll />)
     
     // Upload Identity
@@ -148,7 +153,8 @@ describe('VoteOnPoll Page', () => {
       expect(mockCastVote).toHaveBeenCalledWith(mockPollId, 0, expect.objectContaining({ privateKey: 'secret' }))
     })
     
-    expect(mockRouter.push).toHaveBeenCalledWith(`/poll/${mockPollId}/vote/receipt/v1?txHash=0xabc`)
+    const expectedProof = encodeURIComponent(JSON.stringify(['p1', 'p2']))
+    expect(mockRouter.push).toHaveBeenCalledWith(`/poll/${mockPollId}/vote/receipt/v1?txHash=0xabc&nullifier=n123&proof=${expectedProof}`)
   })
 
   it('shows already voted view immediately if user has voted', async () => {

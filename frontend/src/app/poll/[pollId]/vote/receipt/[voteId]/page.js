@@ -8,9 +8,17 @@ export default function VoteReceiptPage() {
   const { pollId, voteId } = useParams()
   const searchParams = useSearchParams()
   const txHash = searchParams.get('txHash')
+  const nullifier = searchParams.get('nullifier')
+  const proof = searchParams.get('proof')
 
   const handleDownload = () => {
-    const content = `zkVote Receipt\nPoll ID: ${BigInt(pollId).toString(16)}\nVote ID: ${BigInt(voteId).toString(16)}\nTx Hash: ${txHash || 'Not available'}\n`
+    let content = `zkVote Receipt\n`
+    content += `Poll ID: ${pollId}\n`
+    content += `Vote ID: ${voteId}\n`
+    content += `Tx Hash: ${txHash || 'Not available'}\n`
+    if (nullifier) content += `Nullifier Hash: ${nullifier}\n`
+    if (proof) content += `ZK Proof: ${proof}\n`
+    
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
 
@@ -44,7 +52,9 @@ export default function VoteReceiptPage() {
         <ReceiptCard 
           pollId={pollId} 
           voteId={voteId} 
-          txHash={txHash} 
+          txHash={txHash}
+          nullifier={nullifier}
+          proof={proof}
         />
       </motion.div>
 

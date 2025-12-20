@@ -15,6 +15,8 @@ export default function VoteChecker() {
     const pollMatch = text.match(/Poll ID:\s*((?:0x)?[0-9a-fA-F]+)/i)
     const voteMatch = text.match(/Vote ID:\s*((?:0x)?[0-9a-fA-F]+)/i)
     const txMatch = text.match(/Tx Hash:\s*((?:0x)?[0-9a-fA-F]+)/i)
+    const nullifierMatch = text.match(/Nullifier Hash:\s*([0-9a-fA-F]+)/i)
+    const proofMatch = text.match(/ZK Proof:\s*(\[.*\])/i)
 
     if (!pollMatch || !voteMatch) {
       alert('Could not read poll and vote IDs from this receipt file.')
@@ -24,8 +26,16 @@ export default function VoteChecker() {
     const pollId = pollMatch[1]
     const voteId = voteMatch[1]
     const txHash = txMatch ? txMatch[1] : null
+    const nullifier = nullifierMatch ? nullifierMatch[1] : ''
+    const proof = proofMatch ? encodeURIComponent(proofMatch[1]) : ''
 
-    const url = `/poll/${pollId}/vote/check/${voteId}${txHash ? `?txHash=${txHash}` : ''}`
+    const params = new URLSearchParams({
+      ...(txHash && { txHash }),
+      ...(nullifier && { nullifier }),
+      ...(proof && { proof })
+    }).toString()
+
+    const url = `/poll/${pollId}/vote/check/${voteId}${params ? `?${params}` : ''}`
     router.push(url)
   }
 

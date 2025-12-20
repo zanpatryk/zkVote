@@ -126,8 +126,9 @@ export default function VoteOnPoll() {
       }
 
       if (result) {
-        const { voteId, txHash } = result
-        router.push(`/poll/${pollId}/vote/receipt/${voteId}?txHash=${txHash}`)
+        const { voteId, txHash, nullifier, proof } = result
+        const proofStr = proof ? encodeURIComponent(JSON.stringify(proof)) : ''
+        router.push(`/poll/${pollId}/vote/receipt/${voteId}?txHash=${txHash}&nullifier=${nullifier || ''}&proof=${proofStr}`)
       }
     } catch (err) {
        console.error('Vote submission error:', err)

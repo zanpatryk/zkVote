@@ -212,10 +212,20 @@ export async function castVoteWithProof(pollId, voteDetails, proofData) {
         topics: voteCastedLog.topics,
       })
       const voteId = decodedEvent.args.voteId.toString()
-      return { voteId, txHash: receipt.transactionHash }
+      return { 
+        voteId, 
+        txHash: receipt.transactionHash,
+        nullifier,
+        proof: formattedProof.map(p => p.toString()) // Return as strings for easier transport
+      }
     }
 
-    return { voteId: null, txHash: receipt.transactionHash }
+    return { 
+      voteId: null, 
+      txHash: receipt.transactionHash,
+      nullifier,
+      proof: formattedProof.map(p => p.toString())
+    }
   } catch (error) {
     console.error('castVoteWithProof failed:', error)
     toast.error(error.shortMessage || 'Failed to submit secure vote', { id: 'vote' })
