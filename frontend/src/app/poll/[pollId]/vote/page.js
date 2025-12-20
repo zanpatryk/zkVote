@@ -15,20 +15,23 @@ export default function VoteOnPoll() {
   const { pollId } = useParams()
   const router = useRouter()
   const { address, isConnected } = useAccount()
-  const { castVote, isCastingVote } = useSemaphore()
+  const { castVote, isCastingVote, loadIdentityFromStorage, hasStoredIdentity } = useSemaphore()
 
   const [poll, setPoll] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedIndex, setSelectedIndex] = useState(null)
   const [alreadyVoted, setAlreadyVoted] = useState(false)
   const [voteTxHash, setVoteTxHash] = useState(null)
+  const [hasStored, setHasStored] = useState(false)
   
   // ZK Identity State
   const [loadedIdentity, setLoadedIdentity] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
+    setHasStored(hasStoredIdentity(pollId))
+    
+    let cancelled = false;
 
     async function loadData() {
       try {
@@ -64,6 +67,16 @@ export default function VoteOnPoll() {
       cancelled = true
     }
   }, [pollId, isConnected, address])
+
+  async function handleUseStored() {
+    const id = loadIdentityFromStorage(pollId)
+    if (id) {
+      setLoadedIdentity(id)
+      toast.success('Identity loaded from browser storage!')
+    } else {
+      toast.error('Failed to load saved identity')
+    }
+  }
 
   async function handleFileUpload(event) {
     const file = event.target.files[0]
@@ -188,25 +201,39 @@ export default function VoteOnPoll() {
                     To cast a vote, you must upload the <strong>Identity File</strong> you downloaded during registration.
                   </p>
                   
-                  <div className="relative">
-                    <input 
-                      type="file" 
-                      accept=".json"
-                      onChange={handleFileUpload}
-                      disabled={isUploading}
-                      className="hidden"
-                      id="identity-upload"
-                    />
-                    <label 
-                      htmlFor="identity-upload"
-                      className="cursor-pointer inline-flex items-center gap-2 bg-black text-white px-8 py-4 rounded-lg font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
-                    >
-                      {isUploading ? 'Verifying...' : 'Upload Identity File'}
-                    </label>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-4">
-                    Your private key never leaves your browser.
-                  </p>
+                   <div className="flex flex-col gap-4">
+                      {hasStored && (
+                        <button 
+                          onClick={handleUseStored}
+                          className="inline-flex items-center justify-center gap-2 bg-black text-white px-8 py-4 rounded-lg font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all w-full"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                          </svg>
+                          Use Saved Identity
+                        </button>
+                      )}
+
+                      <div className="relative">
+                        <input 
+                          type="file" 
+                          accept=".json"
+                          onChange={handleFileUpload}
+                          disabled={isUploading}
+                          className="hidden"
+                          id="identity-upload"
+                        />
+                        <label 
+                          htmlFor="identity-upload"
+                          className={`cursor-pointer inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold transition-all w-full ${hasStored ? 'bg-white border-2 border-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]' : 'bg-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]'} hover:-translate-y-0.5`}
+                        >
+                          {isUploading ? 'Verifying...' : hasStored ? 'Upload New Identity File' : 'Upload Identity File'}
+                        </label>
+                      </div>
+                   </div>
+                   <p className="text-xs text-gray-400 mt-4">
+                     Your private key never leaves your browser.
+                   </p>
                </div>
             )}
 

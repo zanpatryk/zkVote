@@ -33,7 +33,6 @@ export default function Navbar() {
   const navLinks = [
     { href: '/poll', label: 'Poll', isActive: (p) => p.startsWith('/poll') },
     { href: '/vote', label: 'Vote', isActive: (p) => p === '/vote' },
-    { href: '/verify', label: 'Verify', isActive: (p) => p === '/verify' },
   ]
 
   return (

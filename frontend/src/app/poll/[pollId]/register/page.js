@@ -15,7 +15,7 @@ export default function RegisterPage({ params }) {
   const router = useRouter()
   const { pollId } = use(params)
   const { address, isConnected } = useAccount()
-  const { createIdentity, register, downloadIdentity, isLoadingIdentity, isRegistering } = useSemaphore()
+  const { createIdentity, register, downloadIdentity, saveIdentityToStorage, isLoadingIdentity, isRegistering } = useSemaphore()
   
   const [poll, setPoll] = useState(null)
   const [loadingPoll, setLoadingPoll] = useState(true)
@@ -65,8 +65,9 @@ export default function RegisterPage({ params }) {
         await register(pollId, identity)
         refetchRegistration()
         
+        saveIdentityToStorage(identity, pollId)
         setRegisteredIdentity(identity) // Save for manual download
-        toast.success('Successfully registered! Please safely store your identity.')
+        toast.success('Successfully registered! Identity saved to browser.')
       }
     } catch (err) {
       console.error('Registration failed:', err)

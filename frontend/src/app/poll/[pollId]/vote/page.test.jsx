@@ -76,6 +76,8 @@ describe('VoteOnPoll Page', () => {
     useAccount.mockReturnValue({ address: mockAddress, isConnected: true })
     useSemaphore.mockReturnValue({
       castVote: mockCastVote,
+      hasStoredIdentity: jest.fn().mockReturnValue(false),
+      loadIdentityFromStorage: jest.fn().mockReturnValue(null),
       isCastingVote: false
     })
     getPollById.mockResolvedValue(mockPollData)

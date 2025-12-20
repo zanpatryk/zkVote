@@ -133,6 +133,14 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
           </InteractiveLink>
         ) : showVoteButton ? (
           <>
+            {(state === 1 || state === 2) && (
+              <InteractiveLink href={`/poll/${pollId}/verify`}>
+                <span className="text-black font-semibold hover:underline decoration-2 underline-offset-4">
+                  Verify Vote
+                </span>
+              </InteractiveLink>
+            )}
+
             {state === 0 && canRegister && (
               <InteractiveLink href={`/poll/${pollId}/register`}>
                 <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">

@@ -170,12 +170,58 @@ export function useSemaphore() {
     }
   }, [])
 
+  // Storage Persistence Helpers
+  const saveIdentityToStorage = useCallback((identity, pollId) => {
+    if (!identity || !pollId) return
+    try {
+      const data = JSON.stringify(identity, (key, value) => 
+        typeof value === 'bigint' ? value.toString() : value
+      )
+      localStorage.setItem(`zk-identity-${pollId}`, data)
+    } catch (error) {
+      console.error('Failed to save identity to storage:', error)
+    }
+  }, [])
+
+  const loadIdentityFromStorage = useCallback((pollId) => {
+    if (!pollId) return null
+    try {
+      const data = localStorage.getItem(`zk-identity-${pollId}`)
+      if (!data) return null
+      
+      // Since Identity constructor expects a private key or a serialized state, 
+      // but the '@semaphore-protocol/identity' Identity class can be reconstructed 
+      // from its private key. Our serialization saved the whole object.
+      // We need the private key to truly "reconstruct" it with methods.
+      const parsed = JSON.parse(data)
+      const privateKey = parsed._privateKey || parsed.privateKey || parsed.secret
+      
+      if (!privateKey) {
+        console.warn('Stored identity missing private key')
+        return null
+      }
+      
+      return new Identity(privateKey)
+    } catch (error) {
+      console.error('Failed to load identity from storage:', error)
+      return null
+    }
+  }, [])
+
+  const hasStoredIdentity = useCallback((pollId) => {
+    if (typeof window === 'undefined') return false
+    return !!localStorage.getItem(`zk-identity-${pollId}`)
+  }, [])
+
   return {
     identity,
     createIdentity,
     register,
     castVote,
     downloadIdentity,
+    saveIdentityToStorage,
+    loadIdentityFromStorage,
+    hasStoredIdentity,
     isLoadingIdentity,
     isRegistering,
     isCastingVote

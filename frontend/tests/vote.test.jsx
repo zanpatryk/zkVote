@@ -41,6 +41,8 @@ jest.mock('@/hooks/useSemaphore', () => ({
     register: jest.fn(),
     castVote: jest.fn(),
     downloadIdentity: jest.fn(),
+    hasStoredIdentity: jest.fn().mockReturnValue(false),
+    loadIdentityFromStorage: jest.fn().mockReturnValue(null),
     isLoadingIdentity: false,
     isRegistering: false,
     isCastingVote: false,

@@ -75,6 +75,7 @@ describe('RegisterPage', () => {
       createIdentity: mockCreateIdentity,
       register: mockRegister,
       downloadIdentity: mockDownloadIdentity,
+      saveIdentityToStorage: jest.fn(),
       isLoadingIdentity: false,
       isRegistering: false,
     })
@@ -163,7 +164,7 @@ describe('RegisterPage', () => {
       expect(mockRegister).toHaveBeenCalledWith(mockPollId, mockIdentity)
       // Auto-download should NOT happen yet
       expect(mockDownloadIdentity).not.toHaveBeenCalled()
-      expect(toast.success).toHaveBeenCalledWith('Successfully registered! Please safely store your identity.')
+      expect(toast.success).toHaveBeenCalledWith('Successfully registered! Identity saved to browser.')
     })
 
     // Verify Success UI appears
