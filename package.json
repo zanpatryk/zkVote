@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "workspaces": [
     "contracts",
-    "frontend"
+    "frontend",
+    "circuits"
   ],
   "scripts": {
     "dev:frontend": "bun --filter frontend dev",
@@ -12,7 +13,10 @@
     "dev:local": "bun scripts/start-local-env.js",
     "build": "bun run build:contracts && bun --filter frontend build",
     "build:contracts": "cd contracts && make build && cd .. && bun run generate:abis",
+    "build:circuits": "bun --filter circuits build",
     "test:contracts": "cd contracts && make test",
+    "test:circuits": "bun --filter circuits test",
+    "test:circuits:integration": "bun --filter circuits test:integration",
     "test:ui": "bun --filter frontend test:ui",
     "test:ui:coverage": "bun --filter frontend test:ui:coverage",
     "test:ui:integration": "bun --filter frontend test:ui:integration",

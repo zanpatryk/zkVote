@@ -4,6 +4,8 @@ node_modules
 # Build outputs
 out/
 cache/
+circuits/build/
+circuits/test/output/
 
 # Environment variables
 .env*
