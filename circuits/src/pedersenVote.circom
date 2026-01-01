@@ -52,7 +52,7 @@ template PedersenCommitment() {
     out[1] <== add.yout;
 }
 
-template SecretVote(N) {
+template PedersenVote(N) {
     // === Private inputs ===
     signal input vote[N];          // v_i in {0,1}
     signal input blinder[N];       // r_i random scalars
@@ -85,4 +85,4 @@ template SecretVote(N) {
     }
 }
 
-component main {public [commitments]} = SecretVote(8);
+component main {public [commitments]} = PedersenVote(8);

@@ -23,12 +23,11 @@ async function integrationTest() {
         F.e("2626589144620713026669568689430873010625803728049924121243784502389097019475")
     ];
 
-    const voters = [];
-
-    const buildDir = path.join(__dirname, "../build/secretVote");
+    const voters = []; // Paths
+    const buildDir = path.join(__dirname, "../../build/pedersenVote");
     const setupDir = path.join(buildDir, "setup");
-    const wasmPath = path.join(buildDir, "secretVote_js/secretVote.wasm");
-    const zkeyPath = path.join(setupDir, "secretVote_final.zkey");
+    const wasmPath = path.join(buildDir, "pedersenVote_js/pedersenVote.wasm");
+    const zkeyPath = path.join(setupDir, "pedersenVote_final.zkey");
     const vkeyPath = path.join(setupDir, "verification_key.json");
 
     if (!fs.existsSync(zkeyPath)) {

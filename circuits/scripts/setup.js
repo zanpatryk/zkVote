@@ -3,7 +3,14 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
-const CIRCUIT_NAME = "secretVote";
+if (process.argv.length < 3) {
+    console.log("Usage: node scripts/setup.js <circuit_name>");
+    process.exit(1);
+}
+
+const CIRCUIT_NAME = process.argv[2];
+console.log(`Using circuit: ${CIRCUIT_NAME}`);
+
 const BUILD_DIR = path.join(__dirname, `../build/${CIRCUIT_NAME}`);
 const SETUP_DIR = path.join(BUILD_DIR, "setup");
 // Use pot17 for circuits with > 65536 constraints

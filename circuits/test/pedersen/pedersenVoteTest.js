@@ -34,10 +34,10 @@ describe("SecretVote Circuit (Pedersen Commitment)", function () {
             F.e("2626589144620713026669568689430873010625803728049924121243784502389097019475")
         ];
 
-        const buildDir = path.join(__dirname, "../build/secretVote");
+        const buildDir = path.join(__dirname, "../../build/pedersenVote");
         const setupDir = path.join(buildDir, "setup");
-        wasmPath = path.join(buildDir, "secretVote_js/secretVote.wasm");
-        zkeyPath = path.join(setupDir, "secretVote_final.zkey");
+        wasmPath = path.join(buildDir, "pedersenVote_js/pedersenVote.wasm");
+        zkeyPath = path.join(setupDir, "pedersenVote_final.zkey");
         vkeyPath = path.join(setupDir, "verification_key.json");
 
         if (!fs.existsSync(zkeyPath)) {

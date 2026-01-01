@@ -3,10 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "for f in *.circom; do mkdir -p build/${f%.circom} && circom $f --r1cs --wasm --sym -l ../node_modules -o build/${f%.circom}; done",
-    "setup": "node scripts/setup.js",
-    "test": "mocha test/secretVoteTest.js --timeout 120000 --exit",
-    "test:integration": "node test/integrationTest.js"
+    "build": "for f in src/*.circom; do filename=$(basename $f .circom); mkdir -p build/$filename && circom $f --r1cs --wasm --sym -l ../node_modules -o build/$filename; done",
+    "setup:pedersen": "node scripts/setup.js pedersenVote",
+    "test": "mocha test/pedersen/pedersenVoteTest.js --timeout 120000 --exit",
+    "test:integration": "node test/pedersen/integrationTest.js"
   },
   "dependencies": {
     "circomlib": "^2.0.5",
