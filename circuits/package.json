@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "for f in src/*.circom; do filename=$(basename $f .circom); mkdir -p build/$filename && circom $f --r1cs --wasm --sym -l ../node_modules -o build/$filename; done",
+    "build": "node scripts/build.js",
     "setup:pedersen": "node scripts/setup.js pedersenVote",
     "test": "mocha test/pedersen/pedersenVoteTest.js --timeout 120000 --exit",
     "test:integration": "node test/pedersen/integrationTest.js"
