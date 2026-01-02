@@ -73,6 +73,30 @@
   },
   {
     "type": "function",
+    "name": "initPoll",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "config",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
     "name": "isEligibleToVote",
     "inputs": [
       {

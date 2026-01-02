@@ -46,7 +46,7 @@ describe('WhitelistManager', () => {
   })
 
   it('validates address format', async () => {
-    render(<WhitelistManager pollId="123" />)
+    render(<WhitelistManager pollId="123" pollState={0} />)
     const input = screen.getByPlaceholderText('0x...')
     const button = screen.getByText('Whitelist Address')
 
@@ -59,7 +59,7 @@ describe('WhitelistManager', () => {
 
   it('prevents adding already whitelisted user', async () => {
     read.isUserWhitelisted.mockResolvedValueOnce(true)
-    render(<WhitelistManager pollId="123" />)
+    render(<WhitelistManager pollId="123" pollState={0} />)
     const validAddress = '0x1234567890123456789012345678901234567890'
     const input = screen.getByPlaceholderText('0x...')
     const button = screen.getByText('Whitelist Address')
@@ -79,7 +79,7 @@ describe('WhitelistManager', () => {
   })
 
   it('calls whitelistUser on valid single submission', async () => {
-    render(<WhitelistManager pollId="123" />)
+    render(<WhitelistManager pollId="123" pollState={0} />)
     const validAddress = '0x1234567890123456789012345678901234567890'
     const input = screen.getByPlaceholderText('0x...')
     const button = screen.getByText('Whitelist Address')
@@ -94,7 +94,7 @@ describe('WhitelistManager', () => {
 
   it('calls onSuccess after successful single submission', async () => {
     const onSuccess = jest.fn()
-    render(<WhitelistManager pollId="123" onSuccess={onSuccess} />)
+    render(<WhitelistManager pollId="123" pollState={0} onSuccess={onSuccess} />)
     const validAddress = '0x1234567890123456789012345678901234567890'
     
     fireEvent.change(screen.getByPlaceholderText('0x...'), { target: { value: validAddress } })

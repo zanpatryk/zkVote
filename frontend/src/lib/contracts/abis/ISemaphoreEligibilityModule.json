@@ -1,0 +1,296 @@
+[
+  {
+    "type": "function",
+    "name": "addWhitelisted",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "addWhitelistedBatch",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "users",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "initPoll",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "config",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isEligibleToVote",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isRegistered",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isWhitelisted",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "registerIdentity",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "identityCommitment",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "removeWhitelisted",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "verifyVote",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "vote",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "nullifierHash",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "proof",
+        "type": "uint256[8]",
+        "internalType": "uint256[8]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "RemovedWhitelisted",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Whitelisted",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "SemaphoreEligibilityModule__GroupAlreadyExists",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SemaphoreEligibilityModule__GroupDoesNotExist",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SemaphoreEligibilityModule__NotOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SemaphoreEligibilityModule__UserAlreadyRegistered",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SemaphoreEligibilityModule__UserNotWhitelisted",
+    "inputs": []
+  }
+]

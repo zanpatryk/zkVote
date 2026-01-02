@@ -6,7 +6,7 @@ import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {DeployVotingSystem} from "../../script/DeployVotingSystem.s.sol";
 import {VoteStorageV0} from "../../src/vote_storage/VoteStorageV0.sol";
 import {PollManager} from "../../src/poll_management/PollManager.sol";
-import {EligibilityModuleV0} from "../../src/eligibility/EligibilityModuleV0.sol";
+import {IEligibilityModule} from "../../src/interfaces/IEligibilityModule.sol";
 import {VotingSystemEngine} from "../../src/core/VotingSystemEngine.sol";
 import {ResultNFT} from "../../src/result_nft/ResultNFT.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
@@ -17,7 +17,7 @@ contract IntegrationTest is Test {
     HelperConfig helperConfig;
     VoteStorageV0 voteStorage;
     PollManager pollManager;
-    EligibilityModuleV0 eligibilityModule;
+    IEligibilityModule eligibilityModule;
     VotingSystemEngine vse;
     ResultNFT resultNFT;
 
@@ -50,7 +50,7 @@ contract IntegrationTest is Test {
         options.push("Yes");
         options.push("No");
         vm.prank(creator);
-        uint256 pollId = vse.createPoll("Do you like tests?", "Simple description", options);
+        uint256 pollId = vse.createPoll("Do you like tests?", "Simple description", options, "");
         return pollId;
     }
 
@@ -75,10 +75,10 @@ contract IntegrationTest is Test {
         uint256 pollId = _createPollAs(alice);
 
         vm.prank(alice);
-        vse.startPoll(pollId);
+        vse.whitelistUser(pollId, bob);
 
         vm.prank(alice);
-        vse.whitelistUser(pollId, bob);
+        vse.startPoll(pollId);
 
         assertTrue(eligibilityModule.isWhitelisted(pollId, bob));
 
@@ -122,10 +122,10 @@ contract IntegrationTest is Test {
         uint256 pollId = _createPollAs(alice);
 
         vm.prank(alice);
-        vse.startPoll(pollId);
+        vse.whitelistUser(pollId, bob);
 
         vm.prank(alice);
-        vse.whitelistUser(pollId, bob);
+        vse.startPoll(pollId);
 
         vm.prank(bob);
         vse.castVote(pollId, 0);
@@ -147,17 +147,17 @@ contract IntegrationTest is Test {
 
         vm.prank(alice);
         vm.expectRevert(expectedRevert);
-        vse.createPoll("Invalid Poll", "This poll has only one option", invalidOptions);
+        vse.createPoll("Invalid Poll", "This poll has only one option", invalidOptions, "");
     }
 
     function testCannotVoteAfterPollEnded() external {
         uint256 pollId = _createPollAs(alice);
 
         vm.prank(alice);
-        vse.startPoll(pollId);
+        vse.whitelistUser(pollId, bob);
 
         vm.prank(alice);
-        vse.whitelistUser(pollId, bob);
+        vse.startPoll(pollId);
 
         vm.prank(bob);
         vse.castVote(pollId, 0);
@@ -175,9 +175,6 @@ contract IntegrationTest is Test {
     function testBatchWhitelistAndRemove() external {
         uint256 pollId = _createPollAs(alice);
 
-        vm.prank(alice);
-        vse.startPoll(pollId);
-
         address[] memory users = new address[](2);
         users[0] = bob;
         users[1] = charlie;
@@ -185,11 +182,11 @@ contract IntegrationTest is Test {
         vm.prank(alice);
         vse.whitelistUsers(pollId, users);
 
-        assertTrue(eligibilityModule.isWhitelisted(pollId, bob));
-        assertTrue(eligibilityModule.isWhitelisted(pollId, charlie));
-
         vm.prank(alice);
         vse.removeWhitelisted(pollId, bob);
+
+        vm.prank(alice);
+        vse.startPoll(pollId);
 
         assertFalse(eligibilityModule.isWhitelisted(pollId, bob));
         assertTrue(eligibilityModule.isWhitelisted(pollId, charlie));
@@ -207,10 +204,10 @@ contract IntegrationTest is Test {
         uint256 pollId = _createPollAs(alice);
 
         vm.prank(alice);
-        vse.startPoll(pollId);
+        vse.whitelistUser(pollId, bob);
 
         vm.prank(alice);
-        vse.whitelistUser(pollId, bob);
+        vse.startPoll(pollId);
 
         vm.prank(bob);
         vse.castVote(pollId, 0); // Bob votes "Yes"
@@ -230,9 +227,9 @@ contract IntegrationTest is Test {
     function testMintResultNFTAndVerifyMetadata() external {
         uint256 pollId = _createPollAs(alice);
         vm.prank(alice);
-        vse.startPoll(pollId);
-        vm.prank(alice);
         vse.whitelistUser(pollId, bob);
+        vm.prank(alice);
+        vse.startPoll(pollId);
 
         vm.prank(bob);
         vse.castVote(pollId, 0);

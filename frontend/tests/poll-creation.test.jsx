@@ -108,6 +108,7 @@ describe('Integration Test: Poll Creation', () => {
         title: 'Best Framework?',
         description: 'React vs Vue',
         options: ['React', 'Vue'],
+        merkleTreeDepth: 16,
       })
       expect(mockPush).toHaveBeenCalledWith('/poll/123/whitelist')
     })

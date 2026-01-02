@@ -75,6 +75,7 @@ describe('CreatePollPage', () => {
         title: 'Test Poll',
         description: '',
         options: ['Yes', 'No'],
+        merkleTreeDepth: 16,
       })
       expect(mockPush).toHaveBeenCalledWith('/poll/123/whitelist')
     })

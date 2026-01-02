@@ -101,4 +101,12 @@ contract EligibilityModuleV0 {
         address user = abi.decode(data, (address));
         return s_whitelist[pollId][user];
     }
+
+    /**
+     * @dev Initializes the poll.
+     * @param pollId The ID of the poll.
+     */
+    function initPoll(uint256 pollId, bytes calldata config) external pure returns (bool) {
+        return true;
+    }
 }

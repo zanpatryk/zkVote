@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-export default function ReceiptCard({ pollId, voteId, txHash, interactive = true }) {
+export default function ReceiptCard({ pollId, voteId, txHash, nullifier, proof, interactive = true }) {
   return (
     <div className="bg-white p-6 md:p-8 max-w-sm mx-auto border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative mb-8 font-mono text-left">
       {/* Receipt "holes" or decorative top/bottom could be added here, but keeping it clean for now */}
@@ -44,6 +44,22 @@ export default function ReceiptCard({ pollId, voteId, txHash, interactive = true
             ) : (
               <span className="text-sm text-gray-600 break-all">{txHash}</span>
             )}
+          </div>
+        )}
+
+        {nullifier && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase">Nullifier Hash</p>
+            <p className="text-sm text-gray-600 break-all">{nullifier}</p>
+          </div>
+        )}
+
+        {proof && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase">ZK Proof</p>
+            <p className="text-sm text-gray-600 break-all">
+              {proof.length > 50 ? `${proof.substring(0, 50)}...` : proof}
+            </p>
           </div>
         )}
       </div>

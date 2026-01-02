@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {Script} from "forge-std/Script.sol";
+import {Script, console} from "forge-std/Script.sol";
 
 // Adjust these import paths to match your repo layout
 import {VotingSystemEngine} from "../src/core/VotingSystemEngine.sol";
 import {PollManager} from "../src/poll_management/PollManager.sol";
-import {EligibilityModuleV0} from "../src/eligibility/EligibilityModuleV0.sol";
+import {SemaphoreEligibilityModule} from "../src/eligibility/SemaphoreEligibilityModule.sol";
+import {MockSemaphoreVerifier} from "../test/mocks/MockSemaphoreVerifier.sol";
 import {VoteStorageV0} from "../src/vote_storage/VoteStorageV0.sol";
 import {ResultNFT} from "../src/result_nft/ResultNFT.sol"; // Ensure path is correct
 
@@ -16,7 +17,7 @@ contract DeployVotingSystem is Script {
     /**
      * Deploy order:
      * 1) deploy VSE (VotingSystemEngine)
-     * 2) deploy modules (PollManager, Eligibility, VoteStorage) linked to VSE
+     * 2) deploy modules (PollManager, SemaphoreEligibility, VoteStorage) linked to VSE
      * 3) deploy ResultNFT
      * 4) grant MINTER_ROLE on ResultNFT to VSE
      * 5) initialize VSE with all module addresses
@@ -26,7 +27,7 @@ contract DeployVotingSystem is Script {
         returns (
             VotingSystemEngine vse,
             PollManager pollManager,
-            EligibilityModuleV0 eligibilityModule,
+            SemaphoreEligibilityModule eligibilityModule,
             VoteStorageV0 voteStorage,
             ResultNFT resultNFT, // Added to return tuple
             HelperConfig helper
@@ -47,7 +48,13 @@ contract DeployVotingSystem is Script {
         // 2) Deploy core modules
         //    (Assumes module constructors accept `address votingEngine` param)
         pollManager = new PollManager(address(vse));
-        eligibilityModule = new EligibilityModuleV0(address(vse));
+        
+        // Deploy Mock Verifier first
+        MockSemaphoreVerifier verifier = new MockSemaphoreVerifier();
+        
+        // Deploy Semaphore Eligibility Module
+        eligibilityModule = new SemaphoreEligibilityModule(verifier, address(vse));
+        
         voteStorage = new VoteStorageV0(address(vse));
 
         // 3) Deploy ResultNFT
@@ -62,6 +69,14 @@ contract DeployVotingSystem is Script {
         // 5) Initialize VSE
         //    Now includes the ResultNFT address as the 4th argument
         vse.initialize(address(pollManager), address(eligibilityModule), address(voteStorage), address(resultNFT));
+
+        // Write address to frontend
+        string memory jsonBase = '{"address": "';
+        string memory addrStr = vm.toString(address(vse));
+        string memory jsonEnd = '"}';
+        string memory finalJson = string.concat(jsonBase, addrStr, jsonEnd);
+        vm.writeFile("../frontend/src/lib/contracts/address.json", finalJson);
+        console.log("VSE Address written to frontend:", address(vse));
 
         vm.stopBroadcast();
 

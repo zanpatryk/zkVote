@@ -8,7 +8,7 @@ import { isUserWhitelisted } from '@/lib/blockchain/engine/read'
 import { toast } from 'react-hot-toast'
 import { isAddress } from 'viem'
 
-export default function WhitelistManager({ pollId, onSuccess }) {
+export default function WhitelistManager({ pollId, pollState, onSuccess }) {
   const { isConnected } = useAccount()
 
   const [singleAddress, setSingleAddress] = useState('')
@@ -158,18 +158,19 @@ export default function WhitelistManager({ pollId, onSuccess }) {
                 type="text"
                 value={singleAddress}
                 onChange={e => setSingleAddress(e.target.value)}
-                className="w-full px-5 py-4 border-2 border-black rounded-lg text-lg outline-none focus:bg-gray-50 transition-colors font-mono placeholder-gray-400"
-                placeholder="0x..."
+                disabled={Number(pollState) !== 0}
+                className="w-full px-5 py-4 border-2 border-black rounded-lg text-lg outline-none focus:bg-gray-50 transition-colors font-mono placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder={Number(pollState) !== 0 ? "Whitelisting closed" : "0x..."}
               />
             </div>
             <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-black text-white py-4 rounded-lg text-lg font-bold hover:bg-gray-800 disabled:opacity-50 transition shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+              disabled={isSubmitting || Number(pollState) !== 0}
+              className="w-full bg-black text-white py-4 rounded-lg text-lg font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
             >
-              {isSubmitting ? 'Whitelisting...' : 'Whitelist Address'}
+              {isSubmitting ? 'Whitelisting...' : (Number(pollState) !== 0 ? 'Whitelisting Closed' : 'Whitelist Address')}
             </motion.button>
           </motion.form>
         )}
@@ -188,15 +189,15 @@ export default function WhitelistManager({ pollId, onSuccess }) {
               <label htmlFor="file-upload" className="block text-xl font-serif font-bold mb-2">Upload File</label>
               <p className="text-sm text-gray-500 mb-4">Upload a .txt file with addresses separated by newlines, commas, or spaces.</p>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:bg-gray-50 transition-colors cursor-pointer relative text-center">
-                 <input
+                  <input
                   id="file-upload"
                   type="file"
                   accept=".txt"
                   onChange={handleFileChange}
-                  disabled={isSubmitting}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={isSubmitting || Number(pollState) !== 0}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                 />
-                 <p className="font-medium text-gray-700">Click to Select File</p>
+                 <p className="font-medium text-gray-700">{Number(pollState) !== 0 ? 'Whitelisting Closed' : 'Click to Select File'}</p>
               </div>
             </div>
 
@@ -216,10 +217,10 @@ export default function WhitelistManager({ pollId, onSuccess }) {
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               onClick={handleBatchSubmit}
-              disabled={isSubmitting || batchAddresses.length === 0}
+              disabled={isSubmitting || batchAddresses.length === 0 || Number(pollState) !== 0}
               className="w-full bg-black text-white py-4 rounded-lg text-lg font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
             >
-              {isSubmitting ? 'Whitelisting...' : `Whitelist ${batchAddresses.length} Users`}
+              {isSubmitting ? 'Whitelisting...' : (Number(pollState) !== 0 ? 'Whitelisting Closed' : `Whitelist ${batchAddresses.length} Users`)}
             </motion.button>
           </motion.div>
         )}

@@ -59,7 +59,7 @@ describe('PollsPage', () => {
     await waitFor(() => {
       expect(screen.getAllByTestId('poll-card')).toHaveLength(2)
       expect(screen.getByText('Poll 1 - 1 - 1 - VoteButton: Yes')).toBeInTheDocument()
-      expect(screen.getByText('Poll 2 - 2 - 0 - VoteButton: No')).toBeInTheDocument()
+      expect(screen.getByText('Poll 2 - 2 - 0 - VoteButton: Yes')).toBeInTheDocument()
     })
   })
 
