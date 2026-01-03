@@ -7,6 +7,11 @@ const N_VOTERS = 5;
 
 const SUBORDER = 2736030358979909402780800718157159386076813972158567259200215660948447373041n;
 
+// ANSI color codes
+const GREEN = "\x1b[32m";
+const RED = "\x1b[31m";
+const RESET = "\x1b[0m";
+
 async function integrationTest() {
     console.log("=== Homomorphic Vote Tallying Integration Test ===\n");
     console.log(`Options: ${N_OPTIONS}, Voters: ${N_VOTERS}\n`);
@@ -23,15 +28,15 @@ async function integrationTest() {
         F.e("2626589144620713026669568689430873010625803728049924121243784502389097019475")
     ];
 
-    const voters = []; // Paths
-    const buildDir = path.join(__dirname, "../../build/pedersenVote_N8");
+    const voters = [];
+    const buildDir = path.join(__dirname, "../../build/pedersenVoteVector_N8");
     const setupDir = path.join(buildDir, "setup");
-    const wasmPath = path.join(buildDir, "pedersenVote_N8_js/pedersenVote_N8.wasm");
-    const zkeyPath = path.join(setupDir, "pedersenVote_N8_final.zkey");
+    const wasmPath = path.join(buildDir, "pedersenVoteVector_N8_js/pedersenVoteVector_N8.wasm");
+    const zkeyPath = path.join(setupDir, "pedersenVoteVector_N8_final.zkey");
     const vkeyPath = path.join(setupDir, "verification_key.json");
 
     if (!fs.existsSync(zkeyPath)) {
-        console.error("❌ Run setup first: node circuits/scripts/setup.js");
+        console.error(`${RED}Run setup first: node circuits/scripts/setup.js${RESET}`);
         process.exit(1);
     }
 
@@ -72,12 +77,12 @@ async function integrationTest() {
         const verified = await snarkjs.groth16.verify(vkey, publicSignals, proof);
 
         if (!verified) {
-            console.error(`❌ Voter ${v} proof failed!`);
+            console.error(`${RED}Voter ${v} proof failed!${RESET}`);
             process.exit(1);
         }
 
         voters.push({ vote, blinder, commitments, proof });
-        console.log(`Voter ${v}: voted for option ${voterChoices[v]} ✓`);
+        console.log(`Voter ${v}: voted for option ${voterChoices[v]} ${GREEN}OK${RESET}`);
     }
 
     console.log("\n=== Phase 2: Homomorphic Aggregation ===\n");
@@ -137,9 +142,9 @@ async function integrationTest() {
         computedTally.push(foundTally);
 
         if (foundTally === expectedTally[i]) {
-            console.log(`Option ${i}: ${foundTally} votes ✓ (unblinded & verified)`);
+            console.log(`Option ${i}: ${foundTally} votes ${GREEN}(unblinded & verified)${RESET}`);
         } else {
-            console.log(`Option ${i}: ❌ Mismatch (computed=${foundTally}, expected=${expectedTally[i]})`);
+            console.log(`Option ${i}: ${RED}Mismatch (computed=${foundTally}, expected=${expectedTally[i]})${RESET}`);
             allMatch = false;
         }
     }
@@ -155,9 +160,9 @@ async function integrationTest() {
     console.log(`\nWinner: Option ${winners.join(", ")} with ${maxVotes} votes`);
 
     if (allMatch) {
-        console.log("\n✅ Integration test PASSED - Homomorphic unblinding verified!");
+        console.log(`\n${GREEN}PASSED: Integration test complete - Homomorphic unblinding verified!${RESET}`);
     } else {
-        console.log("\n❌ Integration test FAILED");
+        console.log(`\n${RED}FAILED: Integration test${RESET}`);
         process.exit(1);
     }
 

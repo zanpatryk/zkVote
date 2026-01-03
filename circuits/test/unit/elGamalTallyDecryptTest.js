@@ -9,7 +9,7 @@ const expect = chai.expect;
 const N = 8;
 const SUBORDER = 2736030358979909402780800718157159386076813972158567259200215660948447373041n;
 
-describe("ElGamalDecrypt Circuit", function () {
+describe("ElGamalTallyDecrypt Circuit", function () {
     this.timeout(120000);
 
     let babyjub;
@@ -27,14 +27,14 @@ describe("ElGamalDecrypt Circuit", function () {
             F.e("16950150798460657717958625567821834550301663161624707787222815936182638968203")
         ];
 
-        const buildDir = path.join(__dirname, "../../build/elgamalDecrypt_N8");
+        const buildDir = path.join(__dirname, "../../build/elGamalTallyDecrypt_N8");
         const setupDir = path.join(buildDir, "setup");
-        wasmPath = path.join(buildDir, "elgamalDecrypt_N8_js/elgamalDecrypt_N8.wasm");
-        zkeyPath = path.join(setupDir, "elgamalDecrypt_N8_final.zkey");
+        wasmPath = path.join(buildDir, "elGamalTallyDecrypt_N8_js/elGamalTallyDecrypt_N8.wasm");
+        zkeyPath = path.join(setupDir, "elGamalTallyDecrypt_N8_final.zkey");
         const vkeyPath = path.join(setupDir, "verification_key.json");
 
         if (!fs.existsSync(zkeyPath)) {
-            throw new Error(`zkey not found at ${zkeyPath}. Run 'bun run setup:elgamalDecrypt' first.`);
+            throw new Error(`zkey not found at ${zkeyPath}. Run 'bun run setup' first.`);
         }
 
         vkey = JSON.parse(fs.readFileSync(vkeyPath, "utf8"));

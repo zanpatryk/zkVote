@@ -7,6 +7,11 @@ const N_OPTIONS = 8;
 const N_VOTERS = 5;
 const SUBORDER = 2736030358979909402780800718157159386076813972158567259200215660948447373041n;
 
+// ANSI color codes
+const GREEN = "\x1b[32m";
+const RED = "\x1b[31m";
+const RESET = "\x1b[0m";
+
 async function integrationTest() {
     console.log("=== Homomorphic ElGamal Vote Tallying Integration Test ===\n");
     console.log(`Options: ${N_OPTIONS}, Voters: ${N_VOTERS}\n`);
@@ -17,14 +22,14 @@ async function integrationTest() {
     const G = babyjub.Base8;
 
     // Paths
-    const buildDir = path.join(__dirname, "../../build/elgamalVoteVector_N8");
+    const buildDir = path.join(__dirname, "../../build/elGamalVoteVector_N8");
     const setupDir = path.join(buildDir, "setup");
-    const wasmPath = path.join(buildDir, "elgamalVoteVector_N8_js/elgamalVoteVector_N8.wasm");
-    const zkeyPath = path.join(setupDir, "elgamalVoteVector_N8_final.zkey");
+    const wasmPath = path.join(buildDir, "elGamalVoteVector_N8_js/elGamalVoteVector_N8.wasm");
+    const zkeyPath = path.join(setupDir, "elGamalVoteVector_N8_final.zkey");
     const vkeyPath = path.join(setupDir, "verification_key.json");
 
     if (!fs.existsSync(zkeyPath)) {
-        console.error("Error: Key files not found. Run 'bun run setup:elgamal' first.");
+        console.error(`${RED}Error: Key files not found. Run 'bun run setup' first.${RESET}`);
         process.exit(1);
     }
     
@@ -61,12 +66,9 @@ async function integrationTest() {
         const { publicSignals } = await snarkjs.groth16.fullProve(input, wasmPath, zkeyPath);
         
         // Extract Ciphertexts from Public Signals
-        // Signals structure: [pk0, pk1, C0_c1x, C0_c1y, C0_c2x, C0_c2y, C1_c1x...]
-        // Parse outputs
         const ciphertexts = [];
-        let offset = 0; // Outputs come first in snarkjs
+        let offset = 0;
         for (let i = 0; i < N_OPTIONS; i++) {
-             // Each option has 4 outputs: C1x, C1y, C2x, C2y
              const c1 = [
                 F.e(publicSignals[offset]), 
                 F.e(publicSignals[offset+1])
@@ -86,8 +88,6 @@ async function integrationTest() {
     // 3. Aggregation Phase
     console.log("\n=== Phase 3: Homomorphic Aggregation ===");
     
-    // Initialize Sum Ciphertexts to (0, 1) - Identity point for BabyJubJub?
-    // Identity is (0, 1).
     const ZeroPoint = [F.zero, F.one];
     
     const aggregatedCiphertexts = [];
@@ -100,7 +100,6 @@ async function integrationTest() {
     
     for (let v = 0; v < N_VOTERS; v++) {
         for (let i = 0; i < N_OPTIONS; i++) {
-            // Homomorphic Addition: Sum points
             aggregatedCiphertexts[i].c1 = babyjub.addPoint(aggregatedCiphertexts[i].c1, encryptedVotes[v][i].c1);
             aggregatedCiphertexts[i].c2 = babyjub.addPoint(aggregatedCiphertexts[i].c2, encryptedVotes[v][i].c2);
         }
@@ -110,29 +109,16 @@ async function integrationTest() {
     // 4. Tally Phase
     console.log("\n=== Phase 4: Decryption & Tally ===");
     
-    // Decrypt: M_point = C2 - sk * C1
-    // babyjub points subtraction: A - B = A + (-B)
-    // -B = (B.x, -B.y) in Twisted Edwards?? Check negation.
-    // In BabyJubJub (Twisted Edwards), negation of (x, y) is (-x, y). Correct.
-    
     const finalCounts = new Array(N_OPTIONS).fill(0);
     
     for (let i = 0; i < N_OPTIONS; i++) {
         const C1 = aggregatedCiphertexts[i].c1;
         const C2 = aggregatedCiphertexts[i].c2;
         
-        // Compute sk * C1
         const skC1 = babyjub.mulPointEscalar(C1, privKey);
-        
-        // Negate skC1: (-x, y)
         const negSkC1 = [F.neg(skC1[0]), skC1[1]];
-        
-        // M = C2 + (-skC1)
         const M = babyjub.addPoint(C2, negSkC1);
         
-        // Map M back to count
-        // M = (Count) * G
-        // Brute force check small integers check
         let count = -1;
         for (let t = 0; t <= N_VOTERS; t++) {
             const expected = babyjub.mulPointEscalar(G, BigInt(t));
@@ -143,7 +129,7 @@ async function integrationTest() {
         }
         
         if (count === -1) {
-            console.error(`Error: Could not decrypt count for Option ${i}. Point not in range.`);
+            console.error(`${RED}Error: Could not decrypt count for Option ${i}.${RESET}`);
             console.log(`Point: ${F.toObject(M[0])}, ${F.toObject(M[1])}`);
         } else {
             finalCounts[i] = count;
@@ -159,23 +145,23 @@ async function integrationTest() {
     }
     
     if (pass) {
-        console.log("\n✅ Tally matches expected votes!");
+        console.log(`\n${GREEN}Tally matches expected votes!${RESET}`);
     } else {
-        console.error("\n❌ Test FAILED: Tally mismatch.");
+        console.error(`\n${RED}FAILED: Tally mismatch.${RESET}`);
         process.exit(1);
     }
 
     // 5. Decryption Proof Phase
     console.log("\n=== Phase 5: ZK Decryption Proof ===");
 
-    const decryptBuildDir = path.join(__dirname, "../../build/elgamalDecrypt_N8");
+    const decryptBuildDir = path.join(__dirname, "../../build/elGamalTallyDecrypt_N8");
     const decryptSetupDir = path.join(decryptBuildDir, "setup");
-    const decryptWasmPath = path.join(decryptBuildDir, "elgamalDecrypt_N8_js/elgamalDecrypt_N8.wasm");
-    const decryptZkeyPath = path.join(decryptSetupDir, "elgamalDecrypt_N8_final.zkey");
+    const decryptWasmPath = path.join(decryptBuildDir, "elGamalTallyDecrypt_N8_js/elGamalTallyDecrypt_N8.wasm");
+    const decryptZkeyPath = path.join(decryptSetupDir, "elGamalTallyDecrypt_N8_final.zkey");
     const decryptVkeyPath = path.join(decryptSetupDir, "verification_key.json");
 
     if (!fs.existsSync(decryptZkeyPath)) {
-        console.error("Error: Decrypt key files not found. Run 'bun run setup:elgamalDecrypt' first.");
+        console.error(`${RED}Error: Decrypt key files not found. Run 'bun run setup' first.${RESET}`);
         process.exit(1);
     }
 
@@ -202,17 +188,17 @@ async function integrationTest() {
         decryptWasmPath,
         decryptZkeyPath
     );
-    console.log("✓ Decryption proof generated");
+    console.log(`${GREEN}Decryption proof generated${RESET}`);
 
     const decryptVerified = await snarkjs.groth16.verify(decryptVkey, decryptSignals, decryptProof);
     if (decryptVerified) {
-        console.log("✓ Decryption proof verified - Tally is cryptographically correct!");
+        console.log(`${GREEN}Decryption proof verified - Tally is cryptographically correct!${RESET}`);
     } else {
-        console.error("❌ Decryption proof verification failed!");
+        console.error(`${RED}Decryption proof verification failed!${RESET}`);
         process.exit(1);
     }
 
-    console.log("\n✅ Integration test PASSED - Full voting flow verified!");
+    console.log(`\n${GREEN}PASSED: Integration test complete - Full voting flow verified!${RESET}`);
 }
 
 integrationTest().then(() => {

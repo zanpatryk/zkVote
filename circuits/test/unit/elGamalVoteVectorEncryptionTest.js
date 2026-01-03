@@ -9,7 +9,7 @@ const expect = chai.expect;
 const N = 8;
 const SUBORDER = 2736030358979909402780800718157159386076813972158567259200215660948447373041n;
 
-describe("ElGamal Encryption", function () {
+describe("ElGamal Encryption (VoteVector)", function () {
     this.timeout(120000);
 
     let babyjub;
@@ -33,14 +33,14 @@ describe("ElGamal Encryption", function () {
             F.e("16950150798460657717958625567821834550301663161624707787222815936182638968203")
         ];
 
-        const buildDir = path.join(__dirname, "../../build/elgamalVoteVector_N8");
+        const buildDir = path.join(__dirname, "../../build/elGamalVoteVector_N8");
         const setupDir = path.join(buildDir, "setup");
-        wasmPath = path.join(buildDir, "elgamalVoteVector_N8_js/elgamalVoteVector_N8.wasm");
-        zkeyPath = path.join(setupDir, "elgamalVoteVector_N8_final.zkey");
+        wasmPath = path.join(buildDir, "elGamalVoteVector_N8_js/elGamalVoteVector_N8.wasm");
+        zkeyPath = path.join(setupDir, "elGamalVoteVector_N8_final.zkey");
         const vkeyPath = path.join(setupDir, "verification_key.json");
 
         if (!fs.existsSync(zkeyPath)) {
-            throw new Error(`zkey not found at ${zkeyPath}. Run 'bun run setup:elgamal' first.`);
+            throw new Error(`zkey not found at ${zkeyPath}. Run 'bun run setup' first.`);
         }
         
         vkey = JSON.parse(fs.readFileSync(vkeyPath, "utf8"));
@@ -48,7 +48,6 @@ describe("ElGamal Encryption", function () {
 
     function encryptElGamal(pk, m, r) {
         // C1 = r * G
-        // pk is a point [x, y]
         const c1Point = babyjub.mulPointEscalar(G, r);
         
         // C2 = r * PK + m * G
@@ -99,7 +98,6 @@ describe("ElGamal Encryption", function () {
         const circuitC2 = [publicSignals[offset+2], publicSignals[offset+3]];
 
         // Calculate expected for the tested optionIndex
-        // The value at optionIndex is vote[optionIndex]
         const actualM = BigInt(vote[optionIndex]);
         const expected = encryptElGamal(pk, actualM, rValues[optionIndex]);
 

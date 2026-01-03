@@ -14,7 +14,7 @@ let babyjub, F;
 // Generator points - must match circuit exactly
 let G, H;
 
-describe("PedersenVote Circuit", function () {
+describe("PedersenVoteVector Circuit", function () {
     this.timeout(120000);
 
     before(async function () {
@@ -34,10 +34,10 @@ describe("PedersenVote Circuit", function () {
             F.e("2626589144620713026669568689430873010625803728049924121243784502389097019475")
         ];
 
-        const buildDir = path.join(__dirname, "../../build/pedersenVote_N8");
+        const buildDir = path.join(__dirname, "../../build/pedersenVoteVector_N8");
         const setupDir = path.join(buildDir, "setup");
-        wasmPath = path.join(buildDir, "pedersenVote_N8_js/pedersenVote_N8.wasm");
-        zkeyPath = path.join(setupDir, "pedersenVote_N8_final.zkey");
+        wasmPath = path.join(buildDir, "pedersenVoteVector_N8_js/pedersenVoteVector_N8.wasm");
+        zkeyPath = path.join(setupDir, "pedersenVoteVector_N8_final.zkey");
         vkeyPath = path.join(setupDir, "verification_key.json");
 
         if (!fs.existsSync(zkeyPath)) {
