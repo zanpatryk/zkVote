@@ -277,21 +277,28 @@
   },
   {
     "type": "function",
-    "name": "test_DoubleRegistration_Reverts",
+    "name": "test_CastVoteWithProof_Revert_InvalidOption",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "test_MaxCapacity_Reverts",
+    "name": "test_CastVoteWithProof_Revert_WrongState",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "test_SemaphoreFlow",
+    "name": "test_RegisterVoter_Revert_NotWhitelisted",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "test_RegisterVoter_Revert_WrongState",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"

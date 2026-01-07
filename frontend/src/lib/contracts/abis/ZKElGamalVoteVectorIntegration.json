@@ -14,13 +14,19 @@
   },
   {
     "type": "function",
-    "name": "engine",
-    "inputs": [],
+    "name": "encryptionKey",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "contract VotingSystemEngine"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -104,13 +110,13 @@
   },
   {
     "type": "function",
-    "name": "owner",
+    "name": "pollId",
     "inputs": [],
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "address"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -123,33 +129,20 @@
       {
         "name": "",
         "type": "address",
-        "internalType": "contract PollManager"
+        "internalType": "contract MockPollManager"
       }
     ],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "resultNFT",
+    "name": "pollOwner",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract ResultNFT"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "semaphoreModule",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract SemaphoreEligibilityModule"
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -160,6 +153,19 @@
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "tallyVerifier",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract MockTallyVerifier"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -277,63 +283,38 @@
   },
   {
     "type": "function",
-    "name": "test_DoubleRegistration_Reverts",
+    "name": "testDoubleVotePrevention",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "test_MaxCapacity_Reverts",
+    "name": "testFiftyVoters",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "test_SemaphoreFlow",
+    "name": "testFullFlowWithManyVoters",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "user1",
+    "name": "testInitializeWithMockVerifiers",
     "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "user2",
+    "name": "testTenVoters",
     "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "verifier",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract MockSemaphoreVerifier"
-      }
-    ],
-    "stateMutability": "view"
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -343,7 +324,20 @@
       {
         "name": "",
         "type": "address",
-        "internalType": "contract VoteStorageV0"
+        "internalType": "contract ZKElGamalVoteVector"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "voteVerifier",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract MockVoteVerifier"
       }
     ],
     "stateMutability": "view"

@@ -280,6 +280,11 @@
   },
   {
     "type": "error",
+    "name": "SemaphoreEligibilityModule__GroupIsFull",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "SemaphoreEligibilityModule__NotOwner",
     "inputs": []
   },
