@@ -16,9 +16,7 @@
       { "circuit": "elGamalVoteScalar", "params": { "N": 32 } },
       { "circuit": "elGamalVoteScalar", "params": { "N": 64 } },
       { "circuit": "elGamalTallyDecrypt", "params": { "N": 8 } },
-      { "circuit": "elGamalTallyDecrypt", "params": { "N": 16 } },
-      { "circuit": "elGamalTallyDecrypt", "params": { "N": 32 } },
-      { "circuit": "elGamalTallyDecrypt", "params": { "N": 64 } }
+      { "circuit": "elGamalTallyDecrypt", "params": { "N": 16 } }
     ]
   }
 }
