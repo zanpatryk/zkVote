@@ -33,7 +33,8 @@
         "react-dom": "^19.2.3",
         "react-hot-toast": "^2.6.0",
         "viem": "^2.40.2",
-        "wagmi": "^3.0.1"
+        "wagmi": "^3.0.1",
+        "@zkvote/lib": "workspace:*"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4.1.17",
