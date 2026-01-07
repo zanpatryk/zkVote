@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.20;
 
+import {IEligibilityModule} from "../interfaces/IEligibilityModule.sol";
+
 /* Errors */
 error EligibilityModuleV0__NotOwner();
 error EligibilityModuleV0__NotPollManager();
@@ -10,11 +12,11 @@ error EligibilityModuleV0__NotWhitelisted();
 
 /**
  * @title Eligibility Module V0
- * @dev This contract is the first version of the eligibility module.
+ * @dev Lightweight whitelist-based eligibility module (no Semaphore/Poseidon deps).
  * Voters are eligible to vote if they are whitelisted.
- * The poll manager is the only one who can whitelist users.
+ * The module owner is the only one who can whitelist users.
  */
-contract EligibilityModuleV0 {
+contract EligibilityModuleV0 is IEligibilityModule {
     /* State Variables */
     address public immutable i_owner;
 

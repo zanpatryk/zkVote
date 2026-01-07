@@ -19,10 +19,10 @@ contract ResultNFT is ERC721, ERC721URIStorage, AccessControl {
         s_tokenIdCounter = 1;
     }
 
-    function mintResult(address to, string calldata tokenURI) external onlyRole(MINTER_ROLE) returns (uint256) {
+    function mintResult(address to, string calldata _tokenURI) external onlyRole(MINTER_ROLE) returns (uint256) {
         uint256 tokenId = s_tokenIdCounter++;
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, tokenURI);
+        _setTokenURI(tokenId, _tokenURI);
         return tokenId;
     }
 

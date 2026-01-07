@@ -3,13 +3,12 @@ pragma solidity ^0.8.18;
 
 import {Script, console} from "forge-std/Script.sol";
 
-// Adjust these import paths to match your repo layout
 import {VotingSystemEngine} from "../src/core/VotingSystemEngine.sol";
 import {PollManager} from "../src/poll_management/PollManager.sol";
 import {SemaphoreEligibilityModule} from "../src/eligibility/SemaphoreEligibilityModule.sol";
 import {MockSemaphoreVerifier} from "../test/mocks/MockSemaphoreVerifier.sol";
 import {VoteStorageV0} from "../src/vote_storage/VoteStorageV0.sol";
-import {ResultNFT} from "../src/result_nft/ResultNFT.sol"; // Ensure path is correct
+import {ResultNFT} from "../src/result_nft/ResultNFT.sol";
 
 import {HelperConfig} from "./HelperConfig.s.sol";
 

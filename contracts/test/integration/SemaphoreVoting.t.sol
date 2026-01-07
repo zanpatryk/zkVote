@@ -65,7 +65,7 @@ contract SemaphoreVotingTest is Test {
         
         // This will call initPoll on module with config
         bytes memory config = abi.encode(uint256(20));
-        uint256 pollId = engine.createPoll("ZK Poll", "Desc", options, config);
+        uint256 pollId = engine.createPoll("ZK Poll", "Desc", options, "", config, address(0), address(0));
         
         // 2. Whitelist User1
         engine.whitelistUser(pollId, user1);
@@ -114,7 +114,7 @@ contract SemaphoreVotingTest is Test {
         string[] memory options = new string[](2);
         options[0] = "Yes";
         options[1] = "No";
-        uint256 pollId = engine.createPoll("Double Reg", "Desc", options, abi.encode(uint256(20)));
+        uint256 pollId = engine.createPoll("Double Reg", "Desc", options, "", abi.encode(uint256(20)), address(0), address(0));
         engine.whitelistUser(pollId, user1);
         vm.stopPrank();
 
@@ -133,7 +133,7 @@ contract SemaphoreVotingTest is Test {
         options[1] = "B";
         
         // Depth 1 means capacity is 2^1 = 2 users
-        uint256 pollId = engine.createPoll("Tiny Poll", "Desc", options, abi.encode(uint256(1)));
+        uint256 pollId = engine.createPoll("Tiny Poll", "Desc", options, "", abi.encode(uint256(1)), address(0), address(0));
         
         // Whitelist 3 users
         address user3 = address(4);

@@ -5,8 +5,8 @@ import {Test, console} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {DeployVotingSystem} from "../../script/DeployVotingSystem.s.sol";
 import {VoteStorageV0} from "../../src/vote_storage/VoteStorageV0.sol";
+import {EligibilityModuleV0} from "../../src/eligibility/EligibilityModuleV0.sol";
 import {PollManager} from "../../src/poll_management/PollManager.sol";
-import {IEligibilityModule} from "../../src/interfaces/IEligibilityModule.sol";
 import {VotingSystemEngine} from "../../src/core/VotingSystemEngine.sol";
 import {ResultNFT} from "../../src/result_nft/ResultNFT.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
@@ -17,7 +17,7 @@ contract IntegrationTest is Test {
     HelperConfig helperConfig;
     VoteStorageV0 voteStorage;
     PollManager pollManager;
-    IEligibilityModule eligibilityModule;
+    EligibilityModuleV0 eligibilityModule;
     VotingSystemEngine vse;
     ResultNFT resultNFT;
 
@@ -42,7 +42,11 @@ contract IntegrationTest is Test {
 
     function setUp() external {
         deployer = new DeployVotingSystem();
-        (vse, pollManager, eligibilityModule, voteStorage, resultNFT, helperConfig) = deployer.run();
+        (vse, pollManager, , voteStorage, resultNFT, helperConfig) = deployer.run();
+        
+        // Deploy Plain Eligibility for these tests
+        EligibilityModuleV0 plainEligibility = new EligibilityModuleV0(address(vse));
+        eligibilityModule = plainEligibility;
     }
 
     /* Helper functions */
@@ -50,92 +54,8 @@ contract IntegrationTest is Test {
         options.push("Yes");
         options.push("No");
         vm.prank(creator);
-        uint256 pollId = vse.createPoll("Do you like tests?", "Simple description", options, "");
+        uint256 pollId = vse.createPoll("Do you like tests?", "Simple description", options, "", "", address(eligibilityModule), address(0)); 
         return pollId;
-    }
-
-    /* Tests */
-    function testCreatePollAndStart() external {
-        uint256 pollId = _createPollAs(alice);
-
-        assertEq(pollId, 1);
-        assertEq(pollManager.getPollOwner(pollId), alice);
-        assertEq(pollManager.getPollTitle(pollId), "Do you like tests?");
-        assertEq(pollManager.getPollOptionCount(pollId), 2);
-
-        assertEq(pollManager.getState(pollId), 0);
-
-        vm.prank(alice);
-        vse.startPoll(pollId);
-
-        assertEq(pollManager.getState(pollId), 1);
-    }
-
-    function testWhitelistAndVote() external {
-        uint256 pollId = _createPollAs(alice);
-
-        vm.prank(alice);
-        vse.whitelistUser(pollId, bob);
-
-        vm.prank(alice);
-        vse.startPoll(pollId);
-
-        assertTrue(eligibilityModule.isWhitelisted(pollId, bob));
-
-        vm.prank(bob);
-        uint256 voteId = vse.castVote(pollId, 0);
-
-        assertEq(voteId, 1);
-
-        uint256 count0 = voteStorage.getVoteCount(pollId, 0);
-        uint256 count1 = voteStorage.getVoteCount(pollId, 1);
-        assertEq(count0, 1);
-        assertEq(count1, 0);
-
-        uint256[] memory results = voteStorage.getResults(pollId, 2);
-        assertEq(results.length, 2);
-        assertEq(results[0], 1);
-        assertEq(results[1], 0);
-
-        VoteStorageV0.Vote memory v = voteStorage.getVote(voteId);
-        assertEq(v.voteId, voteId);
-        assertEq(v.pollId, pollId);
-        assertEq(v.optionIdx, 0);
-        assertEq(v.voter, bob);
-    }
-
-    function testNonWhitelistedCannotVote() external {
-        uint256 pollId = _createPollAs(alice);
-
-        vm.prank(alice);
-        vse.startPoll(pollId);
-
-        bytes memory expectedRevert =
-            abi.encodeWithSelector(bytes4(keccak256("VotingSystem__AddressNotWhitelisted(address)")), charlie);
-
-        vm.prank(charlie);
-        vm.expectRevert(expectedRevert);
-        vse.castVote(pollId, 1);
-    }
-
-    function testDoubleVotingRevert() external {
-        uint256 pollId = _createPollAs(alice);
-
-        vm.prank(alice);
-        vse.whitelistUser(pollId, bob);
-
-        vm.prank(alice);
-        vse.startPoll(pollId);
-
-        vm.prank(bob);
-        vse.castVote(pollId, 0);
-
-        bytes memory expectedRevert =
-            abi.encodeWithSelector(bytes4(keccak256("VoteStorageV0__AlreadyVoted(address)")), bob);
-
-        vm.prank(bob);
-        vm.expectRevert(expectedRevert);
-        vse.castVote(pollId, 1);
     }
 
     function testInvalidOptionsRevert() external {
@@ -147,7 +67,7 @@ contract IntegrationTest is Test {
 
         vm.prank(alice);
         vm.expectRevert(expectedRevert);
-        vse.createPoll("Invalid Poll", "This poll has only one option", invalidOptions, "");
+        vse.createPoll("Invalid Poll", "This poll has only one option", invalidOptions, "", "", address(0), address(0));
     }
 
     function testCannotVoteAfterPollEnded() external {

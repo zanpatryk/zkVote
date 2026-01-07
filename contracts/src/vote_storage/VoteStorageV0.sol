@@ -9,8 +9,7 @@ error VoteStorageV0__AlreadyVoted(address user);
 
 /**
  * @title Vote Storage V0
- * @dev This contract is the first version of the vote storage module.
- * It stores the votes casted by users and keeps track of the vote counts for each option.
+ * @dev Plain text vote storage module (no encryption).
  */
 contract VoteStorageV0 is IVoteStorage {
     /* Structs */
@@ -30,8 +29,6 @@ contract VoteStorageV0 is IVoteStorage {
     uint256 private s_totalVotes;
     mapping(uint256 voteId => Vote) private s_votes;
 
-    /* Events */
-
     /* Modifiers */
     modifier ownerOnly() {
         if (msg.sender != i_owner) {
@@ -46,12 +43,10 @@ contract VoteStorageV0 is IVoteStorage {
         s_totalVotes = 0;
     }
 
-    /**
-     * @dev Records a vote for the given poll.
-     * @param pollId The ID of the poll.
-     * @param voter The address of the voter.
-     * @param voteData The encoded vote data (uint256 optionIdx for V0).
-     */
+    function initPoll(uint256, bytes calldata) external override {
+        // No initialization needed for plain voting
+    }
+
     function castVote(uint256 pollId, address voter, bytes calldata voteData) external ownerOnly returns (uint256 voteId) {
         uint256 optionIdx = abi.decode(voteData, (uint256));
 

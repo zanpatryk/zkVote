@@ -59,8 +59,8 @@ contract SemaphoreEligibilityModule is ISemaphoreEligibilityModule, Semaphore {
         return true;
     }
 
-    function isEligibleToVote(uint256, bytes calldata) external pure override returns (bool) {
-        return false;
+    function isEligibleToVote(uint256 pollId, bytes calldata user) external view override returns (bool) {
+        return s_hasRegistered[pollId][abi.decode(user, (address))];
     }
 
     /* Lifecycle Hook */

@@ -45,7 +45,7 @@ contract VotingSystemEngineTest is Test {
         vm.startPrank(owner);
         string[] memory options = new string[](2);
         options[0] = "Yes"; options[1] = "No";
-        uint256 pollId = engine.createPoll("Poll", "Desc", options, "");
+        uint256 pollId = engine.createPoll("Poll", "Desc", options, "", "", address(0), address(0));
         vm.stopPrank();
 
         vm.prank(user1);
@@ -57,7 +57,7 @@ contract VotingSystemEngineTest is Test {
         vm.startPrank(owner);
         string[] memory options = new string[](2);
         options[0] = "Yes"; options[1] = "No";
-        uint256 pollId = engine.createPoll("Poll", "Desc", options, "");
+        uint256 pollId = engine.createPoll("Poll", "Desc", options, "", "", address(0), address(0));
         engine.whitelistUser(pollId, user1);
         
         // Advance to Active state
@@ -69,13 +69,11 @@ contract VotingSystemEngineTest is Test {
         engine.registerVoter(pollId, 12345);
     }
 
-    /* ZK Voting Tests */
-
     function test_CastVoteWithProof_Revert_WrongState() public {
         vm.startPrank(owner);
         string[] memory options = new string[](2);
         options[0] = "Yes"; options[1] = "No";
-        uint256 pollId = engine.createPoll("Poll", "Desc", options, "");
+        uint256 pollId = engine.createPoll("Poll", "Desc", options, "", "", address(0), address(0));
         engine.whitelistUser(pollId, user1);
         vm.stopPrank();
 
@@ -94,7 +92,7 @@ contract VotingSystemEngineTest is Test {
         vm.startPrank(owner);
         string[] memory options = new string[](2);
         options[0] = "Yes"; options[1] = "No";
-        uint256 pollId = engine.createPoll("Poll", "Desc", options, "");
+        uint256 pollId = engine.createPoll("Poll", "Desc", options, "", "", address(0), address(0));
         engine.whitelistUser(pollId, user1);
         vm.stopPrank();
 
