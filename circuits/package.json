@@ -5,8 +5,9 @@
   "scripts": {
     "build": "node scripts/build.js",
     "setup": "node scripts/setup.js",
+    "generate:verifiers": "node scripts/generate-verifiers.js",
     "test": "mocha 'test/unit/**/*Test.js' --timeout 120000 --exit",
-    "test:integration": "node test/integration/pedersenVoteIntegrationTest.js && node test/integration/elgamalVectorIntegrationTest.js && node test/integration/elgamalSingleIntegrationTest.js"
+    "test:integration": "node test/integration/pedersenVoteVectorIntegrationTest.js && node test/integration/elGamalVoteVectorIntegrationTest.js && node test/integration/elGamalVoteScalarIntegrationTest.js"
   },
   "dependencies": {
     "circomlib": "^2.0.5",

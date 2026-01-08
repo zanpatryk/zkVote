@@ -11,11 +11,14 @@ export default function VoteCheckPage() {
   const { pollId, voteId } = useParams()
   const searchParams = useSearchParams()
   const txHash = searchParams.get('txHash')
+  const nullifier = searchParams.get('nullifier')
+  const proof = searchParams.get('proof')
 
   const [vote, setVote] = useState(null)
   const [poll, setPoll] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [derivedAddrMatch, setDerivedAddrMatch] = useState(null)
 
   useEffect(() => {
     async function loadData() {
@@ -29,6 +32,13 @@ export default function VoteCheckPage() {
           setError('Vote not found or could not be loaded.')
         } else {
           setVote(voteData)
+          
+          // Verify nullifier if provided
+          if (nullifier) {
+            const { getAddress } = await import('viem')
+            const derivedVoter = getAddress(`0x${(BigInt(nullifier) & ((1n << 160n) - 1n)).toString(16).padStart(40, '0')}`)
+            setDerivedAddrMatch(getAddress(voteData.voter) === derivedVoter)
+          }
         }
 
         if (pollData) {
@@ -45,7 +55,7 @@ export default function VoteCheckPage() {
     if (pollId && voteId) {
       loadData()
     }
-  }, [pollId, voteId])
+  }, [pollId, voteId, nullifier])
 
   const optionText = vote && poll && poll.options && poll.options[Number(vote.optionIdx)]
     ? poll.options[Number(vote.optionIdx)]
@@ -119,6 +129,38 @@ export default function VoteCheckPage() {
               <p className="text-xs text-gray-500 uppercase">Vote ID</p>
               <p className="text-sm break-all font-mono">{voteId}</p>
             </motion.div>
+
+            {nullifier && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.55 }}
+              >
+                <p className="text-xs text-gray-500 uppercase flex items-center gap-2">
+                  Nullifier Hash
+                  {derivedAddrMatch === true && (
+                    <span className="text-[10px] bg-green-100 text-green-700 px-1 border border-green-200">MATCHED</span>
+                  )}
+                  {derivedAddrMatch === false && (
+                    <span className="text-[10px] bg-red-100 text-red-700 px-1 border border-red-200">MISMATCH</span>
+                  )}
+                </p>
+                <p className="text-sm break-all font-mono">{nullifier}</p>
+              </motion.div>
+            )}
+
+            {proof && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.58 }}
+              >
+                <p className="text-xs text-gray-500 uppercase">ZK Proof</p>
+                <p className="text-[10px] break-all font-mono text-gray-400 line-clamp-2 leading-tight">
+                  {proof}
+                </p>
+              </motion.div>
+            )}
 
             {txHash && (
               <motion.div

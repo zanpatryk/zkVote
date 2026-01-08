@@ -4,12 +4,13 @@ Circom circuits for the zkVote protocol implementing privacy-preserving voting w
 
 ## Circuits
 
-| Circuit             | Purpose                                       | Tally Method                        |
-| ------------------- | --------------------------------------------- | ----------------------------------- |
-| `pedersenVote`      | Pedersen Commitment voting                    | Aggregate + reveal blinders         |
-| `elgamalVoteVector` | ElGamal encrypted voting (N ciphertexts)      | Decrypt with private key            |
-| `elgamalVoteSingle` | Scalable ElGamal voting (1 ciphertext + hash) | Decrypt with private key            |
-| `elgamalDecrypt`    | ZK proof of correct decryption                | Proves tally without revealing `sk` |
+| Circuit               | Purpose                                         | Tally Method                        |
+| --------------------- | ----------------------------------------------- | ----------------------------------- |
+| `pedersenVoteVector`  | Pedersen Commitment voting                      | Aggregate + reveal blinders         |
+| `elGamalVoteVector`   | ElGamal encrypted voting (N ciphertexts)        | Homomorphic aggregation + decrypt   |
+| `elGamalVoteScalar`   | Scalable ElGamal voting (1 ciphertext per vote) | Individual decryption               |
+| `elGamalTallyDecrypt` | ZK proof of correct tally decryption            | Proves tally without revealing `sk` |
+| `elGamalDecrypt`      | Base decryption proof template                  | Used by TallyDecrypt                |
 
 ## Prerequisites
 
@@ -36,100 +37,115 @@ All circuit builds are defined in `circuits.config.json`:
 {
   "builds": {
     "testing": [
-      { "circuit": "pedersenVote", "params": { "N": 8 } },
-      { "circuit": "elgamalVoteVector", "params": { "N": 8 } },
-      { "circuit": "elgamalVoteSingle", "params": { "N": 8 } },
-      { "circuit": "elgamalDecrypt", "params": { "N": 8 } }
+      { "circuit": "pedersenVoteVector", "params": { "N": 8 } },
+      { "circuit": "elGamalVoteVector", "params": { "N": 8 } },
+      { "circuit": "elGamalVoteScalar", "params": { "N": 8 } },
+      { "circuit": "elGamalTallyDecrypt", "params": { "N": 8 } }
     ],
-    "elgamalSingle32": [
-      { "circuit": "elgamalVoteSingle", "params": { "N": 32 } },
-      { "circuit": "elgamalDecrypt", "params": { "N": 32 } }
+    "verifiers": [
+      { "circuit": "elGamalVoteScalar", "params": { "N": 8 } },
+      { "circuit": "elGamalVoteScalar", "params": { "N": 16 } },
+      { "circuit": "elGamalTallyDecrypt", "params": { "N": 8 } },
+      { "circuit": "elGamalTallyDecrypt", "params": { "N": 16 } }
     ]
   }
 }
 ```
 
-Build names follow the pattern: `{circuit}_{params}` (e.g., `elgamalVoteSingle_N8`, `elgamalDecrypt_N32`)
+Build names follow the pattern: `{circuit}_{params}` (e.g., `elGamalVoteScalar_N8`, `elGamalTallyDecrypt_N32`)
 
 ## Build Output
 
 ```
 build/
-├── pedersenVote_N8/
-│   ├── pedersenVote_N8.r1cs
-│   ├── pedersenVote_N8_js/
-│   │   └── pedersenVote_N8.wasm
+├── pedersenVoteVector_N8/
+│   ├── pedersenVoteVector_N8.r1cs
+│   ├── pedersenVoteVector_N8_js/
+│   │   └── pedersenVoteVector_N8.wasm
 │   └── setup/
-│       ├── pedersenVote_N8_final.zkey
+│       ├── pedersenVoteVector_N8_final.zkey
 │       └── verification_key.json
-├── elgamalVoteSingle_N8/
-├── elgamalVoteSingle_N32/
-├── elgamalDecrypt_N8/
-├── elgamalDecrypt_N32/
-└── elgamalVoteVector_N8/
+├── elGamalVoteScalar_N8/
+├── elGamalVoteScalar_N16/
+├── elGamalTallyDecrypt_N8/
+├── elGamalTallyDecrypt_N16/
+└── elGamalVoteVector_N8/
 ```
 
 ## Scripts
 
-| Script             | Description                                                        |
-| ------------------ | ------------------------------------------------------------------ |
-| `build`            | Compile all circuits from `circuits.config.json`                   |
-| `setup`            | Trusted setup for all configured circuits (auto-detects PTAU size) |
-| `test`             | All unit tests                                                     |
-| `test:integration` | Full end-to-end tests                                              |
+| Script               | Description                                                        |
+| -------------------- | ------------------------------------------------------------------ |
+| `build`              | Compile all circuits from `circuits.config.json`                   |
+| `setup`              | Trusted setup for all configured circuits (auto-detects PTAU size) |
+| `test`               | All unit tests                                                     |
+| `test:integration`   | Full end-to-end tests                                              |
+| `generate:verifiers` | Generate Solidity verifier contracts                               |
 
 **Note:** The setup script automatically downloads the appropriate Powers of Tau file based on constraint count (pot14-pot28).
 
 ## Circuit Details
 
-### Pedersen Commitment (`pedersenVote`)
+### Pedersen Commitment (`pedersenVoteVector`)
 
-- **Formula**: $C = vote \cdot G + blinder \cdot H$
+- **Formula**: `C = vote * G + blinder * H`
 - **Tally**: Homomorphic aggregation, reveal sum of blinders
+- **Constraints**: ~63K for N=8
 
-### ElGamal Vector (`elgamalVoteVector`)
+### ElGamal Vector (`elGamalVoteVector`)
 
-- **Output**: N ciphertexts (one per option)
-- **Formula**: $C_1 = r \cdot G$, $C_2 = r \cdot PK + vote \cdot G$
+- **Output**: N ciphertexts (one per option as one-hot encoded)
+- **Formula**: `C1 = r * G`, `C2 = r * PK + vote * G`
 - **Constraints**: ~81K for N=8
+- **Use case**: Fully homomorphic aggregation on-chain
 
-### ElGamal Single (`elgamalVoteSingle`)
+### ElGamal Scalar (`elGamalVoteScalar`)
 
-- **Output**: 1 ciphertext + optionHash (constant size regardless of N)
-- **Formula**: Same encryption, hash routes vote to bucket
-- **Constraints**: ~11K (constant)
+- **Output**: 1 ciphertext (encrypts selected option index)
+- **Formula**: Same encryption as vector
+- **Constraints**: ~10K (constant regardless of N)
+- **Use case**: Individual vote decryption
 
-### Decryption Proof (`elgamalDecrypt`)
+### Tally Decryption Proof (`elGamalTallyDecrypt`)
 
-- **Proves**: `tally[i] * G == aggC2[i] - sk * aggC1[i]`
+- **Proves**: `tally[i] * G == aggC2[i] - sk * aggC1[i]` for all options
 - **Without revealing**: Secret key `sk`
-- **Constraints**: ~54K for N=8, ~210K for N=32
+- **Uses**: Base `ElGamalDecrypt` template for each option
+- **Constraints**: ~81K for N=8, ~650K for N=64
+
+### Base Decryption (`elGamalDecrypt`)
+
+- **Proves**: Correct decryption of a single ciphertext
+- **Template only**: No main component (used by TallyDecrypt)
 
 ## File Structure
 
 ```
 src/
-├── pedersenVote.circom      # Pedersen commitment voting
-├── elgamal.circom           # ElGamal encryption template
-├── elgamalVoteVector.circom # ElGamal vector voting
-├── elgamalVoteSingle.circom # Scalable single-ciphertext voting
-└── elgamalDecrypt.circom    # Decryption proof circuit
+├── pedersenCommitment.circom   # Pedersen commitment template
+├── pedersenVoteVector.circom   # Pedersen commitment voting
+├── elGamal.circom              # ElGamal encryption template
+├── elGamalVoteVector.circom    # ElGamal vector voting
+├── elGamalVoteScalar.circom    # Scalable single-ciphertext voting
+├── elGamalDecrypt.circom       # Base decryption proof template
+└── elGamalTallyDecrypt.circom  # Tally decryption proof circuit
 
 test/
 ├── unit/
-│   ├── pedersenVoteTest.js
-│   ├── elgamalTest.js
-│   ├── elgamalVoteVectorTest.js
-│   ├── elgamalVoteSingleTest.js
-│   └── elgamalDecryptTest.js
+│   ├── pedersenVoteVectorTest.js
+│   ├── elGamalVoteVectorTest.js
+│   ├── elGamalVoteVectorEncryptionTest.js
+│   ├── elGamalVoteScalarTest.js
+│   └── elGamalTallyDecryptTest.js
 └── integration/
-    ├── pedersenVoteIntegrationTest.js
-    ├── elgamalVectorIntegrationTest.js
-    └── elgamalSingleIntegrationTest.js
+    ├── pedersenVoteVectorIntegrationTest.js
+    ├── elGamalVoteVectorIntegrationTest.js
+    └── elGamalVoteScalarIntegrationTest.js
 
 scripts/
-├── build.js    # Compiles circuits from config
-└── setup.js    # Trusted setup with auto PTAU detection
+├── build.js              # Compiles circuits from config
+├── setup.js              # Trusted setup with auto PTAU detection
+└── generate-verifiers.js # Generate Solidity verifiers
 ```
 
 ## Cryptographic Parameters
@@ -137,3 +153,4 @@ scripts/
 - **Curve**: BabyJubJub (Twisted Edwards)
 - **Generator G**: Base8 point
 - **Generator H**: Independent NUMS point (Pedersen only)
+- **Subgroup Order**: `2736030358979909402780800718157159386076813972158567259200215660948447373041`

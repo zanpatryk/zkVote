@@ -126,7 +126,7 @@ export default function PollsPage() {
                     title={poll.title} 
                     state={poll.state}
                     isOwner 
-                    showVoteButton={poll.isWhitelisted && poll.state === 1}
+                    showVoteButton={poll.isWhitelisted && (poll.state === 0 || poll.state === 1)}
                   />
                 </motion.div>
               ))}

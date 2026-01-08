@@ -1,23 +1,61 @@
 # zkVote
 
-A voting application with privacy features.
+Privacy-preserving voting application using Zero-Knowledge Proofs and Semaphore.
 
-## Prerequisites
+zkVote allows users to participate in polls with complete privacy. By leveraging Semaphore, users can prove they belong to a group (are eligible to vote) without revealing their specific identity, ensuring that their vote remains anonymous yet verifiable.
 
-- [Bun](https://bun.sh/)
-- [Foundry](https://book.getfoundry.sh/getting-started/installation)
+## Features
 
-## Installation
+- **Anonymous Voting**: Cast votes without revealing your identity using ZK Proofs.
+- **Privacy-First Identity**: Managed via [Semaphore Protocol](https://semaphore.appliedzkp.org/).
+- **Verifiable Results**: On-chain verification of proofs and vote tallies.
+- **NFT Receipts**: Receive a unique NFT as proof of participation (optional).
+- **Responsive UI**: Modern, clean, and intuitive frontend built with Next.js and Tailwind CSS.
 
-Install the dependencies:
+## Tech Stack
 
-```bash
-bun install
+- **Frontend**: [Next.js](https://nextjs.org/), [Tailwind CSS](https://tailwindcss.com/)
+- **Smart Contracts**: [Solidity](https://soliditylang.org/), [Foundry](https://book.getfoundry.sh/)
+- **ZK Circuits**: [Circom](https://iden3.io/circom)
+- **Identity/Privacy**: [Semaphore Protocol](https://semaphore.appliedzkp.org/)
+- **Package Manager**: [Bun](https://bun.sh/)
+
+## Project Structure
+
+```text
+zkVote/
+├── circuits/      # Circom ZK circuits and logic
+├── contracts/     # Solidity smart contracts (Foundry)
+├── frontend/      # Next.js web application
+├── packages/      # Shared libraries (e.g., zkvote-lib)
+├── scripts/       # Utility scripts for local setup and ABIs
+└── package.json   # Root workspace configuration
 ```
 
-## Running the Project
+## Getting Started
 
-### Development Mode (Recommended)
+### Prerequisites
+
+- [Bun](https://bun.sh/) (Runtime and package manager)
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) (Smart contract development)
+- [Rust](https://www.rust-lang.org/tools/install) (Required for some ZK components)
+
+### Initial Setup
+
+1. **Clone the repository**:
+
+   ```bash
+   git clone --recursive https://github.com/WUT-MiNI-Bachelor-Thesis/zkVote.git
+   cd zkVote
+   ```
+
+2. **One-command Setup**:
+   This will install dependencies, update submodules, compile ZK circuits, download ZK artifacts, and build smart contracts:
+   ```bash
+   bun run setup
+   ```
+
+### Running Locally
 
 To start the entire local environment (blockchain, contract deployment, and frontend) with a single command:
 
@@ -27,48 +65,40 @@ bun run dev:local
 
 This script will:
 
-1. Start a local Anvil blockchain instance.
+1. Start a local **Anvil** blockchain instance.
 2. Deploy the smart contracts to the local chain.
-3. Generate the necessary ABIs and configuration.
-4. Start the frontend development server.
-
-The application will be available at `http://localhost:3000`.
-
-### Manual Setup (Advanced)
-
-If you prefer to run services individually:
-
-1. **Start Blockchain**: `bun run dev:chain`
-2. **Deploy Contracts**: `bun run deploy:local`
-3. **Start Frontend**: `bun run dev:frontend`
-
-### Production Build
-
-1. **Build**: `bun run build`
-2. **Start**: `bun run start`
+3. Generate the necessary ABIs and configuration for the frontend.
+4. Start the frontend development server at `http://localhost:3000`.
 
 ## Testing
 
-### Smart Contracts
-
-Run the Forge tests for smart contracts:
+### Full Suite
 
 ```bash
-bun run test:contracts
-```
-
-### Frontend UI
-
-Run the frontend unit tests:
-
-```bash
-bun run test:ui
+bun run test:contracts  # Forge tests for smart contracts
+bun run test:ui         # Frontend unit tests
+bun run test:circuits   # ZK circuit unit tests
 ```
 
 ### Integration Tests
 
-Run the frontend integration tests:
+```bash
+bun run test:ui:integration       # Playwright/Cypress UI integration tests
+bun run test:circuits:integration # ZK integration tests
+```
+
+## Benchmarking
+
+Run local benchmarks for gas costs and performance:
 
 ```bash
-bun run test:ui:integration
+bun run benchmarking:local
+```
+
+## Deployment
+
+To deploy to Sepolia testnet (requires configuration in `contracts/.env`):
+
+```bash
+bun run deploy:sepolia
 ```

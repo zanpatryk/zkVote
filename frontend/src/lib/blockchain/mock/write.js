@@ -7,6 +7,7 @@ import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { votingSystemMockContract } from '@/lib/contracts/VotingSystemMock'
 import { decodeEventLog, encodeEventTopics, stringToHex } from 'viem'
 import { toast } from 'react-hot-toast'
+import { toastTransactionError } from '../utils/error-handler'
 
 export async function createPoll(pollDetails) {
   const { address } = getAccount(config)
@@ -55,7 +56,7 @@ export async function createPoll(pollDetails) {
     return pollId
   } catch (error) {
     console.error('createPoll failed:', error)
-    toast.error(error.shortMessage || 'Failed to create poll', { id: 'tx' })
+    toastTransactionError(error, 'Failed to create poll', { id: 'tx' })
     throw error
   }
 }
@@ -81,7 +82,7 @@ export async function whitelistUser(pollId, user) {
     })
   } catch (error) {
     console.error('whitelistUser failed:', error)
-    toast.error(error.shortMessage || 'Failed to whitelist user', { id: 'whitelist' })
+    toastTransactionError(error, 'Failed to whitelist user', { id: 'whitelist' })
     throw error
   }
 }
@@ -107,7 +108,7 @@ export async function whitelistUsers(pollId, users) {
     })
   } catch (error) {
     console.error('whitelistUsers failed:', error)
-    toast.error(error.shortMessage || 'Failed to whitelist users', { id: 'whitelist' })
+    toastTransactionError(error, 'Failed to whitelist users', { id: 'whitelist' })
     throw error
   }
 }

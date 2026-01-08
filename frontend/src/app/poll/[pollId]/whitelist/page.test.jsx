@@ -1,4 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { getPollById } from '@/lib/blockchain/engine/read'
 import WhitelistPage from './page'
 import { whitelistUser, whitelistUsers } from '@/lib/blockchain/engine/write'
 import { useParams, useRouter } from 'next/navigation'
@@ -14,6 +15,7 @@ jest.mock('@/lib/blockchain/engine/write', () => ({
 
 jest.mock('@/lib/blockchain/engine/read', () => ({
   isUserWhitelisted: jest.fn(),
+  getPollById: jest.fn(),
 }))
 
 jest.mock('next/navigation', () => ({
@@ -39,6 +41,11 @@ jest.mock('viem', () => ({
 jest.mock('framer-motion', () => ({
   motion: { div: 'div', button: 'button', form: 'form' },
   AnimatePresence: ({ children }) => children,
+}))
+
+jest.mock('@/components/WhitelistedAddressesList', () => ({
+  __esModule: true,
+  default: () => <div data-testid="whitelisted-addresses-list">Mocked List</div>,
 }))
 
 // Mock navigator.clipboard
@@ -67,10 +74,14 @@ describe('WhitelistPage', () => {
     useRouter.mockReturnValue(mockRouter)
     useAccount.mockReturnValue({ isConnected: true })
     isAddress.mockReturnValue(true)
+    getPollById.mockResolvedValue({ state: 0 }) // Mock Poll Created State
   })
 
-  it('renders correctly', () => {
-    render(<WhitelistPage />)
+  it('renders correctly', async () => {
+    await act(async () => {
+      render(<WhitelistPage />)
+    })
+    
     expect(screen.getByText('Whitelist Voters')).toBeInTheDocument()
     expect(screen.getByText('Single Address')).toBeInTheDocument()
     expect(screen.getByText('Batch Upload')).toBeInTheDocument()
@@ -78,8 +89,10 @@ describe('WhitelistPage', () => {
 
 
 
-  it('toggles between single and batch mode', () => {
-    render(<WhitelistPage />)
+  it('toggles between single and batch mode', async () => {
+    await act(async () => {
+      render(<WhitelistPage />)
+    })
     
     // Default is single
     expect(screen.getByPlaceholderText('0x...')).toBeInTheDocument()
@@ -97,7 +110,9 @@ describe('WhitelistPage', () => {
   describe('Single Address Mode', () => {
     it('validates address format', async () => {
       isAddress.mockReturnValue(false)
-      render(<WhitelistPage />)
+      await act(async () => {
+        render(<WhitelistPage />)
+      })
       
       const input = screen.getByPlaceholderText('0x...')
       fireEvent.change(input, { target: { value: 'invalid-address' } })
@@ -111,7 +126,9 @@ describe('WhitelistPage', () => {
 
     it('requires wallet connection', async () => {
       useAccount.mockReturnValue({ isConnected: false })
-      render(<WhitelistPage />)
+      await act(async () => {
+        render(<WhitelistPage />)
+      })
       
       const submitBtn = screen.getByText('Whitelist Address')
       fireEvent.click(submitBtn)
@@ -121,7 +138,9 @@ describe('WhitelistPage', () => {
     })
 
     it('submits valid address successfully', async () => {
-      render(<WhitelistPage />)
+      await act(async () => {
+        render(<WhitelistPage />)
+      })
       
       const input = screen.getByPlaceholderText('0x...')
       fireEvent.change(input, { target: { value: mockAddress } })
@@ -137,7 +156,9 @@ describe('WhitelistPage', () => {
 
     it('handles submission error', async () => {
       whitelistUser.mockRejectedValue(new Error('Failed'))
-      render(<WhitelistPage />)
+      await act(async () => {
+        render(<WhitelistPage />)
+      })
       
       const input = screen.getByPlaceholderText('0x...')
       fireEvent.change(input, { target: { value: mockAddress } })
@@ -152,8 +173,10 @@ describe('WhitelistPage', () => {
   })
 
   describe('Batch Upload Mode', () => {
-    beforeEach(() => {
-      render(<WhitelistPage />)
+    beforeEach(async () => {
+      await act(async () => {
+        render(<WhitelistPage />)
+      })
       fireEvent.click(screen.getByText('Batch Upload'))
     })
 

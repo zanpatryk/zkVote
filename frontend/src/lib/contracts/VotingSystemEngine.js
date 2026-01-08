@@ -1,6 +1,7 @@
 import VotingSystemEngineABI from './abis/VotingSystemEngine.json'
+import ContractAddress from './address.json'
 
-export const VOTING_SYSTEM_ADDRESS = process.env.NEXT_PUBLIC_VOTING_SYSTEM_ADDRESS
+export const VOTING_SYSTEM_ADDRESS = ContractAddress.address || process.env.NEXT_PUBLIC_VOTING_SYSTEM_ADDRESS
 
 export const votingSystemContract = {
   address: VOTING_SYSTEM_ADDRESS,

@@ -6,6 +6,108 @@
   },
   {
     "type": "function",
+    "name": "castEncryptedVote",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "encVote",
+        "type": "uint256[64]",
+        "internalType": "uint256[64]"
+      },
+      {
+        "name": "proof",
+        "type": "tuple",
+        "internalType": "struct ZKVoteLib.Proof",
+        "components": [
+          {
+            "name": "a",
+            "type": "uint256[2]",
+            "internalType": "uint256[2]"
+          },
+          {
+            "name": "b",
+            "type": "uint256[2][2]",
+            "internalType": "uint256[2][2]"
+          },
+          {
+            "name": "c",
+            "type": "uint256[2]",
+            "internalType": "uint256[2]"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "voteId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "castEncryptedVoteWithProof",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "nullifierHash",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "semaphoreProof",
+        "type": "uint256[8]",
+        "internalType": "uint256[8]"
+      },
+      {
+        "name": "encVote",
+        "type": "uint256[64]",
+        "internalType": "uint256[64]"
+      },
+      {
+        "name": "elgamalProof",
+        "type": "tuple",
+        "internalType": "struct ZKVoteLib.Proof",
+        "components": [
+          {
+            "name": "a",
+            "type": "uint256[2]",
+            "internalType": "uint256[2]"
+          },
+          {
+            "name": "b",
+            "type": "uint256[2][2]",
+            "internalType": "uint256[2][2]"
+          },
+          {
+            "name": "c",
+            "type": "uint256[2]",
+            "internalType": "uint256[2]"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "voteId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "castVote",
     "inputs": [
       {
@@ -17,6 +119,40 @@
         "name": "optionIdx",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "voteId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "castVoteWithProof",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "optionIdx",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "nullifierHash",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "proof",
+        "type": "uint256[8]",
+        "internalType": "uint256[8]"
       }
     ],
     "outputs": [
@@ -46,6 +182,26 @@
         "name": "options",
         "type": "string[]",
         "internalType": "string[]"
+      },
+      {
+        "name": "voteStorageConfig",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "eligibilityConfig",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "eligibilityModule",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "voteStorage",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [
@@ -72,6 +228,30 @@
   },
   {
     "type": "function",
+    "name": "getAggregatedCiphertexts",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "c1",
+        "type": "uint256[2][16]",
+        "internalType": "uint256[2][16]"
+      },
+      {
+        "name": "c2",
+        "type": "uint256[2][16]",
+        "internalType": "uint256[2][16]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "i_owner",
     "inputs": [],
     "outputs": [
@@ -93,12 +273,12 @@
         "internalType": "address"
       },
       {
-        "name": "eligibilityModule",
+        "name": "defaultEligibilityModule",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "voteStorage",
+        "name": "defaultVoteStorage",
         "type": "address",
         "internalType": "address"
       },
@@ -150,6 +330,64 @@
   },
   {
     "type": "function",
+    "name": "publishEncryptedResults",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "tally",
+        "type": "uint256[16]",
+        "internalType": "uint256[16]"
+      },
+      {
+        "name": "tallyProof",
+        "type": "tuple",
+        "internalType": "struct ZKVoteLib.Proof",
+        "components": [
+          {
+            "name": "a",
+            "type": "uint256[2]",
+            "internalType": "uint256[2]"
+          },
+          {
+            "name": "b",
+            "type": "uint256[2][2]",
+            "internalType": "uint256[2][2]"
+          },
+          {
+            "name": "c",
+            "type": "uint256[2]",
+            "internalType": "uint256[2]"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "registerVoter",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "identityCommitment",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "removeWhitelisted",
     "inputs": [
       {
@@ -168,13 +406,26 @@
   },
   {
     "type": "function",
-    "name": "s_eligibilityModule",
+    "name": "s_defaultEligibility",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
         "internalType": "contract IEligibilityModule"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "s_defaultVoteStorage",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IVoteStorage"
       }
     ],
     "stateMutability": "view"
@@ -194,6 +445,25 @@
   },
   {
     "type": "function",
+    "name": "s_pollEligibility",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IEligibilityModule"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "s_pollManager",
     "inputs": [],
     "outputs": [
@@ -207,6 +477,25 @@
   },
   {
     "type": "function",
+    "name": "s_pollVoteStorage",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IVoteStorage"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "s_resultNFT",
     "inputs": [],
     "outputs": [
@@ -214,19 +503,6 @@
         "name": "",
         "type": "address",
         "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "s_voteStorage",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IVoteStorage"
       }
     ],
     "stateMutability": "view"
@@ -279,6 +555,44 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "EncryptedResultsPublished",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EncryptedVoteCast",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "voter",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "voteId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
   },
   {
     "type": "error",

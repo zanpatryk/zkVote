@@ -1,6 +1,6 @@
 pragma circom 2.1.5;
 
-include "elgamal.circom";
+include "elGamal.circom";
 include "circomlib/circuits/bitify.circom";
 
 template ElGamalVoteVector(N) {

@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { hexToString } from 'viem'
 import { toast } from 'react-hot-toast'
+import { useAccount } from 'wagmi'
+import { useSemaphore } from '@/hooks/useSemaphore'
+import { usePollRegistry } from '@/hooks/usePollRegistry'
 
 export function formatDuration(ms) {
   if (ms <= 0) return '0m'
@@ -21,6 +24,18 @@ export function formatDuration(ms) {
 
 export default function PollCard({ pollId, title, state, isOwner = false, showVoteButton = false, interactive = true }) {
   const [now, setNow] = useState(Date.now())
+  const { address } = useAccount()
+  const { createIdentity, register, isLoadingIdentity, isRegistering } = useSemaphore()
+  const { isZK, isRegistered } = usePollRegistry(pollId)
+
+  const canRegister = isZK && !isRegistered && state === 0 // Registration only allowed in Created state
+
+  const handleRegister = async () => {
+    const identity = await createIdentity()
+    if (identity) {
+      await register(pollId)
+    }
+  }
 
   // State mapping: 0 = CREATED, 1 = ACTIVE, 2 = ENDED
   let statusLabel = null
@@ -81,11 +96,18 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
             </div>
           )}
         </div>
-        {isOwner && (
-          <span className="bg-black text-white text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black">
-            Owner
-          </span>
-        )}
+        <div className="flex gap-2">
+          {isRegistered && (
+            <span className="bg-gray-100 text-black text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black/20">
+              Registered
+            </span>
+          )}
+          {isOwner && (
+            <span className="bg-black text-white text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black">
+              Owner
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="mt-8 flex flex-wrap gap-6 border-t-2 border-black/5 pt-6 items-center">
@@ -109,12 +131,32 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
               Mint Result NFT
             </span>
           </InteractiveLink>
-        ) : showVoteButton && state === 1 ? (
-          <InteractiveLink href={`/poll/${pollId}/vote`}>
-            <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">
-              Vote Now
-            </span>
-          </InteractiveLink>
+        ) : showVoteButton ? (
+          <>
+            {(state === 1 || state === 2) && (
+              <InteractiveLink href={`/poll/${pollId}/verify`}>
+                <span className="text-black font-semibold hover:underline decoration-2 underline-offset-4">
+                  Verify Vote
+                </span>
+              </InteractiveLink>
+            )}
+
+            {state === 0 && canRegister && (
+              <InteractiveLink href={`/poll/${pollId}/register`}>
+                <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">
+                  Register Identity
+                </span>
+              </InteractiveLink>
+            )}
+            
+            {state === 1 && isRegistered && (
+              <InteractiveLink href={`/poll/${pollId}/vote`}>
+                <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">
+                  Vote Now
+                </span>
+              </InteractiveLink>
+            )}
+          </>
         ) : null}
       </div>
     </div>

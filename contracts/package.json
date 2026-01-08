@@ -1,4 +1,7 @@
-{ 
-    "name": "contracts", 
-    "private": true 
+{
+    "name": "contracts",
+    "private": true,
+    "dependencies": {
+        "@semaphore-protocol/contracts": "^4.14.0"
+    }
 }

@@ -19,7 +19,9 @@ const demoPoll = {
 const demoReceipt = {
   pollId: "0x7f3a8b1c9d2e4f50",
   voteId: "0x9e8d7c6b5a4f3e21",
-  txHash: "0xabc123def456789012345678901234567890abcdef123456789012345678901234"
+  txHash: "0xabc123def456789012345678901234567890abcdef123456789012345678901234",
+  nullifier: "0x7d6a5b4c3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6",
+  proof: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
 }
 
 const demoNFT = {
@@ -83,25 +85,25 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col items-center pt-32 px-6 pb-32">
       {/* Hero Section */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="text-center mb-24"
-      >
-        <div className="inline-block mb-6 px-4 py-2 border-2 border-black text-sm font-bold uppercase tracking-widest">
-          Decentralized Governance
-        </div>
-        <h1 className="text-8xl md:text-9xl font-black font-serif mb-8 tracking-tight">zkVote</h1>
-        <p className="text-2xl md:text-3xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed">
-          Secure, transparent, and verifiable voting on the blockchain.
-        </p>
-        {!isConnected && (
-          <p className="text-lg text-gray-500 mt-8 max-w-xl mx-auto">
-            Connect your wallet to create polls, cast votes, and earn commemorative NFT badges.
+      {!isConnected && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-24"
+        >
+          <div className="inline-block mb-6 px-4 py-2 border-2 border-black text-sm font-bold uppercase tracking-widest">
+            Private & Anonymous Governance
+          </div>
+          <h1 className="text-8xl md:text-9xl font-black font-serif mb-8 tracking-tight">zkVote</h1>
+          <p className="text-2xl md:text-3xl text-gray-600 font-medium max-w-3xl mx-auto leading-relaxed">
+            Privacy-preserving, transparent, and verifiable voting on the blockchain.
           </p>
-        )}
-      </motion.div>
+          <p className="text-lg text-gray-500 mt-8 max-w-xl mx-auto">
+            Connect your wallet to register your private identity, cast anonymous votes, and earn commemorative NFT badges.
+          </p>
+        </motion.div>
+      )}
 
       {!isConnected && (
         <>
@@ -116,11 +118,11 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 border-2 border-black p-8 bg-black text-white">
               <div className="text-center">
                 <p className="text-5xl font-black font-serif">100%</p>
-                <p className="text-sm uppercase tracking-widest mt-2 text-gray-400">On-Chain</p>
+                <p className="text-sm uppercase tracking-widest mt-2 text-gray-400">Anonymous</p>
               </div>
               <div className="text-center border-y py-8 md:py-0 md:border-y-0 md:border-l md:border-r border-white/20">
                 <p className="text-5xl font-black font-serif">ZK</p>
-                <p className="text-sm uppercase tracking-widest mt-2 text-gray-400">Privacy</p>
+                <p className="text-sm uppercase tracking-widest mt-2 text-gray-400">Semaphore V4</p>
               </div>
               <div className="text-center">
                 <p className="text-5xl font-black font-serif">NFT</p>
@@ -160,8 +162,8 @@ export default function LandingPage() {
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl flex-shrink-0">1</div>
                 <div>
-                  <h3 className="text-2xl font-bold font-serif mb-2">View & Manage Polls</h3>
-                  <p className="text-gray-600 text-lg">Browse active governance proposals and track their status. Create new polls, manage whitelists, and monitor voting progress in real-time.</p>
+                  <h3 className="text-2xl font-bold font-serif mb-2">Register Private Identity</h3>
+                  <p className="text-gray-600 text-lg">Your on-chain presence is tied to a unique ZK identity commitment. Register once per poll to join the anonymity set and participate in private governance.</p>
                 </div>
               </div>
               <div>
@@ -186,8 +188,8 @@ export default function LandingPage() {
               <div className="flex items-start gap-4 lg:order-2">
                 <div className="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl flex-shrink-0">2</div>
                 <div>
-                  <h3 className="text-2xl font-bold font-serif mb-2">Cast Your Vote</h3>
-                  <p className="text-gray-600 text-lg">Experience a sleek, official ballot interface. Your vote is anonymized using Zero-Knowledge proofs before it ever hits the chain.</p>
+                  <h3 className="text-2xl font-bold font-serif mb-2">Cast Anonymous Votes</h3>
+                  <p className="text-gray-600 text-lg">Your vote is protected by ZK-SNARKs. Only you know how you voted, while everyone can verify that every vote is valid and correctly counted.</p>
                 </div>
               </div>
               <div className="lg:order-1 flex justify-center">
@@ -206,8 +208,8 @@ export default function LandingPage() {
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-black text-white flex items-center justify-center font-black text-xl flex-shrink-0">3</div>
                 <div>
-                  <h3 className="text-2xl font-bold font-serif mb-2">Get Vote Receipts</h3>
-                  <p className="text-gray-600 text-lg">Every vote generates a downloadable receipt with poll ID, vote ID, and transaction hash. Use these IDs to independently verify your vote on the blockchain.</p>
+                  <h3 className="text-2xl font-bold font-serif mb-2">Verify via Nullifiers</h3>
+                  <p className="text-gray-600 text-lg">Every vote generates a cryptographic receipt containing a nullifier hash and ZK proof. Use these to independently verify that your vote was recorded without revealing your identity.</p>
                 </div>
               </div>
               <div className="flex justify-center lg:justify-start">
@@ -215,6 +217,8 @@ export default function LandingPage() {
                   pollId={demoReceipt.pollId}
                   voteId={demoReceipt.voteId}
                   txHash={demoReceipt.txHash}
+                  nullifier={demoReceipt.nullifier}
+                  proof={demoReceipt.proof}
                   interactive={false}
                 />
               </div>
@@ -253,10 +257,10 @@ export default function LandingPage() {
             </motion.h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {[
-                { step: "01", title: "Connect", desc: "Link your wallet to access the platform" },
-                { step: "02", title: "Create or Vote", desc: "Start a poll or participate in governance" },
-                { step: "03", title: "Verify", desc: "Check any vote on the blockchain" },
-                { step: "04", title: "Collect", desc: "Mint your participation NFT badge" }
+                { step: "01", title: "Connect", desc: "Link your wallet to the zkVote platform" },
+                { step: "02", title: "Register", desc: "Generate and save your private ZK identity" },
+                { step: "03", title: "Vote", desc: "Cast an anonymous proof-backed vote" },
+                { step: "04", title: "Verify", desc: "Audit results while maintaining privacy" }
               ].map((item, index) => (
                 <motion.div 
                   key={index}

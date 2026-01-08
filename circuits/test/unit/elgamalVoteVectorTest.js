@@ -9,7 +9,7 @@ const expect = chai.expect;
 const N = 8;
 const SUBORDER = 2736030358979909402780800718157159386076813972158567259200215660948447373041n;
 
-describe("ElGamalVote Circuit", function () {
+describe("ElGamalVoteVector Circuit", function () {
     this.timeout(120000);
 
     let babyjub;
@@ -28,10 +28,10 @@ describe("ElGamalVote Circuit", function () {
         F = babyjub.F;
         G = babyjub.Base8;
 
-        const buildDir = path.join(__dirname, "../../build/elgamalVoteVector_N8");
+        const buildDir = path.join(__dirname, "../../build/elGamalVoteVector_N8");
         const setupDir = path.join(buildDir, "setup");
-        wasmPath = path.join(buildDir, "elgamalVoteVector_N8_js/elgamalVoteVector_N8.wasm");
-        zkeyPath = path.join(setupDir, "elgamalVoteVector_N8_final.zkey");
+        wasmPath = path.join(buildDir, "elGamalVoteVector_N8_js/elGamalVoteVector_N8.wasm");
+        zkeyPath = path.join(setupDir, "elGamalVoteVector_N8_final.zkey");
         const vkeyPath = path.join(setupDir, "verification_key.json");
 
         if (!fs.existsSync(zkeyPath)) {

@@ -8,6 +8,7 @@ import '@testing-library/jest-dom'
 // Mock dependencies
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getPollById: jest.fn(),
+  getMerkleTreeDepth: jest.fn().mockResolvedValue(20),
 }))
 
 jest.mock('@/components/PollDetails', () => ({
@@ -18,6 +19,21 @@ jest.mock('@/components/PollDetails', () => ({
 jest.mock('@/components/WhitelistManager', () => ({
   __esModule: true,
   default: () => <div data-testid="whitelist-manager">Whitelist Manager Component</div>,
+}))
+
+jest.mock('@/components/WhitelistedAddressesList', () => ({
+  __esModule: true,
+  default: () => <div data-testid="whitelisted-addresses-list">Whitelisted Addresses List Component</div>,
+}))
+
+jest.mock('@/components/VotesList', () => ({
+  __esModule: true,
+  default: () => <div data-testid="votes-list">Votes List Component</div>,
+}))
+
+jest.mock('@/components/RegistrationList', () => ({
+  __esModule: true,
+  default: () => <div data-testid="registration-list">Registration List Component</div>,
 }))
 
 jest.mock('@/components/PollStatusManager.jsx', () => ({
@@ -36,6 +52,15 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('react-hot-toast', () => ({
   toast: { error: jest.fn() },
+}))
+
+// Mock Framer Motion
+jest.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+    section: ({ children, ...props }) => <section {...props}>{children}</section>,
+  },
+  AnimatePresence: ({ children }) => <>{children}</>,
 }))
 
 describe('ManagePollPage', () => {
@@ -84,17 +109,38 @@ describe('ManagePollPage', () => {
     expect(mockPush).toHaveBeenCalledWith(`/poll/${mockPollId}`)
   })
 
-  it('renders management view if owner', async () => {
+  it('renders management view with tabs if owner', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
     read.getPollById.mockResolvedValue({ creator: mockUserAddress.toLowerCase(), state: 0 }) // Is owner
 
     render(<ManagePollPage />)
 
+    // Initial State: Poll Details Tab
     await waitFor(() => {
       expect(screen.getByText('Manage Poll')).toBeInTheDocument()
       expect(screen.getByTestId('poll-details')).toBeInTheDocument()
       expect(screen.getByTestId('poll-status-manager')).toBeInTheDocument()
-      expect(screen.getByTestId('whitelist-manager')).toBeInTheDocument()
+      // Whitelist manager should NOT be visible yet
+      expect(screen.queryByTestId('whitelist-manager')).not.toBeInTheDocument()
+    })
+    
+    // Switch to Whitelisting Tab
+    fireEvent.click(screen.getByText('Whitelisting'))
+    
+    await waitFor(() => {
+        expect(screen.getByTestId('whitelist-manager')).toBeInTheDocument()
+        expect(screen.getByTestId('whitelisted-addresses-list')).toBeInTheDocument()
+        // Poll details should be hidden
+        expect(screen.queryByTestId('poll-details')).not.toBeInTheDocument()
+    })
+
+    // Switch to Votes Tab
+    fireEvent.click(screen.getByText('Votes'))
+
+    await waitFor(() => {
+        expect(screen.getByTestId('votes-list')).toBeInTheDocument()
+        // Whitelist manager should be hidden
+        expect(screen.queryByTestId('whitelist-manager')).not.toBeInTheDocument()
     })
   })
 })
