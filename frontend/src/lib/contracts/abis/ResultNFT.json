@@ -197,7 +197,7 @@
         "internalType": "address"
       },
       {
-        "name": "_tokenURI",
+        "name": "tokenURI",
         "type": "string",
         "internalType": "string"
       }
