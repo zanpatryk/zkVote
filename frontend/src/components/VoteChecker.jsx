@@ -1,55 +1,38 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { parseJsonFile } from '@/lib/utils/file'
 
-export default function VoteChecker() {
-  const router = useRouter()
-
+export default function VoteChecker({ onVerify }) {
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const text = await file.text()
+    try {
+      const data = await parseJsonFile(file)
+      if (!data.pollId || !data.voteId) {
+        throw new Error('Missing pollId or voteId')
+      }
 
-    // Expect lines like: "Poll ID: X", "Vote ID: Y", "Tx Hash: Z"
-    const pollMatch = text.match(/Poll ID:\s*((?:0x)?[0-9a-fA-F]+)/i)
-    const voteMatch = text.match(/Vote ID:\s*((?:0x)?[0-9a-fA-F]+)/i)
-    const txMatch = text.match(/Tx Hash:\s*((?:0x)?[0-9a-fA-F]+)/i)
-    const nullifierMatch = text.match(/Nullifier Hash:\s*([0-9a-fA-F]+)/i)
-    const proofMatch = text.match(/ZK Proof:\s*(\[.*\])/i)
-
-    if (!pollMatch || !voteMatch) {
-      alert('Could not read poll and vote IDs from this receipt file.')
-      return
+      if (onVerify) {
+        onVerify(data)
+      }
+    } catch (err) {
+      alert('Invalid receipt file. Please upload a valid zkVote receipt (.json).')
     }
-
-    const pollId = pollMatch[1]
-    const voteId = voteMatch[1]
-    const txHash = txMatch ? txMatch[1] : null
-    const nullifier = nullifierMatch ? nullifierMatch[1] : ''
-    const proof = proofMatch ? encodeURIComponent(proofMatch[1]) : ''
-
-    const params = new URLSearchParams({
-      ...(txHash && { txHash }),
-      ...(nullifier && { nullifier }),
-      ...(proof && { proof })
-    }).toString()
-
-    const url = `/poll/${pollId}/vote/check/${voteId}${params ? `?${params}` : ''}`
-    router.push(url)
   }
 
   return (
     <div className="bg-white border-2 border-black rounded-lg p-10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-left max-w-2xl mx-auto w-full">
       <div className="mb-6">
          <h2 className="text-2xl font-serif font-bold mb-2">Upload Receipt</h2>
-         <p className="text-gray-500">Select the <code className="bg-gray-100 px-1 rounded text-black">.txt</code> file required when you voted.</p>
+         <p className="text-gray-500">Select the <code className="bg-gray-100 px-1 rounded text-black">.json</code> file received when you voted.</p>
       </div>
 
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors group cursor-pointer relative">
         <input
             type="file"
-            accept=".txt"
+            accept=".json"
             onChange={handleFileChange}
             aria-label="Upload vote receipt"
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"

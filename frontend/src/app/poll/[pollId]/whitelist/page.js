@@ -1,14 +1,13 @@
-"use client"
-import WhitelistManager from '@/components/WhitelistManager'
+'use client'
+
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { getPollById } from '@/lib/blockchain/engine/read'
 import { toast } from 'react-hot-toast'
-
-import Link from 'next/link'
-
+import WhitelistManager from '@/components/WhitelistManager'
 import WhitelistedAddressesList from '@/components/WhitelistedAddressesList'
+import BackButton from '@/components/BackButton'
 
 export default function WhitelistPage() {
   const { pollId } = useParams()
@@ -47,15 +46,13 @@ export default function WhitelistPage() {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-12"
+        className="mb-12 flex justify-between items-start"
       >
-        <Link href={`/poll/${pollId}/manage`}>
-          <button className="text-gray-600 hover:text-black font-medium transition mb-6 flex items-center gap-2">
-            ← Manage Poll
-          </button>
-        </Link>
-        <h1 className="text-5xl font-black font-serif mb-4 tracking-tight">Whitelist Voters</h1>
-        <p className="text-xl text-gray-600 font-medium">Add wallet addresses that are allowed to register their ZK membership and participate in voting.</p>
+        <div>
+           <h1 className="text-5xl font-black font-serif mb-2 tracking-tight">Whitelist Voters</h1>
+           <p className="text-xl text-gray-600 font-medium">Add addresses allowed to participate in the poll.</p>
+        </div>
+        <BackButton href={`/poll/${pollId}/manage`} label="Manage Poll" />
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}

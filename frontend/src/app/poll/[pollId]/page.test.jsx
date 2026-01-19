@@ -9,6 +9,14 @@ jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }))
 
+jest.mock('@/hooks/usePollRegistry', () => ({
+  usePollRegistry: jest.fn()
+}))
+
+jest.mock('@/hooks/useZKVote', () => ({
+  useZKVote: jest.fn()
+}))
+
 // Mock PollDetails component
 jest.mock('@/components/PollDetails', () => {
   return function MockPollDetails({ pollId }) {
@@ -23,14 +31,32 @@ jest.mock('framer-motion', () => ({
   },
 }))
 
+// Mock BackButton
+jest.mock('@/components/BackButton', () => {
+  return function MockBackButton({ href, label }) {
+    return <a href={href}>← {label || 'Go Back'}</a>
+  }
+})
+
 describe('ManagePoll Page', () => {
   const mockPush = jest.fn()
+  const mockRouter = { push: mockPush }
   const mockPollId = '123'
+
+  const { usePollRegistry } = require('@/hooks/usePollRegistry')
+  const { useZKVote } = require('@/hooks/useZKVote')
 
   beforeEach(() => {
     jest.clearAllMocks()
-    useRouter.mockReturnValue({ push: mockPush })
     useParams.mockReturnValue({ pollId: mockPollId })
+    useRouter.mockReturnValue(mockRouter)
+    
+    usePollRegistry.mockReturnValue({
+        isLoading: false,
+        isRegistered: false,
+    })
+    
+    useZKVote.mockReturnValue({})
   })
 
   it('renders page title', () => {
@@ -45,8 +71,8 @@ describe('ManagePoll Page', () => {
 
   it('navigates back to poll list when Go Back is clicked', () => {
     render(<ManagePoll />)
-    fireEvent.click(screen.getByText('← Go Back'))
-    expect(mockPush).toHaveBeenCalledWith('/poll')
+    const link = screen.getByText('← Go Back').closest('a')
+    expect(link).toHaveAttribute('href', '/poll')
   })
 
   it('renders PollDetails component with correct pollId', () => {

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import NFTCard from './NFTCard'
 
 describe('NFTCard', () => {
@@ -16,6 +16,10 @@ describe('NFTCard', () => {
 
     expect(screen.getByText('Test Badge')).toBeInTheDocument()
     expect(screen.getByText('A badge for testing')).toBeInTheDocument()
+    
+    // Click to expand to see attributes
+    fireEvent.click(screen.getByText('Test Badge'))
+    
     expect(screen.getByText('Test Poll')).toBeInTheDocument()
     expect(screen.getByText('Voter')).toBeInTheDocument()
   })

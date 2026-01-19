@@ -13,6 +13,7 @@ jest.mock('next/navigation', () => ({
     replace: mockReplace,
   }),
   usePathname: () => mockPathname(),
+  useParams: jest.fn(),
 }))
 
 // Mock wagmi

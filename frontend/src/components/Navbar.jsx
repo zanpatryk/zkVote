@@ -8,22 +8,31 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Navbar() {
-  const { isConnected, address } = useAccount()
+  const { isConnected: wagmiConnected, address } = useAccount()
   const pathname = usePathname()
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const isConnected = mounted && wagmiConnected
 
   // Redirect logic (connect → /home, disconnect → /)
   useEffect(() => {
     const protectedRoutes = ['/home', '/poll', '/vote']
     const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
 
+    if (!mounted) return
+
     if (isConnected && pathname === '/') {
       router.replace('/home')
     } else if (!isConnected && isProtectedRoute) {
       router.replace('/')
     }
-  }, [isConnected, address, pathname, router])
+  }, [isConnected, address, pathname, router, mounted])
 
   // Close menu when route changes
   useEffect(() => {
@@ -32,7 +41,9 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/poll', label: 'Poll', isActive: (p) => p.startsWith('/poll') },
-    { href: '/vote', label: 'Vote', isActive: (p) => p === '/vote' },
+    { href: '/vote', label: 'Vote', isActive: (p) => p.startsWith('/vote') },
+    { href: '/verify', label: 'Verify', isActive: (p) => p.startsWith('/verify') },
+    { href: '/nfts', label: 'NFTs', isActive: (p) => p.startsWith('/nfts') },
   ]
 
   return (

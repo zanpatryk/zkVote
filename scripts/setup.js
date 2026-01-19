@@ -27,7 +27,7 @@ const tasks = [
     { id: 'circuits_build', name: 'Build Project ZK Circuits', cmd: 'bun', args: ['run', '--filter', 'circuits', 'build'] },
     { id: 'circuits_setup', name: 'Run ZK Trusted Setup', cmd: 'bun', args: ['run', '--filter', 'circuits', 'setup'] },
     { id: 'zkvote_lib_sync', name: 'Sync ZK Artifacts to Lib', cmd: 'bun', args: ['run', '--filter', '@zkvote/lib', 'sync:artifacts'] },
-    { id: 'frontend_download', name: 'Download Semaphore Circuits', cmd: 'bun', args: ['run', '--filter', 'frontend', 'download:circuits'] },
+    { id: 'frontend_setup_circuits', name: 'Setup Frontend Circuits', cmd: 'bun', args: ['run', '--filter', 'frontend', 'setup:circuits'] },
     { id: 'contracts_install', name: 'Install Forge Dependencies', cmd: 'forge', args: ['install'], cwd: path.join(__dirname, '../contracts') },
     { id: 'contracts_build', name: 'Build Smart Contracts', cmd: 'make', args: ['build'], cwd: path.join(__dirname, '../contracts') }
 ];

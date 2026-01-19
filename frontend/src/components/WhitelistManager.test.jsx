@@ -64,9 +64,7 @@ describe('WhitelistManager', () => {
     const input = screen.getByPlaceholderText('0x...')
     const button = screen.getByText('Whitelist Address')
 
-    fireEvent.change(input, { target: { value: 'invalid-address' } }) // Use invalid to avoid mock viem address issues if logic uses isAddress?
-    // Wait. My mock for viem returns true ONLY for '0x123...'. 
-    // And test uses '0x123...'
+    fireEvent.change(input, { target: { value: 'invalid-address' } })
     fireEvent.change(input, { target: { value: validAddress } })
     fireEvent.click(button)
 

@@ -1,56 +1,37 @@
 "use client"
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { hexToString } from 'viem'
 import { toast } from 'react-hot-toast'
 import { useAccount } from 'wagmi'
 import { useSemaphore } from '@/hooks/useSemaphore'
 import { usePollRegistry } from '@/hooks/usePollRegistry'
-
-export function formatDuration(ms) {
-  if (ms <= 0) return '0m'
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60) % 60
-  const hours = Math.floor(totalSeconds / 3600) % 24
-  const days = Math.floor(totalSeconds / 86400)
-
-  const parts = []
-  if (days) parts.push(`${days}d`)
-  if (hours) parts.push(`${hours}h`)
-  if (minutes || parts.length === 0) parts.push(`${minutes}m`)
-  return parts.join(' ')
-}
+import { POLL_STATE } from '@/lib/constants'
+import CONTRACT_ADDRESSES from '@/lib/contracts/addresses'
 
 export default function PollCard({ pollId, title, state, isOwner = false, showVoteButton = false, interactive = true }) {
-  const [now, setNow] = useState(Date.now())
   const { address } = useAccount()
   const { createIdentity, register, isLoadingIdentity, isRegistering } = useSemaphore()
-  const { isZK, isRegistered } = usePollRegistry(pollId)
+  const { isZK, isRegistered, eligibilityModuleAddress, voteStorageAddress, resultsPublished } = usePollRegistry(pollId)
+  
+  const isAnonymous = eligibilityModuleAddress?.toLowerCase() === CONTRACT_ADDRESSES.semaphoreEligibility?.toLowerCase()
+  const isSecret = voteStorageAddress?.toLowerCase() === CONTRACT_ADDRESSES.zkElGamalVoteVector?.toLowerCase()
 
-  const canRegister = isZK && !isRegistered && state === 0 // Registration only allowed in Created state
+  const canRegister = isZK && !isRegistered && state === POLL_STATE.CREATED
 
   const handleRegister = async () => {
-    const identity = await createIdentity()
+    const identity = await createIdentity(pollId)
     if (identity) {
       await register(pollId)
     }
   }
 
-  // State mapping: 0 = CREATED, 1 = ACTIVE, 2 = ENDED
-  let statusLabel = null
-  let statusValue = null
-
-  if (state === 0) {
-    statusLabel = 'Status'
-    statusValue = 'Created'
-  } else if (state === 1) {
-    statusLabel = 'Status'
-    statusValue = 'Active'
-  } else if (state === 2) {
-    statusLabel = 'Status'
-    statusValue = 'Ended'
-  }
+  // State to label mapping
+  const statusLabel = 'Status'
+  const statusValue = {
+    [POLL_STATE.CREATED]: 'Created',
+    [POLL_STATE.ACTIVE]: 'Active',
+    [POLL_STATE.ENDED]: 'Ended',
+  }[state] || null
 
   const handleCopy = (e) => {
     e.preventDefault()
@@ -69,8 +50,20 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
     <div className={`p-6 md:p-8 bg-white border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all duration-200`}>
       <div className="flex justify-between items-start pointer-events-auto">
         <div>
-          <h3 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 leading-tight">
+          <h3 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 leading-tight flex items-center gap-3">
             {title}
+            <div className="flex gap-2">
+              {isAnonymous && (
+                <span className="bg-gray-100 text-gray-600 text-[10px] font-black px-2 py-0.5 uppercase tracking-tighter border border-gray-200 rounded-sm">
+                  Anonymous
+                </span>
+              )}
+              {isSecret && (
+                <span className="bg-gray-100 text-gray-600 text-[10px] font-black px-2 py-0.5 uppercase tracking-tighter border border-gray-200 rounded-sm">
+                  Secret
+                </span>
+              )}
+            </div>
           </h3>
           <div className="mt-3 flex items-center gap-3 text-gray-600">
             <span className="text-xs font-mono uppercase tracking-wider text-gray-500 border border-black/20 px-2 py-1 rounded-sm" title={pollId.toString()}>
@@ -91,22 +84,24 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
           </div>
           {statusLabel && statusValue && (
             <div className="mt-3 flex items-center gap-2">
-                 <span className={`w-2 h-2 rounded-full ${state === 1 ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                 <span className={`w-2 h-2 rounded-full ${state === POLL_STATE.ACTIVE ? 'bg-green-500' : 'bg-gray-400'}`}></span>
                  <p className="text-sm font-medium uppercase tracking-wide text-gray-600">{statusValue}</p>
             </div>
           )}
         </div>
-        <div className="flex gap-2">
-          {isRegistered && (
-            <span className="bg-gray-100 text-black text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black/20">
-              Registered
-            </span>
-          )}
-          {isOwner && (
-            <span className="bg-black text-white text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black">
-              Owner
-            </span>
-          )}
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex gap-2">
+            {isRegistered && (
+              <span className="bg-gray-100 text-black text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black/20">
+                Registered
+              </span>
+            )}
+            {isOwner && (
+              <span className="bg-black text-white text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black">
+                Owner
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -125,7 +120,7 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
           </InteractiveLink>
         )}
 
-        {state === 2 ? (
+        {state === POLL_STATE.ENDED && (!isSecret || resultsPublished) ? (
           <InteractiveLink href={`/poll/${pollId}/nft`}>
             <span className="text-black font-semibold hover:underline decoration-2 underline-offset-4">
               Mint Result NFT
@@ -133,15 +128,7 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
           </InteractiveLink>
         ) : showVoteButton ? (
           <>
-            {(state === 1 || state === 2) && (
-              <InteractiveLink href={`/poll/${pollId}/verify`}>
-                <span className="text-black font-semibold hover:underline decoration-2 underline-offset-4">
-                  Verify Vote
-                </span>
-              </InteractiveLink>
-            )}
-
-            {state === 0 && canRegister && (
+            {state === POLL_STATE.CREATED && canRegister && (
               <InteractiveLink href={`/poll/${pollId}/register`}>
                 <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">
                   Register Identity
@@ -149,7 +136,7 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
               </InteractiveLink>
             )}
             
-            {state === 1 && isRegistered && (
+            {state === POLL_STATE.ACTIVE && (isRegistered || !isZK) && (
               <InteractiveLink href={`/poll/${pollId}/vote`}>
                 <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">
                   Vote Now

@@ -11,6 +11,7 @@ jest.mock('@/lib/blockchain/engine/read', () => ({
   getPollById: jest.fn(),
   isUserWhitelisted: jest.fn(),
   getUserNFTs: jest.fn(),
+  getZKPollState: jest.fn(),
 }))
 
 jest.mock('@/lib/blockchain/engine/write', () => ({

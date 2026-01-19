@@ -1,4 +1,4 @@
-import './globals.css'
+import '@/styles/globals.css'
 import Navbar from '@/components/Navbar.jsx'
 import Footer from '@/components/Footer.jsx'
 import Providers from '@/lib/providers/Providers'

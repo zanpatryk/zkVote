@@ -34,27 +34,6 @@ async function waitForAnvil() {
 }
 
 async function start() {
-    // 0. Check and download circuits if needed
-    const fs = require('fs');
-    const path = require('path');
-    const circuitPath = path.join(__dirname, '../frontend/public/semaphore/20/semaphore.wasm');
-    
-    if (!fs.existsSync(circuitPath)) {
-        console.log('[Setup] Circuits missing. Downloading...');
-        const download = spawn('bun', ['run', 'download:circuits'], { 
-            cwd: path.join(__dirname, '../frontend'), 
-            stdio: 'inherit' 
-        });
-        
-        await new Promise((resolve, reject) => {
-            download.on('close', (code) => {
-                if (code === 0) resolve();
-                else reject(new Error('Circuit download failed'));
-            });
-        });
-        console.log('[Setup] Circuits ready!');
-    }
-
     // 1. Start Anvil
     console.log('[Setup] Starting Anvil...');
     const anvil = spawn('bun', ['run', 'dev:chain'], { stdio: ['ignore', 'pipe', 'pipe'] });

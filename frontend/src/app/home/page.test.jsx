@@ -14,6 +14,7 @@ jest.mock('next/navigation', () => ({
 // Mock wagmi
 jest.mock('wagmi', () => ({
   useAccount: jest.fn(() => ({ isConnected: true, address: '0x123' })),
+  http: jest.fn(),
 }))
 
 // Mock read
@@ -30,7 +31,7 @@ describe('HomePage', () => {
   it('renders both sections', () => {
     read.getUserNFTs.mockResolvedValue([])
     render(<HomePage />)
-    expect(screen.getByText('Your Voting Badges')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search by Poll ID...')).toBeInTheDocument()
   })
 
   it('fetches and displays badges on mount', async () => {

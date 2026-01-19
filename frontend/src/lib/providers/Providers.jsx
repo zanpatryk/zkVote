@@ -1,25 +1,15 @@
 'use client'
 
+import { useState } from 'react'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { wagmiConfig } from '@/lib/wagmi/config'
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: (failureCount, error) => {
-        if (error.status === '403') return false
-        return failureCount < 3
-      },
-    },
-  },
-}) 
-
 // Custom RainbowKit theme - Premium Monochrome
 const customTheme = {
   fonts: {
-    body: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+    body: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
   radii: {
     connectButton: '8px',
@@ -64,6 +54,17 @@ const customTheme = {
 }
 
 export default function Providers({ children }) {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: (failureCount, error) => {
+          if (error.status === '403') return false
+          return failureCount < 3
+        },
+      },
+    },
+  }))
+
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>

@@ -11,6 +11,7 @@ jest.mock('@/lib/blockchain/engine/read', () => ({
 
 jest.mock('wagmi', () => ({
   useAccount: jest.fn(),
+  http: jest.fn(),
 }))
 
 // Mock components to avoid viem import issues
@@ -58,72 +59,37 @@ jest.mock('framer-motion', () => ({
   AnimatePresence: ({ children }) => <>{children}</>,
 }))
 
+jest.mock('@/components/landing/HeroSection', () => () => <div>zkVote Hero</div>)
+jest.mock('@/components/landing/StatsBanner', () => () => <div>Stats Banner</div>)
+jest.mock('@/components/landing/ExperienceShowcase', () => () => <div>Experience</div>)
+jest.mock('@/components/landing/HowItWorks', () => () => <div>How It Works</div>)
+jest.mock('@/components/landing/CTASection', () => () => <div>CTA</div>)
+
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(),
+}))
+
 describe('LandingPage', () => {
   const mockUserAddress = '0xUser'
+  const mockPush = jest.fn()
 
   beforeEach(() => {
     jest.clearAllMocks()
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
+    require('next/navigation').useRouter.mockReturnValue({ push: mockPush })
   })
 
   it('renders title when not connected', () => {
     wagmi.useAccount.mockReturnValue({ isConnected: false })
     read.getUserNFTs.mockResolvedValue([])
     render(<LandingPage />)
-    expect(screen.getByText('zkVote')).toBeInTheDocument()
-    expect(screen.getByText('Privacy-preserving, transparent, and verifiable voting on the blockchain.')).toBeInTheDocument()
+    // Expect HeroSection content (Mocked)
+    expect(screen.getByText('zkVote Hero')).toBeInTheDocument()
   })
 
-  it('hides title when connected', () => {
+  it('redirects when connected', () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true })
-    read.getUserNFTs.mockResolvedValue([])
     render(<LandingPage />)
-    expect(screen.queryByText('zkVote')).not.toBeInTheDocument()
-  })
-
-  it('fetches and displays user badges when connected', async () => {
-    const mockNFTs = [
-      {
-        tokenId: '1',
-        name: 'Poll #1 Results',
-        description: 'Results for poll: Test Poll',
-        attributes: [
-          { trait_type: 'Yes', value: '10' },
-          { trait_type: 'No', value: '5' }
-        ]
-      }
-    ]
-    read.getUserNFTs.mockResolvedValue(mockNFTs)
-
-    render(<LandingPage />)
-
-    expect(screen.getByText('Your Voting Badges')).toBeInTheDocument()
-    expect(screen.getByText('Loading badges...')).toBeInTheDocument()
-
-    await waitFor(() => {
-      expect(read.getUserNFTs).toHaveBeenCalledWith(mockUserAddress)
-      expect(screen.getByText('Poll #1 Results')).toBeInTheDocument()
-      expect(screen.getByText('Results for poll: Test Poll')).toBeInTheDocument()
-      expect(screen.getByText('Yes:')).toBeInTheDocument()
-      expect(screen.getByText('10')).toBeInTheDocument()
-    })
-  })
-
-  it('displays empty state when no badges found', async () => {
-    read.getUserNFTs.mockResolvedValue([])
-
-    render(<LandingPage />)
-
-    await waitFor(() => {
-      expect(screen.getByText("You haven't earned any badges yet. Participate in polls to earn them!")).toBeInTheDocument()
-    })
-  })
-
-  it('does not fetch badges if not connected', () => {
-    wagmi.useAccount.mockReturnValue({ isConnected: false })
-    render(<LandingPage />)
-    
-    expect(read.getUserNFTs).not.toHaveBeenCalled()
-    expect(screen.queryByText('Your Voting Badges')).not.toBeInTheDocument()
+    expect(mockPush).toHaveBeenCalledWith('/nfts')
   })
 })

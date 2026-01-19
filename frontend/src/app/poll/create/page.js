@@ -1,31 +1,48 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { createPoll } from '@/lib/blockchain/engine/write'
+import { MODULE_ADDRESSES } from '@/lib/contracts'
 import { toast } from 'react-hot-toast'
-import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
+import BackButton from '@/components/BackButton'
+
+// Modular Components
+import PollBasicInfo from '@/components/create-poll/PollBasicInfo'
+import PollSettings from '@/components/create-poll/PollSettings'
+import KeyGenerator from '@/components/create-poll/KeyGenerator'
+import VoterCapacity from '@/components/create-poll/VoterCapacity'
+import OptionsEditor from '@/components/create-poll/OptionsEditor'
 
 export default function CreatePollPage() {
   const router = useRouter()
   const { isConnected } = useAccount()
 
+  // Form State
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [depth, setDepth] = useState(16)
+  const [depth, setDepth] = useState(20)
   const [options, setOptions] = useState(['', ''])
+  
+  // Settings
+  const [isAnonymous, setIsAnonymous] = useState(true) // Semaphore
+  const [isSecret, setIsSecret] = useState(false)     // ElGamal
+
+  // Secret Key Management
+  const [generatedKeys, setGeneratedKeys] = useState(null)
+  const [hasSavedKey, setHasSavedKey] = useState(false)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const addOption = () => setOptions([...options, ''])
-  const removeOption = (i) => setOptions(options.filter((_, idx) => idx !== i))
-  const updateOption = (i, value) => {
-    const newOptions = [...options]
-    newOptions[i] = value
-    setOptions(newOptions)
-  }
+  // Clear keys when secrecy is disabled
+  useEffect(() => {
+    if (!isSecret) {
+      setGeneratedKeys(null)
+      setHasSavedKey(false)
+    }
+  }, [isSecret])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -34,24 +51,40 @@ export default function CreatePollPage() {
 
     const cleanOptions = options.filter(o => o.trim() !== '')
     if (cleanOptions.length < 2) return toast.error('Need at least 2 options')
+    if (isSecret && cleanOptions.length > 16) return toast.error('Encrypted polls are limited to 16 options')
     if (!title.trim()) return toast.error('Poll title is required')
-
 
     setIsSubmitting(true)
 
-    // Enforce safe bounds just in case
-    const safeDepth = Math.max(16, Math.min(depth, 32))
-
     try {
+      // map toggles to module addresses
+      const eligibilityModule = isAnonymous ? MODULE_ADDRESSES.semaphoreEligibility : MODULE_ADDRESSES.eligibilityV0
+      const voteStorage = isSecret ? MODULE_ADDRESSES.zkElGamalVoteVector : MODULE_ADDRESSES.voteStorageV0
+
+      let voteStorageParams = null
+      
+      if (isSecret) {
+         if (!generatedKeys || !hasSavedKey) {
+            return toast.error('Please generate and save your encryption keys')
+         }
+         
+         // Use the real generated Public Key
+         voteStorageParams = {
+            publicKey: generatedKeys.pk
+         }
+      }
+
       const pollId = await createPoll({
         title: title.trim(),
         description: description.trim(),
         options: cleanOptions,
-        merkleTreeDepth: safeDepth,
+        merkleTreeDepth: isAnonymous ? Math.max(16, Math.min(depth, 32)) : 0,
+        eligibilityModule,
+        voteStorage,
+        voteStorageParams
       })
       
       // Redirect to the new whitelist page for the created poll
-      console.log('Poll created with ID:', pollId, 'Redirecting to whitelist...')
       router.push(`/poll/${pollId}/whitelist`)
     } catch (err) {
       console.error('Failed to create poll:', err)
@@ -73,152 +106,51 @@ export default function CreatePollPage() {
           <h1 className="text-5xl font-serif font-bold text-gray-900 mb-4">Create New Poll</h1>
           <p className="text-lg text-gray-600">Launch a secure, tamper-proof vote.</p>
         </div>
-        <Link href="/poll">
-          <button className="text-gray-600 hover:text-black font-medium transition flex items-center gap-2">
-            ← Back to Dashboard
-          </button>
-        </Link>
+        <BackButton href="/poll" label="Back to Dashboard" />
       </motion.div>
 
-      <form onSubmit={handleSubmit} className="space-y-10">
-        {/* Poll Title */}
-        <motion.div
-           initial={{ opacity: 0, x: -20 }}
-           animate={{ opacity: 1, x: 0 }}
-           transition={{ delay: 0.1 }}
-        >
-          <label className="block text-xl font-serif font-bold text-gray-900 mb-3">Poll Question</label>
-          <input
-            type="text"
-            required
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            className="w-full px-5 py-4 border-2 border-black rounded-lg text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] outline-none transition-all placeholder-gray-400 font-medium"
-            placeholder="e.g., What is your favorite color?"
-          />
-        </motion.div>
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        
+        <PollBasicInfo 
+          title={title} 
+          setTitle={setTitle} 
+          description={description} 
+          setDescription={setDescription} 
+        />
 
-        {/* Description */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-           <label className="block text-xl font-serif font-bold text-gray-900 mb-3">Description <span className="text-gray-400 font-sans text-base font-normal">(Optional)</span></label>
-          <textarea
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            rows={3}
-            className="w-full px-5 py-4 border-2 border-black rounded-lg text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] outline-none transition-all placeholder-gray-400 font-medium resize-none"
-            placeholder="Provide context for voters..."
-          />
-        </motion.div>
+        <PollSettings
+          isAnonymous={isAnonymous}
+          setIsAnonymous={setIsAnonymous}
+          isSecret={isSecret}
+          setIsSecret={setIsSecret}
+          onOptionsLimitChange={() => {
+             // If turning ON secrecy loop calls this, but we handle truncation here just in case logic is needed
+             if (options.length > 16) setOptions(options.slice(0, 16))
+          }}
+        />
 
-        {/* Voter Capacity */}
-        <motion.div
-           initial={{ opacity: 0, x: -20 }}
-           animate={{ opacity: 1, x: 0 }}
-           transition={{ delay: 0.25 }}
-        >
-          <label className="block text-xl font-serif font-bold text-gray-900 mb-2">
-            Voter Capacity
-          </label>
-          <p className="text-sm text-gray-500 max-w-lg mb-4">
-            Larger capacity results in larger fees, verification time, and proof sizes.
-          </p>
-          
-          <div className="p-6 border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white">
-            <input
-              type="range"
-              min="16"
-              max="32"
-              step="1"
-              value={depth}
-              onChange={e => setDepth(parseInt(e.target.value))}
-              className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black border-2 border-black"
+        <AnimatePresence>
+          {isSecret && (
+            <KeyGenerator
+              generatedKeys={generatedKeys}
+              setGeneratedKeys={setGeneratedKeys}
+              hasSavedKey={hasSavedKey}
+              setHasSavedKey={setHasSavedKey}
             />
-            <div className="mt-4 flex justify-between items-center">
-               <div className="flex gap-2">
-                 <button
-                   type="button"
-                   onClick={() => setDepth(d => Math.max(d - 1, 16))}
-                   className="w-10 h-10 flex items-center justify-center border-2 border-black bg-white hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
-                   aria-label="Decrease depth"
-                 >
-                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                     <path d="M12 21l-12-18h24z" />
-                   </svg>
-                 </button>
-                 <button
-                   type="button"
-                   onClick={() => setDepth(d => Math.min(d + 1, 32))}
-                   className="w-10 h-10 flex items-center justify-center border-2 border-black bg-white hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
-                   aria-label="Increase depth"
-                 >
-                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                     <path d="M12 3l12 18h-24z" />
-                   </svg>
-                 </button>
-               </div>
+          )}
+        </AnimatePresence>
 
-               <div className="text-right">
-                 <p className="text-3xl font-black font-serif tabular-nums">
-                   {(Math.pow(2, depth)).toLocaleString()} 
-                 </p>
-                 <p className="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Max Participants</p>
-               </div>
-            </div>
-          </div>
-        </motion.div>
+        <AnimatePresence>
+          {isAnonymous && (
+            <VoterCapacity depth={depth} setDepth={setDepth} />
+          )}
+        </AnimatePresence>
 
-        {/* Options */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <label className="block text-xl font-serif font-bold text-gray-900 mb-4">Voting Options</label>
-          <div className="space-y-4">
-            <AnimatePresence initial={false}>
-              {options.map((opt, i) => (
-                <motion.div 
-                  key={i} 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex gap-4"
-                >
-                  <input
-                    type="text"
-                    required={i < 2}
-                    value={opt}
-                    onChange={e => updateOption(i, e.target.value)}
-                    className="flex-1 px-5 py-3 border-2 border-black rounded-lg text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] outline-none transition-all placeholder-gray-400 font-medium"
-                    placeholder={`Option ${i + 1}`}
-                  />
-                  {options.length > 2 && (
-                    <button
-                      type="button"
-                      onClick={() => removeOption(i)}
-                      className="px-6 border-2 border-black bg-red-50 text-red-600 rounded-lg font-bold hover:bg-red-100 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            type="button"
-            onClick={addOption}
-            className="mt-6 px-6 py-3 border-2 border-black bg-white rounded-lg font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-sm uppercase tracking-wide"
-          >
-            + Add Another Option
-          </motion.button>
-        </motion.div>
+        <OptionsEditor
+          options={options}
+          setOptions={setOptions}
+          isSecret={isSecret}
+        />
 
         {/* Submit */}
         <motion.div 

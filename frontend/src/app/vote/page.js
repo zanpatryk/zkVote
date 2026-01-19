@@ -1,30 +1,24 @@
 'use client'
 
 import { useAccount } from 'wagmi'
-import { getWhitelistedPolls } from '@/lib/blockchain/engine/read'
-import { useQuery } from '@tanstack/react-query'
 import PollCard from '@/components/PollCard.jsx'
-
-import { useState } from 'react'
 import StatusFilter from '@/components/StatusFilter.jsx'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useWhitelistedPolls } from '@/hooks/usePolls'
+import { usePollFilter } from '@/hooks/usePollFilter'
 
 export default function VotePage() {
   const { address, isConnected } = useAccount()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-
-  const { data: polls = [], isLoading } = useQuery({
-    queryKey: ['whitelistedPolls', address],
-    queryFn: () => getWhitelistedPolls(address),
-    enabled: isConnected && !!address,
-  })
-
-  const filteredPolls = polls.filter(poll => {
-    const matchesSearch = poll.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || poll.state.toString() === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  
+  const { polls, isLoading } = useWhitelistedPolls(address, isConnected)
+  
+  const { 
+    searchQuery, 
+    setSearchQuery, 
+    statusFilter, 
+    setStatusFilter, 
+    filteredPolls 
+  } = usePollFilter(polls)
 
   return (
     <div className="pt-24 max-w-5xl mx-auto px-6 pb-32 relative">
@@ -73,7 +67,7 @@ export default function VotePage() {
         ) : filteredPolls.length === 0 ? (
           <div className="text-center py-24 border-2 border-dashed border-gray-300 rounded-xl">
              <p className="text-xl text-gray-400 font-serif italic">
-               {polls.length === 0 ? "You are not whitelisted on any poll yet." : "No polls found matching your filters."}
+               {!polls || polls.length === 0 ? "You are not whitelisted on any poll yet." : "No polls found matching your filters."}
              </p>
           </div>
         ) : (

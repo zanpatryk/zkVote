@@ -366,12 +366,12 @@
     "name": "isEligibleToVote",
     "inputs": [
       {
-        "name": "",
+        "name": "pollId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "",
+        "name": "user",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -383,7 +383,7 @@
         "internalType": "bool"
       }
     ],
-    "stateMutability": "pure"
+    "stateMutability": "view"
   },
   {
     "type": "function",

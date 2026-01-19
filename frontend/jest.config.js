@@ -20,6 +20,9 @@ const customJestConfig = {
     '!src/lib/**/*',
   ],
   coverageReporters: ['text', 'html'],
+  transformIgnorePatterns: [
+    '/node_modules/',
+  ],
 }
 
 module.exports = createJestConfig(customJestConfig)

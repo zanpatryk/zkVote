@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { getPollById, getPollResults } from '@/lib/blockchain/engine/read'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 export default function PollDetails({ pollId, showResults = false }) {
   const [poll, setPoll] = useState(null)

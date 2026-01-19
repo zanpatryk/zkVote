@@ -47,6 +47,17 @@ export function generateKeyPair() {
 }
 
 /**
+ * Derive public key from private key
+ * @param {bigint} sk 
+ * @returns {[bigint, bigint]}
+ */
+export function getPublicKey(sk) {
+    if (!babyJub) throw new Error("Call init() first");
+    const pkPoint = babyJub.mulPointEscalar(G, sk);
+    return [F.toObject(pkPoint[0]), F.toObject(pkPoint[1])];
+}
+
+/**
  * Encrypt a message using EC ElGamal
  * @param {Array<bigint>} pk - Public key point [x, y]
  * @param {bigint|number} message - Message scalar (e.g. 0 or 1, or option index)

@@ -1,6 +1,6 @@
 
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import StatusFilter from './StatusFilter'
 
 // Mock Framer Motion
@@ -51,10 +51,6 @@ describe('StatusFilter', () => {
 
     expect(mockCallback).toHaveBeenCalledWith('1') // Value for Active
     
-    // Should close dropdown (Active text likely still in DOM depending on implementation detail of framer-motion mock, 
-    // but simplified mock renders conditionally. If AnimatePresence renders children directly, conditional rendering in component controls visibility)
-    // In StatusFilter.jsx: isOpen && (<motion.div ...>)
-    // So it should be removed from DOM
     expect(screen.queryByText('Created')).not.toBeInTheDocument()
   })
 
@@ -67,9 +63,6 @@ describe('StatusFilter', () => {
     // Open dropdown
     fireEvent.click(screen.getAllByRole('button')[0]) // Use button role, or getByText('Active') parent if unambiguous
 
-    // Open dropdown to check checklist item styling
-    // The selected item usually has specific classes (bg-black text-white)
-    // We can check for the checkmark
     expect(screen.getByText('✓')).toBeInTheDocument()
   })
   

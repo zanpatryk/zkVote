@@ -1,73 +1,10 @@
-"use client"
-
-import { useEffect, useState } from 'react'
-import { getGroupMembers, getModules } from '@/lib/blockchain/engine/read'
-import { useWatchContractEvent } from 'wagmi'
-import { parseAbiItem } from 'viem'
+import { POLL_STATE } from '@/lib/constants'
+import { getExplorerTxUrl } from '@/lib/utils/explorer'
 import { motion, AnimatePresence } from 'framer-motion'
+import { usePollRegistrations } from '@/hooks/usePollRegistrations'
 
 export default function RegistrationList({ pollId, pollState }) {
-  const [registrations, setRegistrations] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [eligibilityModuleAddress, setEligibilityModuleAddress] = useState(null)
-
-  // Fetch initial data
-  useEffect(() => {
-    let mounted = true
-    
-    async function loadData() {
-      if (!pollId) return
-      
-      try {
-        setLoading(true)
-        const members = await getGroupMembers(pollId)
-        if (mounted) {
-            // Sort by block number descending (newest first)
-            const sorted = members.sort((a, b) => Number(b.blockNumber || 0) - Number(a.blockNumber || 0))
-            setRegistrations(sorted)
-        }
-
-        const modules = await getModules()
-        if (mounted) setEligibilityModuleAddress(modules.eligibilityModule)
-
-      } catch (err) {
-        console.error('Failed to load registrations:', err)
-        if (mounted) setError('Failed to load registrations')
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    }
-
-    loadData()
-
-    return () => { mounted = false }
-  }, [pollId])
-
-  // Real-time updates
-  useWatchContractEvent({
-    address: eligibilityModuleAddress,
-    abi: [parseAbiItem('event MemberAdded(uint256 indexed groupId, uint256 index, uint256 identityCommitment, uint256 merkleTreeRoot)')],
-    eventName: 'MemberAdded',
-    args: { groupId: pollId ? BigInt(pollId) : undefined },
-    onLogs(logs) {
-      if (!logs || logs.length === 0) return
-
-      const newRegistrations = logs.map(log => ({
-        identityCommitment: (log.args.identityCommitment || log.args[2]).toString(),
-        transactionHash: log.transactionHash,
-        blockNumber: log.blockNumber
-      }))
-
-      setRegistrations(prev => {
-        // Prevent duplicates
-        const existingHashes = new Set(prev.map(r => r.transactionHash))
-        const uniqueNew = newRegistrations.filter(r => !existingHashes.has(r.transactionHash))
-        return [...uniqueNew, ...prev].sort((a, b) => Number(b.blockNumber || 0) - Number(a.blockNumber || 0))
-      })
-    },
-    enabled: Number(pollState) === 0 // Only listen for live updates in Created state (0)
-  })
+  const { registrations, loading, error } = usePollRegistrations(pollId, pollState)
 
   if (loading) {
      return (
@@ -90,7 +27,7 @@ export default function RegistrationList({ pollId, pollState }) {
         <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold font-serif">Registered Identities ({registrations.length})</h3>
             <div className="flex gap-2">
-                {Number(pollState) === 0 && (
+                {pollState === POLL_STATE.CREATED && (
                     <motion.span 
                       animate={{ backgroundColor: ["#dcfce7", "#bbf7d0", "#dcfce7"] }}
                       transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -129,7 +66,7 @@ export default function RegistrationList({ pollId, pollState }) {
                                     </td>
                                     <td className="py-3 px-2 text-right">
                                         <a 
-                                            href={`https://sepolia.etherscan.io/tx/${reg.transactionHash}`}
+                                            href={getExplorerTxUrl(reg.transactionHash)}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex items-center text-blue-600 hover:text-black font-medium text-sm transition-colors group"
