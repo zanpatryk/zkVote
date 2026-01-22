@@ -4,33 +4,36 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { useSemaphore } from '@/hooks/useSemaphore'
+import { useZKVote } from '@/hooks/useZKVote' // Uses usePollRegistry internally but we need it here too
+import { usePollRegistry } from '@/hooks/usePollRegistry'
 import { Identity } from '@semaphore-protocol/identity'
 import { getPollById, hasVoted, getVoteTransaction } from '@/lib/blockchain/engine/read'
 import { toast } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import VoteBallot from '@/components/VoteBallot'
+import BackButton from '@/components/BackButton'
+import IdentityAuthenticator from '@/components/vote-poll/IdentityAuthenticator'
 
 export default function VoteOnPoll() {
   const { pollId } = useParams()
   const router = useRouter()
   const { address, isConnected } = useAccount()
-  const { castVote, isCastingVote, loadIdentityFromStorage, hasStoredIdentity } = useSemaphore()
+  const { createIdentity, isLoadingIdentity } = useSemaphore()
+  const { submitVote, isSubmitting, currentStep, steps } = useZKVote(pollId)
 
   const [poll, setPoll] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedIndex, setSelectedIndex] = useState(null)
   const [alreadyVoted, setAlreadyVoted] = useState(false)
   const [voteTxHash, setVoteTxHash] = useState(null)
-  const [hasStored, setHasStored] = useState(false)
   
   // ZK Identity State
   const [loadedIdentity, setLoadedIdentity] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
 
+
   useEffect(() => {
-    setHasStored(hasStoredIdentity(pollId))
-    
     let cancelled = false;
 
     async function loadData() {
@@ -39,12 +42,6 @@ export default function VoteOnPoll() {
         if (!cancelled) setPoll(pollData)
 
         if (isConnected && address) {
-          // Check if this wallet has voted (public check)
-          // Note: In ZK voting, preventing double voting is handled by the nullifier on-chain.
-          // This check is mainly for UI state if we track "wallet X cast a vote".
-          // If the contract doesn't store "who voted" (anonymous), this might return false.
-          // However, we can check if the NULLIFIER for this identity has been used if we knew the identity.
-          // For now, we keep the existing check but it might change for pure ZK.
           const voted = await hasVoted(pollId, address)
           if (!cancelled) {
             setAlreadyVoted(voted)
@@ -68,18 +65,20 @@ export default function VoteOnPoll() {
     }
   }, [pollId, isConnected, address])
 
-  async function handleUseStored() {
-    const id = loadIdentityFromStorage(pollId)
-    if (id) {
-      setLoadedIdentity(id)
-      toast.success('Identity loaded from browser storage!')
-    } else {
-      toast.error('Failed to load saved identity')
+  /**
+   * Regenerate identity from wallet signature (primary method)
+   */
+  async function handleRegenerateIdentity() {
+    const identity = await createIdentity(pollId)
+    if (identity) {
+      setLoadedIdentity(identity)
+      toast.success('Identity loaded from wallet!')
     }
   }
 
-  async function handleFileUpload(event) {
-    const file = event.target.files[0]
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0]
     if (!file) return
 
     setIsUploading(true)
@@ -94,8 +93,6 @@ export default function VoteOnPoll() {
         throw new Error('Invalid identity file: Missing private key')
       }
 
-
-
       // Reconstruct Identity
       const identity = new Identity(privateKey)
       
@@ -109,6 +106,11 @@ export default function VoteOnPoll() {
     }
   }
 
+  const { isZK, isRegistered } = usePollRegistry(pollId)
+
+  // Redirect or warn if not registered for ZK polls?
+  // For now, we'll just check in handle submit or let the UI handle it.
+  
   async function handleSubmit(e) {
     e.preventDefault()
 
@@ -124,14 +126,21 @@ export default function VoteOnPoll() {
       return
     }
     
-    if (!loadedIdentity && !alreadyVoted) {
-      toast.error('Please load your identity to vote')
-      return
+    // Identity only needed for ZK
+    if (isZK) {
+      if (!isRegistered) {
+         toast.error('You are not registered for this poll')
+         return
+      }
+      if (!loadedIdentity && !alreadyVoted) {
+        toast.error('Please load your identity to vote')
+        return
+      }
     }
 
     try {
-      // Use ZK Vote from hook
-      const result = await castVote(pollId, selectedIndex, loadedIdentity)
+      // Use Unified ZK/Secret Vote from hook
+      const result = await submitVote(selectedIndex, loadedIdentity)
       
       if (result?.alreadyVoted) {
           setAlreadyVoted(true)
@@ -149,7 +158,7 @@ export default function VoteOnPoll() {
     }
   }
 
-  const showBallot = alreadyVoted || loadedIdentity || (poll && poll.state !== 1)
+  const showBallot = alreadyVoted || (isZK ? loadedIdentity : true) || (poll && poll.state !== 1)
 
   return (
     <div className="pt-12 md:pt-24 max-w-2xl mx-auto px-6 pb-16 md:pb-32 font-mono">
@@ -186,56 +195,18 @@ export default function VoteOnPoll() {
                  <div className="w-3 h-3 bg-black rounded-full animate-pulse"></div>
                  <span className="text-sm uppercase tracking-widest text-gray-500 font-bold">Secure Voting Terminal</span>
                </div>
-              <button 
-                onClick={() => router.push('/poll')}
-                className="text-gray-500 hover:text-black whitespace-nowrap text-sm font-bold uppercase tracking-wider hover:underline"
-              >
-                [ Go Back ]
-              </button>
+              <BackButton href="/poll" label="Go Back" variant="bracket" className="text-sm font-bold uppercase tracking-wider" />
             </div>
 
             {!showBallot && (
-               <div className="bg-white border-2 border-black p-8 rounded-lg shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-center space-y-6">
-                  <h2 className="text-2xl font-bold font-serif">Authenticate Identity</h2>
-                  <p className="text-gray-600">
-                    To cast a vote, you must upload the <strong>Identity File</strong> you downloaded during registration.
-                  </p>
-                  
-                   <div className="flex flex-col gap-4">
-                      {hasStored && (
-                        <button 
-                          onClick={handleUseStored}
-                          className="inline-flex items-center justify-center gap-2 bg-black text-white px-8 py-4 rounded-lg font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all w-full"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                          </svg>
-                          Use Saved Identity
-                        </button>
-                      )}
-
-                      <div className="relative">
-                        <input 
-                          type="file" 
-                          accept=".json"
-                          onChange={handleFileUpload}
-                          disabled={isUploading}
-                          className="hidden"
-                          id="identity-upload"
-                        />
-                        <label 
-                          htmlFor="identity-upload"
-                          className={`cursor-pointer inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-bold transition-all w-full ${hasStored ? 'bg-white border-2 border-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]' : 'bg-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]'} hover:-translate-y-0.5`}
-                        >
-                          {isUploading ? 'Verifying...' : hasStored ? 'Upload New Identity File' : 'Upload Identity File'}
-                        </label>
-                      </div>
-                   </div>
-                   <p className="text-xs text-gray-400 mt-4">
-                     Your private key never leaves your browser.
-                   </p>
-               </div>
+               <IdentityAuthenticator 
+                 onRegenerateIdentity={handleRegenerateIdentity}
+                 onFileUpload={handleFileUpload}
+                 isLoading={isLoadingIdentity}
+                 isUploading={isUploading}
+               />
             )}
+
 
             {showBallot && (
               <VoteBallot 
@@ -243,10 +214,12 @@ export default function VoteOnPoll() {
                 pollId={pollId}
                 alreadyVoted={alreadyVoted}
                 voteTxHash={voteTxHash}
-                submitting={isCastingVote}
+                submitting={isSubmitting}
                 onSubmit={handleSubmit}
                 selectedIndex={selectedIndex}
                 setSelectedIndex={setSelectedIndex}
+                currentStep={currentStep}
+                steps={steps}
               />
             )}
           </motion.div>

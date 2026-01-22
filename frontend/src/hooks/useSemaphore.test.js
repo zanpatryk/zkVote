@@ -1,8 +1,8 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useSemaphore } from './useSemaphore'
 import { useSignMessage, useAccount } from 'wagmi'
-import { registerVoter, castVoteWithProof } from '@/lib/blockchain/engine/write'
-import { getGroupMembers, getMerkleTreeDepth } from '@/lib/blockchain/engine/read'
+import { addMember, castVoteWithProof } from '@/lib/blockchain/engine/write'
+import { getGroupMembers, getMerkleTreeDepth, hasVoted } from '@/lib/blockchain/engine/read'
 import toast from 'react-hot-toast'
 import { Identity } from '@semaphore-protocol/identity'
 
@@ -13,13 +13,14 @@ jest.mock('wagmi', () => ({
 }))
 
 jest.mock('@/lib/blockchain/engine/write', () => ({
-  registerVoter: jest.fn(),
+  addMember: jest.fn(),
   castVoteWithProof: jest.fn(),
 }))
 
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getGroupMembers: jest.fn(),
   getMerkleTreeDepth: jest.fn(),
+  hasVoted: jest.fn(),
 }))
 
 jest.mock('react-hot-toast', () => {
@@ -35,7 +36,6 @@ jest.mock('react-hot-toast', () => {
   }
 })
 
-
 jest.mock('@semaphore-protocol/identity', () => ({
   Identity: jest.fn(),
 }))
@@ -48,11 +48,23 @@ jest.mock('@semaphore-protocol/proof', () => ({
   generateProof: jest.fn(),
 }))
 
+jest.mock('viem', () => ({
+  keccak256: jest.fn(() => '0x123456'),
+  pad: jest.fn(),
+  toHex: jest.fn(),
+  getAddress: jest.fn(addr => addr),
+}))
+
+jest.mock('poseidon-lite', () => ({
+  poseidon2: jest.fn(() => '12345'),
+}))
+
 describe('useSemaphore', () => {
   const mockSignMessageAsync = jest.fn()
   const mockIdentityInstance = { 
     commitment: { toString: () => '123' },
-    toString: () => 'identity-string'
+    toString: () => 'identity-string',
+    secretScalar: 'secret' 
   }
 
   beforeEach(() => {
@@ -60,7 +72,7 @@ describe('useSemaphore', () => {
     useAccount.mockReturnValue({ address: '0x123', isConnected: true })
     useSignMessage.mockReturnValue({ signMessageAsync: mockSignMessageAsync })
     Identity.mockImplementation(() => mockIdentityInstance)
-    registerVoter.mockResolvedValue({})
+    addMember.mockResolvedValue({})
   })
 
   it('should return initial state', () => {
@@ -77,7 +89,7 @@ describe('useSemaphore', () => {
       const { result } = renderHook(() => useSemaphore())
 
       await act(async () => {
-        const identity = await result.current.createIdentity()
+        const identity = await result.current.createIdentity('poll-123')
         expect(identity).toBeNull()
       })
 
@@ -85,17 +97,17 @@ describe('useSemaphore', () => {
       expect(mockSignMessageAsync).not.toHaveBeenCalled()
     })
 
-    it('should create identity successfully', async () => {
+    it('should create identity successfully with pollId', async () => {
       mockSignMessageAsync.mockResolvedValue('signature')
       const { result } = renderHook(() => useSemaphore())
 
       let identity
       await act(async () => {
-        identity = await result.current.createIdentity()
+        identity = await result.current.createIdentity('poll-123')
       })
 
       expect(mockSignMessageAsync).toHaveBeenCalledWith({
-        message: 'Sign this message to generate your voting identity. This does not cost gas.'
+        message: 'Sign to access your zkVote identity for Poll #poll-123\n\nThis signature is used to derive your anonymous voting identity. It does not cost gas.'
       })
       expect(Identity).toHaveBeenCalledWith('signature')
       expect(result.current.identity).toBe(mockIdentityInstance)
@@ -108,12 +120,23 @@ describe('useSemaphore', () => {
       const { result } = renderHook(() => useSemaphore())
 
       await act(async () => {
-        const identity = await result.current.createIdentity()
+        const identity = await result.current.createIdentity('poll-123')
         expect(identity).toBeNull()
       })
 
       expect(toast.error).toHaveBeenCalledWith('Failed to generate identity')
       expect(result.current.identity).toBeNull()
+    })
+
+    it('should fail if pollId is not provided', async () => {
+      const { result } = renderHook(() => useSemaphore())
+
+      await act(async () => {
+        const identity = await result.current.createIdentity()
+        expect(identity).toBeNull()
+      })
+
+      expect(toast.error).toHaveBeenCalledWith('Poll ID required')
     })
   })
 
@@ -126,7 +149,7 @@ describe('useSemaphore', () => {
       })
 
       expect(toast.error).toHaveBeenCalledWith('No identity found. Generate one first.')
-      expect(registerVoter).not.toHaveBeenCalled()
+      expect(addMember).not.toHaveBeenCalled()
     })
 
     it('should register successfully', async () => {
@@ -135,7 +158,7 @@ describe('useSemaphore', () => {
 
       // First create identity
       await act(async () => {
-        await result.current.createIdentity()
+        await result.current.createIdentity('poll-123')
       })
 
       // Then register
@@ -143,27 +166,23 @@ describe('useSemaphore', () => {
         await result.current.register('poll-123')
       })
 
-      expect(registerVoter).toHaveBeenCalledWith('poll-123', '123')
-      // Note: toast for success/error in registerVoter is handled inside registerVoter typically, 
-      // but the hook might verify the call happened.
+      expect(addMember).toHaveBeenCalledWith('poll-123', '123')
     })
 
     it('should handle registration error', async () => {
       mockSignMessageAsync.mockResolvedValue('signature')
-      registerVoter.mockRejectedValue(new Error('Contract error'))
+      addMember.mockRejectedValue(new Error('Contract error'))
       const { result } = renderHook(() => useSemaphore())
 
       await act(async () => {
-        await result.current.createIdentity()
+        await result.current.createIdentity('poll-123')
       })
 
       await act(async () => {
         await result.current.register('poll-123')
       })
 
-      // The hook catches the error and logs it. It doesn't throw.
-      expect(registerVoter).toHaveBeenCalled()
-      // We can check if isRegistering went back to false
+      expect(addMember).toHaveBeenCalled()
       expect(result.current.isRegistering).toBe(false)
     })
   })
@@ -306,5 +325,50 @@ describe('useSemaphore', () => {
 
        expect(toast.error).toHaveBeenCalledWith('Failed to download identity')
     })
+  })
+
+  describe('regenerateIdentity', () => {
+    it('should be an alias for createIdentity', () => {
+      const { result } = renderHook(() => useSemaphore())
+      expect(result.current.regenerateIdentity).toBe(result.current.createIdentity)
+    })
+
+    it('should regenerate the same identity for the same pollId', async () => {
+      mockSignMessageAsync.mockResolvedValue('same-signature')
+      const { result } = renderHook(() => useSemaphore())
+
+      let identity1, identity2
+      await act(async () => {
+        identity1 = await result.current.createIdentity('poll-123')
+      })
+      await act(async () => {
+        identity2 = await result.current.regenerateIdentity('poll-123')
+      })
+
+      // Both calls should produce the same identity (mocked)
+      expect(identity1).toBe(mockIdentityInstance)
+      expect(identity2).toBe(mockIdentityInstance)
+    })
+  })
+
+
+  describe('checkIdentityVoted', () => {
+     it('should return false if invalid params', async () => {
+         const { result } = renderHook(() => useSemaphore())
+         const res = await result.current.checkIdentityVoted(null, null)
+         expect(res).toEqual({ voted: false })
+     })
+
+     it('should detect if voted', async () => {
+         const { result } = renderHook(() => useSemaphore())
+         // hasVoted mock setup
+         const { hasVoted } = require('@/lib/blockchain/engine/read')
+         hasVoted.mockResolvedValue(true)
+
+         const res = await result.current.checkIdentityVoted('123', { secretScalar: '123' })
+         
+         expect(res.voted).toBe(true)
+         expect(res.voterAddress).toBeDefined()
+     })
   })
 })

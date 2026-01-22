@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import PollCard, { formatDuration } from './PollCard.jsx'
+import PollCard from './PollCard.jsx'
 import { usePollRegistry } from '@/hooks/usePollRegistry'
 import '@testing-library/jest-dom'
 
@@ -156,25 +156,5 @@ describe('PollCard', () => {
     expect(writeTextMock).toHaveBeenCalledWith('123456789')
   })
 
-  describe('formatDuration', () => {
-    it('formats 0 or negative ms as 0m', () => {
-      expect(formatDuration(0)).toBe('0m')
-      expect(formatDuration(-100)).toBe('0m')
-    })
 
-    it('formats minutes correctly', () => {
-      expect(formatDuration(60 * 1000)).toBe('1m')
-      expect(formatDuration(5 * 60 * 1000)).toBe('5m')
-    })
-
-    it('formats hours correctly', () => {
-      expect(formatDuration(60 * 60 * 1000)).toBe('1h')
-      expect(formatDuration(2 * 60 * 60 * 1000 + 30 * 60 * 1000)).toBe('2h 30m')
-    })
-
-    it('formats days correctly', () => {
-      expect(formatDuration(24 * 60 * 60 * 1000)).toBe('1d')
-      expect(formatDuration(2 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000)).toBe('2d 5h')
-    })
-  })
 })

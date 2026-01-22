@@ -16,7 +16,8 @@ Circom circuits for the zkVote protocol implementing privacy-preserving voting w
 
 - **Bun** (Package Manager)
 - **Node.js** (For snarkjs)
-- **Circom** → [Install](https://docs.circom.io/getting-started/installation/)
+- **Rust** - Required for Circom ([Install](https://www.rust-lang.org/tools/install))
+- **Circom** - ZK circuit compiler ([Install](https://docs.circom.io/getting-started/installation/))
 
 ## Quick Start
 

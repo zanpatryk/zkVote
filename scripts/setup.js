@@ -27,7 +27,7 @@ const tasks = [
     { id: 'circuits_build', name: 'Build Project ZK Circuits', cmd: 'bun', args: ['run', '--filter', 'circuits', 'build'] },
     { id: 'circuits_setup', name: 'Run ZK Trusted Setup', cmd: 'bun', args: ['run', '--filter', 'circuits', 'setup'] },
     { id: 'zkvote_lib_sync', name: 'Sync ZK Artifacts to Lib', cmd: 'bun', args: ['run', '--filter', '@zkvote/lib', 'sync:artifacts'] },
-    { id: 'frontend_download', name: 'Download Semaphore Circuits', cmd: 'bun', args: ['run', '--filter', 'frontend', 'download:circuits'] },
+    { id: 'frontend_setup_circuits', name: 'Setup Frontend Circuits', cmd: 'bun', args: ['run', '--filter', 'frontend', 'setup:circuits'] },
     { id: 'contracts_install', name: 'Install Forge Dependencies', cmd: 'forge', args: ['install'], cwd: path.join(__dirname, '../contracts') },
     { id: 'contracts_build', name: 'Build Smart Contracts', cmd: 'make', args: ['build'], cwd: path.join(__dirname, '../contracts') }
 ];
@@ -36,14 +36,12 @@ let hasRendered = false;
 let taskStatus = tasks.map(() => ({ status: 'pending', duration: null }));
 let lastLines = [];
 let isFinished = false;
+let lastRenderedLines = 0; // Track how many lines were rendered last time
 
 function render() {
     // Clear previous lines if we've rendered before
-    if (hasRendered) {
-        // Total lines printed:
-        // 3 (header) + tasks.length + 2 (preview header) + 5 (preview lines)
-        const totalLines = tasks.length + (isFinished ? 3 : 10);
-        process.stdout.write(`\u001b[${totalLines}A`);
+    if (hasRendered && lastRenderedLines > 0) {
+        process.stdout.write(`\u001b[${lastRenderedLines}A`);
     }
     hasRendered = true;
 
@@ -76,6 +74,9 @@ function render() {
             process.stdout.write(`${clearLine}${colors.gray}> ${line.substring(0, (process.stdout.columns || 80) - 5)}${colors.reset}\n`);
         }
     }
+
+    // Track how many lines we rendered (3 header + tasks + preview if not finished)
+    lastRenderedLines = 3 + tasks.length + (isFinished ? 0 : 7);
 }
 
 async function checkTools() {
@@ -134,14 +135,13 @@ async function runTask(task, index) {
 }
 
 async function main() {
-    // Initial render
-    console.clear();
     console.log(`${colors.bold}${colors.cyan}Initializing Setup...${colors.reset}`);
 
     try {
         await checkTools();
         
-        // Initial render
+        // Clear and start fresh render
+        console.clear();
         render();
         
         for (let i = 0; i < tasks.length; i++) {

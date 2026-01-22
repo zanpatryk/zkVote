@@ -41,11 +41,18 @@ bun install
 
 ### Circuit Setup
 
-The frontend requires Semaphore ZK artifacts (`.wasm` and `.zkey` files) to generate proofs in the browser. You must download these before the application can function correctly:
+The frontend requires ZK artifacts (`.wasm` and `.zkey` files) to generate proofs in the browser. This includes both the standard Semaphore protocols and our custom ElGamal/Tally circuits.
+
+To initialize all required artifacts:
 
 ```bash
-bun run download:circuits
+bun run setup:circuits
 ```
+
+This script:
+
+1. Downloads Semaphore artifacts from the PSE CDN.
+2. Copies locally compiled ElGamal/Tally artifacts from the `circuits/build` directory.
 
 ### Development
 
@@ -67,7 +74,9 @@ The application will be available at `http://localhost:3000`.
 - `bun run test:ui:watch`: Runs unit tests in watch mode.
 - `bun run test:ui:coverage`: Generates a test coverage report.
 - `bun run test:ui:integration`: Runs specific UI integration tests.
-- `bun run download:circuits`: Downloads Semaphore ZK artifacts for the frontend.
+- `bun run setup:circuits`: Runs both download and copy scripts to prepare all ZK artifacts.
+- `bun run download:circuits`: Downloads Semaphore ZK artifacts from a remote CDN.
+- `bun run copy:circuits`: Copies locally compiled ElGamal/Tally artifacts from the `circuits/` package.
 
 ## Testing
 
@@ -79,6 +88,16 @@ bun run test:ui
 
 # Run integration tests
 bun run test:ui:integration
+
+# Generate coverage report
+bun run test:ui:coverage
 ```
+
+### Coverage
+
+The coverage report provides details on which lines of code are exercised by our tests.
+
+- **Console Output**: A summary table is printed to the terminal after running the coverage command.
+- **HTML Report**: A detailed interactive report is generated in the `frontend/coverage/lcov-report/index.html` directory. Open this file in your browser to explore line-by-line coverage.
 
 Unit tests are located alongside the components or pages they test (e.g., `PollCard.test.jsx`). Integration tests are located in the `tests/` directory.

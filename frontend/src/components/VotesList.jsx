@@ -1,68 +1,10 @@
-import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useWatchContractEvent } from 'wagmi'
-import { getPollVotes, getModules } from '@/lib/blockchain/engine/read'
-import { parseAbiItem } from 'viem'
+import { POLL_STATE } from '@/lib/constants'
+import { getExplorerTxUrl } from '@/lib/utils/explorer'
+import { usePollVotes } from '@/hooks/usePollVotes'
 
 export default function VotesList({ pollId, pollState }) {
-  const [votes, setVotes] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [voteStorageAddress, setVoteStorageAddress] = useState(null)
-
-  // Fetch contract address
-  useEffect(() => {
-    const fetchAddress = async () => {
-      try {
-        const { voteStorage } = await getModules()
-        setVoteStorageAddress(voteStorage)
-      } catch (error) {
-        console.error('Failed to get vote storage address:', error)
-      }
-    }
-    fetchAddress()
-  }, [])
-
-  // Fetch initial votes
-  useEffect(() => {
-    const fetchVotes = async () => {
-      if (!pollId) return
-      setLoading(true)
-      try {
-        const history = await getPollVotes(pollId)
-        // Sort by block number descending (newest first)
-        setVotes(history.sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber)))
-      } catch (error) {
-        console.error('Failed to fetch votes:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchVotes()
-  }, [pollId])
-
-  // Watch for new votes
-  useWatchContractEvent({
-    address: voteStorageAddress,
-    abi: [parseAbiItem('event VoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId)')],
-    eventName: 'VoteCasted',
-    args: { pollId: BigInt(pollId || 0) },
-    onLogs: (logs) => {
-      const newVotes = logs.map(log => ({
-        voter: log.args.voter,
-        voteId: log.args.voteId.toString(),
-        transactionHash: log.transactionHash,
-        blockNumber: log.blockNumber
-      }))
-      
-      setVotes(prev => {
-        // Prevent duplicates
-        const existingTxHashes = new Set(prev.map(v => v.transactionHash))
-        const uniqueNewVotes = newVotes.filter(v => !existingTxHashes.has(v.transactionHash))
-        return [...uniqueNewVotes, ...prev].sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
-      })
-    },
-    enabled: !!voteStorageAddress && !!pollId && Number(pollState) === 1 // Only listen in Open state (1)
-  })
+  const { votes, loading } = usePollVotes(pollId, pollState)
 
   if (loading) {
     return (
@@ -80,7 +22,7 @@ export default function VotesList({ pollId, pollState }) {
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold font-serif">Cast Votes ({votes.length})</h3>
         <div className="flex gap-2">
-            {Number(pollState) === 1 && (
+            {pollState === POLL_STATE.ACTIVE && (
                 <motion.span 
                   animate={{ backgroundColor: ["#dcfce7", "#bbf7d0", "#dcfce7"] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -94,7 +36,7 @@ export default function VotesList({ pollId, pollState }) {
 
       {votes.length === 0 ? (
         <div className="text-center py-8 text-gray-500 italic border-2 border-dashed border-gray-200 rounded-lg">
-          {Number(pollState) === 0 ? "Voting hasn't started yet." : "No votes recorded yet."}
+          {pollState === POLL_STATE.CREATED ? "Voting hasn't started yet." : "No votes recorded yet."}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -119,7 +61,7 @@ export default function VotesList({ pollId, pollState }) {
                     </td>
                     <td className="py-3 px-2 text-right">
                       <a 
-                        href={`https://sepolia.etherscan.io/tx/${vote.transactionHash}`}
+                        href={getExplorerTxUrl(vote.transactionHash)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center text-blue-600 hover:text-black font-medium text-sm transition-colors group"

@@ -38,7 +38,8 @@ zkVote/
 
 - [Bun](https://bun.sh/) (Runtime and package manager)
 - [Foundry](https://book.getfoundry.sh/getting-started/installation) (Smart contract development)
-- [Rust](https://www.rust-lang.org/tools/install) (Required for some ZK components)
+- [Circom](https://docs.circom.io/getting-started/installation/) (ZK circuit compiler)
+- [Rust](https://www.rust-lang.org/tools/install) (Required for Circom and ZK components)
 
 ### Initial Setup
 

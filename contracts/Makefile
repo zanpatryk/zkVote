@@ -12,13 +12,14 @@ ANVIL_RPC := http://127.0.0.1:$(ANVIL_PORT)
 ANVIL_RPC_DOCKER := http://host.docker.internal:$(ANVIL_PORT)
 ANVIL_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
-.PHONY: help build test test-unit test-integration test-all clean start-anvil stop-anvil deploy deploy-sepolia
+.PHONY: help build test test-unit test-integration test-all clean start-anvil stop-anvil deploy deploy-anvil deploy-sepolia
 
 help:
 	@echo "Makefile targets:"
 	@echo "  make start-anvil      - start anvil in background (writes anvil.pid)"
 	@echo "  make stop-anvil       - kill anvil started by start-anvil"
 	@echo "  make deploy           - run the Foundry script against local anvil"
+	@echo "  make deploy-anvil     - run the Foundry script against local anvil (alias for deploy)"
 	@echo "  make deploy-sepolia   - run the foundry script against Sepolia"
 	@echo "  make build            - forge build"
 	@echo "  make test             - run all tests (unit + integration without FFI)"
@@ -82,6 +83,8 @@ deploy:
 	  --rpc-url $(ANVIL_RPC) \
 	  --private-key $(ANVIL_KEY) \
 	  --broadcast
+
+deploy-anvil: deploy
 
 # ==============================================================================
 # Benchmarks

@@ -1,22 +1,10 @@
 import { render, screen, waitFor, act } from '@testing-library/react'
 import RegistrationList from './RegistrationList'
-import * as read from '@/lib/blockchain/engine/read'
-import * as wagmi from 'wagmi'
-import '@testing-library/jest-dom'
+import { usePollRegistrations } from '@/hooks/usePollRegistrations'
 
-// Mock dependencies
-jest.mock('@/lib/blockchain/engine/read', () => ({
-  getModules: jest.fn(),
-  getGroupMembers: jest.fn(),
-}))
-
-jest.mock('wagmi', () => ({
-  useWatchContractEvent: jest.fn(),
-}))
-
-// Mock viem
-jest.mock('viem', () => ({
-  parseAbiItem: jest.fn(),
+// Mock the hook
+jest.mock('@/hooks/usePollRegistrations', () => ({
+  usePollRegistrations: jest.fn(),
 }))
 
 // Mock framer-motion
@@ -30,20 +18,19 @@ jest.mock('framer-motion', () => ({
 
 describe('RegistrationList', () => {
   const mockPollId = '123'
-  const mockParams = {
-    eligibilityModule: '0xEligibility'
-  }
   
   beforeEach(() => {
     jest.clearAllMocks()
-    read.getModules.mockResolvedValue(mockParams)
-    wagmi.useWatchContractEvent.mockImplementation(({ onLogs }) => {}) // No-op default
+    usePollRegistrations.mockReturnValue({
+        registrations: [],
+        loading: false,
+        error: null
+    })
   })
 
   it('renders loading state initially', async () => {
-    read.getGroupMembers.mockReturnValue(new Promise(() => {})) // Pending promise
+    usePollRegistrations.mockReturnValue({ registrations: [], loading: true, error: null })
     
-    // Wrap in act because useEffect triggers state update
     await act(async () => {
         render(<RegistrationList pollId={mockPollId} />)
     })
@@ -52,7 +39,7 @@ describe('RegistrationList', () => {
   })
 
   it('renders empty state when no registrations fetched', async () => {
-    read.getGroupMembers.mockResolvedValue([])
+    usePollRegistrations.mockReturnValue({ registrations: [], loading: false, error: null })
     
     await act(async () => {
         render(<RegistrationList pollId={mockPollId} />)
@@ -67,7 +54,7 @@ describe('RegistrationList', () => {
       { identityCommitment: '123456789', transactionHash: '0xabc', blockNumber: 100n },
       { identityCommitment: '987654321', transactionHash: '0xdef', blockNumber: 101n },
     ]
-    read.getGroupMembers.mockResolvedValue(mockMembers)
+    usePollRegistrations.mockReturnValue({ registrations: mockMembers, loading: false, error: null })
 
     await act(async () => {
         render(<RegistrationList pollId={mockPollId} />)
@@ -79,43 +66,12 @@ describe('RegistrationList', () => {
   })
 
   it('renders error state on fetch failure', async () => {
-    read.getGroupMembers.mockRejectedValue(new Error('Fetch failed'))
+    usePollRegistrations.mockReturnValue({ registrations: [], loading: false, error: 'Failed to load registrations' })
 
     await act(async () => {
         render(<RegistrationList pollId={mockPollId} />)
     })
 
     expect(screen.getByText('Failed to load registrations')).toBeInTheDocument()
-  })
-
-  it('updates list on new MemberAdded event', async () => {
-    read.getGroupMembers.mockResolvedValue([])
-    
-    // Capture the event listener callback
-    let eventCallback
-    wagmi.useWatchContractEvent.mockImplementation(({ onLogs }) => {
-        eventCallback = onLogs
-    })
-
-    await act(async () => {
-        render(<RegistrationList pollId={mockPollId} />)
-    })
-    
-    expect(screen.getByText('Registered Identities (0)')).toBeInTheDocument()
-
-    // Simulate new event
-    const newLog = { 
-        args: { identityCommitment: 999n }, 
-        transactionHash: '0xNewTx', 
-        blockNumber: 102n 
-    }
-    
-    // Act
-    await act(async () => {
-         eventCallback([newLog])
-    })
-
-    expect(screen.getByText('999')).toBeInTheDocument()
-    expect(screen.getByText('Registered Identities (1)')).toBeInTheDocument()
   })
 })

@@ -1,11 +1,11 @@
 "use client"
 import PollDetails from '@/components/PollDetails'
-import { useParams, useRouter } from 'next/navigation'
+import BackButton from '@/components/BackButton'
+import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 
 export default function ManagePoll() {
   const { pollId } = useParams()
-  const router = useRouter()
 
   return (
     <motion.div 
@@ -16,13 +16,8 @@ export default function ManagePoll() {
     >
        <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold">Poll Details</h1>
-        <button 
-          onClick={() => router.push('/poll')}
-          className="text-gray-600 hover:text-black whitespace-nowrap"
-        >
-          ← Go Back
-        </button>
-      </div>
+        <BackButton href="/poll" />
+       </div>
       
       <PollDetails pollId={pollId} />
     </motion.div>

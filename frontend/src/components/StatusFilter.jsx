@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { POLL_STATE } from '@/lib/constants'
 
 export default function StatusFilter({ currentStatus, onStatusChange }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -9,9 +10,9 @@ export default function StatusFilter({ currentStatus, onStatusChange }) {
 
   const options = [
     { value: 'all', label: 'All Status' },
-    { value: '0', label: 'Created' },
-    { value: '1', label: 'Active' },
-    { value: '2', label: 'Ended' },
+    { value: String(POLL_STATE.CREATED), label: 'Created' },
+    { value: String(POLL_STATE.ACTIVE), label: 'Active' },
+    { value: String(POLL_STATE.ENDED), label: 'Ended' },
   ]
 
   const currentLabel = options.find(o => o.value === currentStatus)?.label || 'All Status'

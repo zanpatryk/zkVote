@@ -3,10 +3,10 @@ import { Identity } from '@semaphore-protocol/identity'
 import { Group } from '@semaphore-protocol/group'
 import { generateProof } from '@semaphore-protocol/proof'
 import { useSignMessage, useAccount } from 'wagmi'
-import { registerVoter, castVoteWithProof } from '@/lib/blockchain/engine/write'
+import { addMember, castVoteWithProof } from '@/lib/blockchain/engine/write'
 import { getGroupMembers, getMerkleTreeDepth } from '@/lib/blockchain/engine/read'
 import { toast } from 'react-hot-toast'
-import { toastTransactionError } from '@/lib/blockchain/utils/error-handler'
+import { toastTransactionError, formatTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 export function useSemaphore() {
   const { address } = useAccount()
@@ -17,16 +17,29 @@ export function useSemaphore() {
   const [isRegistering, setIsRegistering] = useState(false)
   const [isCastingVote, setIsCastingVote] = useState(false)
 
-  // Create deterministic identity based on wallet signature
-  const createIdentity = useCallback(async () => {
+  /**
+   * Create or regenerate a deterministic identity for a specific poll.
+   * The same wallet + pollId will ALWAYS produce the same identity.
+   * No storage needed - can be regenerated anytime by signing.
+   * 
+   * @param {string|number} pollId - The poll ID to derive identity for
+   * @returns {Promise<Identity|null>} The derived identity
+   */
+  const createIdentity = useCallback(async (pollId) => {
     if (!address) {
       toast.error('Connect wallet first')
       return null
     }
 
+    if (!pollId) {
+      toast.error('Poll ID required')
+      return null
+    }
+
     setIsLoadingIdentity(true)
     try {
-      const message = 'Sign this message to generate your voting identity. This does not cost gas.'
+      // Deterministic: same wallet + same pollId = same signature = same identity
+      const message = `Sign to access your zkVote identity for Poll #${pollId}\n\nThis signature is used to derive your anonymous voting identity. It does not cost gas.`
       const signature = await signMessageAsync({ message })
       const newIdentity = new Identity(signature)
       
@@ -53,14 +66,45 @@ export function useSemaphore() {
 
     setIsRegistering(true)
     try {
-      await registerVoter(pollId, activeIdentity.commitment.toString())
+      const success = await addMember(pollId, activeIdentity.commitment.toString())
+      return success
     } catch (error) {
       console.error('Registration error:', error)
       // Error toast handled in registerVoter
+      return false
     } finally {
       setIsRegistering(false)
     }
   }, [identity])
+
+  // Generate ZK Proof (Semaphore)
+  const generateVoteProof = useCallback(async (pollId, signal, identity) => {
+    if (!identity) throw new Error('Identity required')
+    
+    // Ensure signal is valid (number or string-convertible)
+    // generateProof expects message/signal.
+    
+    const depth = await getMerkleTreeDepth(pollId)
+    const membersData = await getGroupMembers(pollId)
+    
+    const commitments = membersData.map(m => m.identityCommitment).filter(Boolean)
+    const group = new Group(commitments)
+    
+    const index = group.indexOf(identity.commitment)
+    if (index === -1) {
+        throw new Error('Your identity is not registered in this poll group.')
+    }
+
+    // generateProof(identity, group, message, scope, snarkArtifacts)
+    const proof = await generateProof(
+      identity, 
+      group, 
+      signal, 
+      pollId,
+      depth
+    )
+    return proof
+  }, [])
 
   // Cast ZK Vote
   const castVote = useCallback(async (pollId, optionIndex, identity) => {
@@ -71,49 +115,31 @@ export function useSemaphore() {
 
     setIsCastingVote(true)
     try {
-      const depth = await getMerkleTreeDepth(pollId)
-      const membersData = await getGroupMembers(pollId)
-      
-      // Map member objects to identity commitments (strings/BigInts) for Semaphore Group
-      const commitments = membersData.map(m => m.identityCommitment).filter(Boolean)
-      
-      const group = new Group(commitments)
-      
-      // Verify the identity is in the group (client-side check)
-      const index = group.indexOf(identity.commitment)
-      if (index === -1) {
-          throw new Error('Your identity is not registered in this poll group.')
-      }
-
       toast.loading('Generating ZK Proof... (this may take a moment)', { id: 'vote' })
       
-      // generateProof(identity, group, message, scope, snarkArtifacts)
-      // generateProof(identity, group, message, scope, snarkArtifacts)
-      const proof = await generateProof(
-        identity, 
-        group, 
-        optionIndex, 
-        pollId,
-        depth
-      )
+      const proof = await generateVoteProof(pollId, optionIndex, identity)
 
       // Call contract
       const result = await castVoteWithProof(pollId, { optionIndex }, proof)
       return result
     } catch (error) {
-      console.error('ZK Vote failed:', error)
+      // 1. Check if it's a known "Already Voted" error first
+      const errorMessage = formatTransactionError(error)
       
-      const message = toastTransactionError(error, 'Failed to cast ZK vote', { id: 'vote' })
-      
-      if (message.includes('already cast')) {
+      if (errorMessage.includes('already cast')) {
+        toast.error(errorMessage, { id: 'vote' })
         return { alreadyVoted: true }
       }
+
+      // 2. Log real unexpected errors
+      console.error('ZK Vote failed:', error)
+      toast.error(errorMessage, { id: 'vote' })
       
       return null
     } finally {
       setIsCastingVote(false)
     }
-  }, []) // No dependencies needed as arguments are passed
+  }, [generateVoteProof])
 
   // Check if an identity has already voted in this poll
   const checkIdentityVoted = useCallback(async (pollId, identity) => {
@@ -133,8 +159,8 @@ export function useSemaphore() {
       // Note: We use the full hash value and take last 160 bits
       const voterAddress = getAddress(`0x${(BigInt(manualNullifierHash) & ((1n << 160n) - 1n)).toString(16).padStart(40, '0')}`)
       
-      console.log('Peeking vote status for derived address:', voterAddress)
-      console.log('On-chain result for peek:', voted)
+      const { hasVoted } = await import('@/lib/blockchain/engine/read')
+      const voted = await hasVoted(pollId, voterAddress)
       
       return { voted, voterAddress }
     } catch (error) {
@@ -170,60 +196,24 @@ export function useSemaphore() {
     }
   }, [])
 
-  // Storage Persistence Helpers
-  const saveIdentityToStorage = useCallback((identity, pollId) => {
-    if (!identity || !pollId) return
-    try {
-      const data = JSON.stringify(identity, (key, value) => 
-        typeof value === 'bigint' ? value.toString() : value
-      )
-      localStorage.setItem(`zk-identity-${pollId}`, data)
-    } catch (error) {
-      console.error('Failed to save identity to storage:', error)
-    }
-  }, [])
-
-  const loadIdentityFromStorage = useCallback((pollId) => {
-    if (!pollId) return null
-    try {
-      const data = localStorage.getItem(`zk-identity-${pollId}`)
-      if (!data) return null
-      
-      // Since Identity constructor expects a private key or a serialized state, 
-      // but the '@semaphore-protocol/identity' Identity class can be reconstructed 
-      // from its private key. Our serialization saved the whole object.
-      // We need the private key to truly "reconstruct" it with methods.
-      const parsed = JSON.parse(data)
-      const privateKey = parsed._privateKey || parsed.privateKey || parsed.secret
-      
-      if (!privateKey) {
-        console.warn('Stored identity missing private key')
-        return null
-      }
-      
-      return new Identity(privateKey)
-    } catch (error) {
-      console.error('Failed to load identity from storage:', error)
-      return null
-    }
-  }, [])
-
-  const hasStoredIdentity = useCallback((pollId) => {
-    if (typeof window === 'undefined') return false
-    return !!localStorage.getItem(`zk-identity-${pollId}`)
-  }, [])
+  /**
+   * Alias for createIdentity - makes the regeneration use case explicit.
+   * Users can call this anytime to recover their identity by signing.
+   */
+  const regenerateIdentity = createIdentity
 
   return {
     identity,
     createIdentity,
+    regenerateIdentity,
     register,
     castVote,
+    generateVoteProof,
     downloadIdentity,
-    saveIdentityToStorage,
-    loadIdentityFromStorage,
-    hasStoredIdentity,
     isLoadingIdentity,
     isRegistering,
-    isCastingVote
+    isCastingVote,
+    checkIdentityVoted
   }
 }
+

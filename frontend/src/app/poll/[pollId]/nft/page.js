@@ -1,13 +1,15 @@
-"use client"
+'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { getPollById, isUserWhitelisted, getUserNFTs } from '@/lib/blockchain/engine/read'
+import { getPollById, isUserWhitelisted, getUserNFTs, getZKPollState } from '@/lib/blockchain/engine/read'
 import { mintResultNFT } from '@/lib/blockchain/engine/write'
 import PollDetails from '@/components/PollDetails'
 import { toast } from 'react-hot-toast'
 import { motion } from 'framer-motion'
+import BackButton from '@/components/BackButton'
+import { POLL_STATE } from '@/lib/constants'
 
 export default function MintNFTPage() {
   const { pollId } = useParams()
@@ -37,10 +39,18 @@ export default function MintNFTPage() {
         }
 
         // Must be ENDED (state 2)
-        if (Number(pollData.state) !== 2) {
+        if (Number(pollData.state) !== POLL_STATE.ENDED) {
           toast.error("This poll has not ended yet.")
           router.replace(`/poll/${pollId}`)
           return
+        }
+
+        // For Encrypted Polls: Results must be published
+        const zkState = await getZKPollState(pollId)
+        if (zkState && !zkState.resultsPublished) {
+             toast.error("Tally Results Not Yet Published")
+             router.replace(`/poll/${pollId}`)
+             return
         }
 
         const isCreator = pollData.creator.toLowerCase() === userAddress.toLowerCase()
@@ -130,12 +140,7 @@ export default function MintNFTPage() {
             <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">Mint Result NFT</h1>
             <p className="text-gray-500">Collect your voting history.</p>
         </div>
-        <button 
-          onClick={() => router.push('/poll')}
-          className="text-gray-600 hover:text-black font-medium"
-        >
-          ← Back to Dashboard
-        </button>
+        <BackButton href="/poll" label="Back to Dashboard" />
       </motion.div>
 
       <motion.div 

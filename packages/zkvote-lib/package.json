@@ -9,6 +9,7 @@
     "./elgamal": "./src/elgamal.js",
     "./pedersen": "./src/pedersen.js",
     "./proof": "./src/proof.js",
+    "./node": "./src/node.js",
     "./contracts/*": "./contracts/*"
   },
   "scripts": {

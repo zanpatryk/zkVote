@@ -9,6 +9,15 @@ jest.mock('@/components/VoteChecker', () => {
   }
 })
 
+// Mock useRouter
+jest.mock('next/navigation', () => ({
+  useRouter() {
+    return {
+      back: jest.fn(),
+    }
+  },
+}))
+
 describe('VerifyPage', () => {
   it('renders the verify page structure', () => {
     render(<VerifyPage />)

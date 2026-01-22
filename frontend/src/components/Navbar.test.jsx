@@ -44,9 +44,11 @@ describe('Navbar', () => {
 
     expect(screen.getByText('zkVote')).toBeInTheDocument()
     expect(screen.getByText('Connect Wallet')).toBeInTheDocument()
-    // Poll and Vote links should not be visible
+    // Nav links should not be visible
     expect(screen.queryByText('Poll')).not.toBeInTheDocument()
     expect(screen.queryByText('Vote')).not.toBeInTheDocument()
+    expect(screen.queryByText('Verify')).not.toBeInTheDocument()
+    expect(screen.queryByText('NFTs')).not.toBeInTheDocument()
   })
 
   it('renders navigation links when connected', () => {
@@ -58,6 +60,8 @@ describe('Navbar', () => {
     expect(screen.getByText('zkVote')).toBeInTheDocument()
     expect(screen.getByText('Poll')).toBeInTheDocument()
     expect(screen.getByText('Vote')).toBeInTheDocument()
+    expect(screen.getByText('Verify')).toBeInTheDocument()
+    expect(screen.getByText('NFTs')).toBeInTheDocument()
   })
 
   it('highlights active link', () => {

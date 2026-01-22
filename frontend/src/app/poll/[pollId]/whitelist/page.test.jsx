@@ -55,13 +55,6 @@ Object.assign(navigator, {
   },
 })
 
-// Mock FileReader
-class MockFileReader {
-  readAsText(file) {
-    this.onload({ target: { result: file.content } })
-  }
-}
-global.FileReader = MockFileReader
 
 describe('WhitelistPage', () => {
   const mockPollId = '123'
@@ -183,7 +176,7 @@ describe('WhitelistPage', () => {
     it('handles file upload with valid addresses', async () => {
       const fileContent = '0x123\n0x456, 0x789'
       const file = new File([fileContent], 'addresses.txt', { type: 'text/plain' })
-      file.content = fileContent // For MockFileReader
+      file.text = jest.fn().mockResolvedValue(fileContent)
 
       const input = screen.getByLabelText('Upload File')
       fireEvent.change(input, { target: { files: [file] } })
@@ -198,7 +191,7 @@ describe('WhitelistPage', () => {
       isAddress.mockReturnValue(false)
       const fileContent = 'invalid'
       const file = new File([fileContent], 'addresses.txt', { type: 'text/plain' })
-      file.content = fileContent
+      file.text = jest.fn().mockResolvedValue(fileContent)
 
       const input = screen.getByLabelText('Upload File')
       fireEvent.change(input, { target: { files: [file] } })
@@ -211,7 +204,7 @@ describe('WhitelistPage', () => {
     it('submits batch addresses successfully', async () => {
       const fileContent = '0x123'
       const file = new File([fileContent], 'addresses.txt', { type: 'text/plain' })
-      file.content = fileContent
+      file.text = jest.fn().mockResolvedValue(fileContent)
 
       const input = screen.getByLabelText('Upload File')
       fireEvent.change(input, { target: { files: [file] } })

@@ -9,17 +9,6 @@ jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }))
 
-jest.mock('wagmi', () => ({
-  useAccount: jest.fn(),
-}))
-
-jest.mock('react-hot-toast', () => ({
-  toast: {
-    success: jest.fn(),
-    error: jest.fn(),
-  },
-}))
-
 jest.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }) => <div {...props}>{children}</div>,
@@ -44,20 +33,23 @@ describe('VoteReceiptPage', () => {
     jest.clearAllMocks()
     useParams.mockReturnValue({ pollId: mockPollId, voteId: mockVoteId })
     useSearchParams.mockReturnValue({ get: jest.fn().mockReturnValue('0x123abc') })
-    const { useAccount } = require('wagmi')
-    useAccount.mockReturnValue({ address: '0xAddress' })
   })
 
   it('renders success message', () => {
     render(<VoteReceiptPage />)
     expect(screen.getByText('Vote Submitted')).toBeInTheDocument()
-    expect(screen.getByText('Your vote has been successfully cast. Here is your receipt.')).toBeInTheDocument()
+    expect(screen.getByText('Your vote has been successfully cast.')).toBeInTheDocument()
+  })
+
+  it('renders receipt card', () => {
+    render(<VoteReceiptPage />)
+    expect(screen.getByTestId('receipt-card')).toBeInTheDocument()
   })
 
   it('handles download button click', () => {
     render(<VoteReceiptPage />)
     
-    const downloadBtn = screen.getByText('Download Receipt (.txt)')
+    const downloadBtn = screen.getByText('Download Receipt')
     
     // Mock anchor click
     const link = document.createElement('a')
@@ -69,7 +61,7 @@ describe('VoteReceiptPage', () => {
     fireEvent.click(downloadBtn)
 
     expect(global.URL.createObjectURL).toHaveBeenCalled()
-    expect(link.download).toBe(`zkvote-receipt-poll-${mockPollId}-vote-${mockVoteId}.txt`)
+    expect(link.download).toBe(`zkvote-receipt-poll-${mockPollId}-vote-${mockVoteId}.json`)
     expect(clickSpy).toHaveBeenCalled()
     expect(global.URL.revokeObjectURL).toHaveBeenCalled()
 
@@ -77,22 +69,5 @@ describe('VoteReceiptPage', () => {
     appendSpy.mockRestore()
     removeSpy.mockRestore()
   })
-
-  it('handles save to wallet button click', () => {
-    const { toast } = require('react-hot-toast')
-    render(<VoteReceiptPage />)
-    
-    const saveBtn = screen.getByText('Save to Wallet (Browser)')
-    
-    // Mock localStorage
-    const setItemSpy = jest.spyOn(Storage.prototype, 'setItem')
-    
-    fireEvent.click(saveBtn)
-
-    expect(setItemSpy).toHaveBeenCalledWith(
-      `zk-receipt-0xaddress-${mockPollId}`,
-      expect.stringContaining(`"pollId":"${mockPollId}"`)
-    )
-    expect(toast.success).toHaveBeenCalledWith('Receipt saved to your wallet storage!')
-  })
 })
+

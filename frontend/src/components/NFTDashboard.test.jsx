@@ -6,6 +6,7 @@ import { getUserNFTs } from '@/lib/blockchain/engine/read'
 // Mock dependencies
 jest.mock('wagmi', () => ({
   useAccount: jest.fn(),
+  http: jest.fn(),
 }))
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getUserNFTs: jest.fn(),
@@ -20,7 +21,7 @@ describe('NFTDashboard', () => {
     useAccount.mockReturnValue({ isConnected: false, address: null })
     render(<NFTDashboard />)
 
-    expect(screen.getByText('Your Voting Badges')).toBeInTheDocument()
+    // Title removed from component
     // Default empty state message
     expect(screen.getByText('No Badges Yet')).toBeInTheDocument()
   })

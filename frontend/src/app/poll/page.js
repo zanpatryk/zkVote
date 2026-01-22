@@ -1,55 +1,33 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
-import { getOwnedPolls } from '@/lib/blockchain/engine/read'
+import { useState, useEffect } from 'react'
 import PollCard from '@/components/PollCard.jsx'
 import Link from 'next/link'
 import StatusFilter from '@/components/StatusFilter.jsx'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useOwnedPolls } from '@/hooks/usePolls'
+import { usePollFilter } from '@/hooks/usePollFilter'
 
 export default function PollsPage() {
   const { address, isConnected } = useAccount()
-  const [polls, setPolls] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  
+  const { polls, isLoading } = useOwnedPolls(address, isConnected)
+  
+  const {
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    filteredPolls
+  } = usePollFilter(polls)
 
-  useEffect(() => {
-    if (!isConnected || !address) {
-      setPolls([])
-      setIsLoading(false)
-      return
-    }
+  /* Hydration Fix: Ensure server and client render match on first pass */
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
-    let cancelled = false
-
-    getOwnedPolls(address).then(async (data) => {
-      if (cancelled) return
-
-      // Check whitelist status for each poll
-      const pollsWithWhitelist = await Promise.all(data.map(async (poll) => {
-        const isWhitelisted = await import('@/lib/blockchain/engine/read').then(m => m.isUserWhitelisted(poll.pollId, address))
-        return { ...poll, isWhitelisted }
-      }))
-
-      if (!cancelled) {
-        setPolls(pollsWithWhitelist)
-        setIsLoading(false)
-      }
-    }).catch(err => {
-      console.error('Failed to load owned polls:', err)
-      if (!cancelled) setIsLoading(false)
-    })
-
-    return () => { cancelled = true }
-  }, [address, isConnected])
-
-  const filteredPolls = polls.filter(poll => {
-    const matchesSearch = poll.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || poll.state.toString() === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  // If not mounted (SSR) or loading, show loading state to avoid hydration mismatch
+  const showLoading = !mounted || isLoading
 
   return (
     <div className="pt-24 max-w-5xl mx-auto px-6 pb-32 relative">
@@ -96,12 +74,12 @@ export default function PollsPage() {
       </motion.div>
 
       <div>
-        {isLoading ? (
+        {showLoading ? (
           <div className="text-center py-20 text-xl text-gray-600 font-serif italic">Loading your polls...</div>
         ) : filteredPolls.length === 0 ? (
           <div className="text-center py-24 border-2 border-dashed border-gray-300 rounded-xl">
              <p className="text-xl text-gray-400 font-serif italic">
-                {polls.length === 0 ? "You haven't created any polls yet." : "No polls match your search."}
+                {!polls || polls.length === 0 ? "You haven't created any polls yet." : "No polls match your search."}
              </p>
           </div>
         ) : (

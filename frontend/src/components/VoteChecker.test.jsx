@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import VoteChecker from './VoteChecker'
 import { useRouter } from 'next/navigation'
-import userEvent from '@testing-library/user-event'
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -9,63 +8,88 @@ jest.mock('next/navigation', () => ({
 }))
 
 describe('VoteChecker', () => {
-  const mockPush = jest.fn()
+  const mockOnVerify = jest.fn()
 
   beforeEach(() => {
     jest.clearAllMocks()
-    useRouter.mockReturnValue({ push: mockPush })
   })
 
   it('renders correctly', () => {
-    render(<VoteChecker />)
+    render(<VoteChecker onVerify={mockOnVerify} />)
     expect(screen.getByText('Upload Receipt')).toBeInTheDocument()
     expect(screen.getByLabelText('Upload vote receipt')).toBeInTheDocument()
   })
 
-  it('handles valid file upload with Tx Hash', async () => {
-    render(<VoteChecker />)
+  it('handles valid JSON file upload with all fields', async () => {
+    render(<VoteChecker onVerify={mockOnVerify} />)
 
-    const fileContent = 'zkVote Receipt\nPoll ID: 12345\nVote ID: 67890\nTx Hash: 0xabc123'
-    const file = new File([fileContent], 'receipt.txt', { type: 'text/plain' })
+    const receiptData = {
+      pollId: '12345',
+      voteId: '67890',
+      txHash: '0xabc123',
+      nullifier: 'nullifier123',
+      proof: '[1,2,3]'
+    }
+    const fileContent = JSON.stringify(receiptData)
+    const file = new File([fileContent], 'receipt.json', { type: 'application/json' })
     file.text = jest.fn().mockResolvedValue(fileContent)
     const input = screen.getByLabelText('Upload vote receipt')
 
     fireEvent.change(input, { target: { files: [file] } })
 
     await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/poll/12345/vote/check/67890?txHash=0xabc123')
+      expect(mockOnVerify).toHaveBeenCalledWith(receiptData)
     })
   })
   
-  it('handles valid file upload without Tx Hash', async () => {
-    render(<VoteChecker />)
+  it('handles valid JSON file upload with minimal fields', async () => {
+    render(<VoteChecker onVerify={mockOnVerify} />)
 
-    const fileContent = 'Poll ID: 12345\nVote ID: 67890'
-    const file = new File([fileContent], 'receipt.txt', { type: 'text/plain' })
+    const receiptData = { pollId: '12345', voteId: '67890' }
+    const fileContent = JSON.stringify(receiptData)
+    const file = new File([fileContent], 'receipt.json', { type: 'application/json' })
     file.text = jest.fn().mockResolvedValue(fileContent)
     const input = screen.getByLabelText('Upload vote receipt')
 
     fireEvent.change(input, { target: { files: [file] } })
 
     await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/poll/12345/vote/check/67890')
+      expect(mockOnVerify).toHaveBeenCalledWith(receiptData)
     })
   })
 
-  it('alerts on invalid file content', async () => {
+  it('alerts on invalid JSON file', async () => {
     window.alert = jest.fn()
     render(<VoteChecker />)
 
     const fileContent = 'Invalid Content'
-    const file = new File([fileContent], 'receipt.txt', { type: 'text/plain' })
+    const file = new File([fileContent], 'receipt.json', { type: 'application/json' })
     file.text = jest.fn().mockResolvedValue(fileContent)
     const input = screen.getByLabelText('Upload vote receipt')
 
     fireEvent.change(input, { target: { files: [file] } })
 
     await waitFor(() => {
-        expect(window.alert).toHaveBeenCalledWith('Could not read poll and vote IDs from this receipt file.')
-        expect(mockPush).not.toHaveBeenCalled()
+      expect(window.alert).toHaveBeenCalledWith('Invalid receipt file. Please upload a valid zkVote receipt (.json).')
+      expect(mockOnVerify).not.toHaveBeenCalled()
+    })
+  })
+
+  it('alerts when required fields are missing', async () => {
+    window.alert = jest.fn()
+    render(<VoteChecker />)
+
+    const receiptData = { pollId: '12345' } // missing voteId
+    const fileContent = JSON.stringify(receiptData)
+    const file = new File([fileContent], 'receipt.json', { type: 'application/json' })
+    file.text = jest.fn().mockResolvedValue(fileContent)
+    const input = screen.getByLabelText('Upload vote receipt')
+
+    fireEvent.change(input, { target: { files: [file] } })
+
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalledWith('Invalid receipt file. Please upload a valid zkVote receipt (.json).')
+      expect(mockOnVerify).not.toHaveBeenCalled()
     })
   })
 })

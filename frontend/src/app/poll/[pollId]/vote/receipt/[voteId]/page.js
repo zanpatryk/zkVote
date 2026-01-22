@@ -3,44 +3,17 @@
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import ReceiptCard from '@/components/ReceiptCard'
 import { motion } from 'framer-motion'
-import { useAccount } from 'wagmi'
-import { toast } from 'react-hot-toast'
+import BackButton from '@/components/BackButton'
 
 export default function VoteReceiptPage() {
   const { pollId, voteId } = useParams()
   const router = useRouter()
-  const { address } = useAccount()
   const searchParams = useSearchParams()
   const txHash = searchParams.get('txHash')
   const nullifier = searchParams.get('nullifier')
   const proof = searchParams.get('proof')
 
   const handleDownload = () => {
-    let content = `zkVote Receipt\n`
-    content += `Poll ID: ${pollId}\n`
-    content += `Vote ID: ${voteId}\n`
-    content += `Tx Hash: ${txHash || 'Not available'}\n`
-    if (nullifier) content += `Nullifier Hash: ${nullifier}\n`
-    if (proof) content += `ZK Proof: ${proof}\n`
-    
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `zkvote-receipt-poll-${pollId}-vote-${voteId}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  const handleSaveToWallet = () => {
-    if (!address) {
-      toast.error('Please connect your wallet to save the receipt')
-      return
-    }
-
     const receiptData = {
       pollId,
       voteId,
@@ -49,27 +22,32 @@ export default function VoteReceiptPage() {
       proof,
       timestamp: Date.now()
     }
+    
+    const blob = new Blob([JSON.stringify(receiptData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
 
-    try {
-      localStorage.setItem(`zk-receipt-${address.toLowerCase()}-${pollId}`, JSON.stringify(receiptData))
-      toast.success('Receipt saved to your wallet storage!')
-    } catch (error) {
-      console.error('Failed to save receipt:', error)
-      toast.error('Failed to save receipt to browser storage')
-    }
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `zkvote-receipt-poll-${pollId}-vote-${voteId}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   return (
-    <div className="pt-32 max-w-3xl mx-auto px-6 pb-32 text-center">
+    <div className="pt-32 max-w-3xl mx-auto px-6 pb-32">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="flex justify-between items-start mb-12"
       >
-        <h1 className="text-5xl font-black font-serif mb-6 tracking-tight">Vote Submitted</h1>
-        <p className="text-xl text-gray-600 mb-12 font-medium max-w-xl mx-auto">
-          Your vote has been successfully cast. Here is your receipt.
-        </p>
+         <div className="text-left">
+            <h1 className="text-5xl font-black font-serif mb-2 tracking-tight">Vote Submitted</h1>
+            <p className="text-xl text-gray-600 font-medium">Your vote has been successfully cast.</p>
+         </div>
+         <BackButton href="/vote" label="Back to Voting" />
       </motion.div>
 
       <motion.div 
@@ -86,7 +64,7 @@ export default function VoteReceiptPage() {
         />
       </motion.div>
 
-      <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+      <div className="flex justify-center mt-8 text-center">
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -94,23 +72,13 @@ export default function VoteReceiptPage() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="button"
-          onClick={handleSaveToWallet}
-          className="bg-white text-black px-8 py-4 rounded-lg text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
-        >
-          Save to Wallet (Browser)
-        </motion.button>
-
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          type="button"
           onClick={handleDownload}
-          className="bg-black text-white px-8 py-4 rounded-lg text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
+          className="bg-black text-white px-8 py-4 rounded-lg text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center gap-3"
         >
-          Download Receipt (.txt)
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 10.5L12 15m0 0l4.5-4.5M12 15V3" />
+          </svg>
+          Download Receipt
         </motion.button>
       </div>
     </div>

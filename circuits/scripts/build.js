@@ -4,8 +4,25 @@ const { execSync } = require("child_process");
 
 const SRC_DIR = path.join(__dirname, "../src");
 const BUILD_DIR = path.join(__dirname, "../build");
+const TEMP_DIR = path.join(__dirname, "../.temp");
 const NODE_MODULES = path.join(__dirname, "../../node_modules");
 const CONFIG_PATH = path.join(__dirname, "../circuits.config.json");
+
+// Check if circom is installed
+function checkCircomInstalled() {
+    try {
+        execSync("circom --version", { stdio: "ignore" });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+if (!checkCircomInstalled()) {
+    console.error("Error: Circom compiler not found.");
+    console.error("Please install Circom: https://docs.circom.io/getting-started/installation/");
+    process.exit(1);
+}
 
 if (!fs.existsSync(BUILD_DIR)) {
     fs.mkdirSync(BUILD_DIR);
@@ -70,7 +87,10 @@ allBuilds.forEach(build => {
     content = content.replace(mainRegex, newMain);
 
     // Write modified source to temp file
-    const tempSrc = path.join(SRC_DIR, `_temp_${circuit}.circom`);
+    if (!fs.existsSync(TEMP_DIR)) {
+        fs.mkdirSync(TEMP_DIR, { recursive: true });
+    }
+    const tempSrc = path.join(TEMP_DIR, `${circuit}.circom`);
     fs.writeFileSync(tempSrc, content);
 
     // Create output directory
@@ -94,12 +114,12 @@ allBuilds.forEach(build => {
 
     try {
         execSync(
-            `circom "${tempSrc}" --r1cs --wasm --sym -l "${NODE_MODULES}" -o "${outDir}"`,
+            `circom "${tempSrc}" --r1cs --wasm --sym -l "${NODE_MODULES}" -l "${SRC_DIR}" -o "${outDir}"`,
             { stdio: "inherit" }
         );
 
         // Rename output files to match build name
-        const tempName = `_temp_${circuit}`;
+        const tempName = circuit;
 
         // Handle JS folder and wasm rename first
         const jsDir = path.join(outDir, `${tempName}_js`);

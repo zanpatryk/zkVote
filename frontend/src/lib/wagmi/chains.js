@@ -2,6 +2,8 @@ import { http } from 'wagmi'
 import { sepolia } from 'wagmi/chains'
 import { defineChain } from 'viem'
 
+console.log('DEBUG: wagmi import keys:', Object.keys(require('wagmi')))
+
 export const anvil = defineChain({
   id: 31337,
   name: 'Anvil',

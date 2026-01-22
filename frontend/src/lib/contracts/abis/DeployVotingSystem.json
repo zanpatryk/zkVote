@@ -28,14 +28,24 @@
         "internalType": "contract PollManager"
       },
       {
-        "name": "eligibilityModule",
+        "name": "semaphoreEligibility",
         "type": "address",
         "internalType": "contract SemaphoreEligibilityModule"
       },
       {
-        "name": "voteStorage",
+        "name": "eligibilityV0",
+        "type": "address",
+        "internalType": "contract EligibilityModuleV0"
+      },
+      {
+        "name": "voteStorageV0",
         "type": "address",
         "internalType": "contract VoteStorageV0"
+      },
+      {
+        "name": "zkElGamalVoteVector",
+        "type": "address",
+        "internalType": "contract ZKElGamalVoteVector"
       },
       {
         "name": "resultNFT",
