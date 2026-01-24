@@ -5,6 +5,7 @@ import { publishEncryptedResults } from '@/lib/blockchain/engine/write'
 import { decryptTally, generateTallyProof } from '@/lib/crypto/tally'
 import { toast } from 'react-hot-toast'
 import { usePollRegistry } from '@/hooks/usePollRegistry'
+import { toastTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 export function usePublishTally(pollId) {
   const [isProcessing, setIsProcessing] = useState(false)
@@ -50,7 +51,7 @@ export function usePublishTally(pollId) {
       return tally
     } catch (error) {
       console.error('Decryption/Publishing failed:', error)
-      toast.error('Failed: ' + (error.shortMessage || error.message), { id: toastId })
+      toastTransactionError(error, 'Decryption or publishing failed', { id: toastId })
       throw error
     } finally {
       setIsProcessing(false)

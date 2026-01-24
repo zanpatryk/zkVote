@@ -28,12 +28,12 @@ export default function RegisterPage() {
   useEffect(() => {
     if (!pollId) return
     
-    getPollById(pollId).then(data => {
+    getPollById(pollId).then(({ data, error }) => {
+      if (error) {
+        console.error('Failed to load poll:', error)
+        toast.error('Failed to load poll details')
+      }
       setPoll(data)
-      setLoadingPoll(false)
-    }).catch(err => {
-      console.error('Failed to load poll:', err)
-      toast.error('Failed to load poll details')
       setLoadingPoll(false)
     })
   }, [pollId])
@@ -86,7 +86,7 @@ export default function RegisterPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-12"
       >
-        <BackButton href={`/poll/${pollId}`} label="Back to Poll" className="mb-6" />
+        <BackButton href="/poll" label="Back to Polls" className="mb-6" />
         <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">Register for Anonymous Voting</h1>
         <p className="text-lg text-gray-600">
           This poll requires ZK Identity registration. By registering, you create a private identity that allows you to vote without revealing your wallet address.

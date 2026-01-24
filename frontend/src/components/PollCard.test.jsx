@@ -35,10 +35,17 @@ jest.mock('@/hooks/useSemaphore', () => ({
   })),
 }))
 
+// Mock useUserNFTs
+jest.mock('@/hooks/useUserNFTs', () => ({
+  useUserNFTs: jest.fn(() => ({ nfts: [] })),
+}))
+
 // Mock viem
 jest.mock('viem', () => ({
   hexToString: jest.fn((hex) => hex),
 }))
+
+import { useUserNFTs } from '@/hooks/useUserNFTs'
 
 describe('PollCard', () => {
   const defaultProps = {
@@ -72,10 +79,19 @@ describe('PollCard', () => {
     expect(screen.getByText('Ended')).toBeInTheDocument()
   })
 
-  it('shows Mint Result NFT link for Ended poll (state 2)', () => {
+  it('shows Mint Result NFT link for Ended poll (state 2) when not minted', () => {
+    useUserNFTs.mockReturnValue({ nfts: [] })
     render(<PollCard {...defaultProps} state={2} />)
     expect(screen.getByText('Mint Result NFT')).toBeInTheDocument()
-    expect(screen.getByText('View Details')).toBeInTheDocument()
+  })
+
+  it('shows NFT Minted badge when user has minted', () => {
+    useUserNFTs.mockReturnValue({ 
+      nfts: [{ name: `Poll #${defaultProps.pollId} Results` }] 
+    })
+    render(<PollCard {...defaultProps} state={2} />)
+    expect(screen.getByText('NFT Minted')).toBeInTheDocument()
+    expect(screen.queryByText('Mint Result NFT')).not.toBeInTheDocument()
   })
 
   it('shows owner badge when isOwner is true', () => {

@@ -29,7 +29,7 @@ describe('HomePage', () => {
   })
 
   it('renders both sections', () => {
-    read.getUserNFTs.mockResolvedValue([])
+    read.getUserNFTs.mockResolvedValue({ data: [], error: null })
     render(<HomePage />)
     expect(screen.getByPlaceholderText('Search by Poll ID...')).toBeInTheDocument()
   })
@@ -43,7 +43,7 @@ describe('HomePage', () => {
         attributes: []
       }
     ]
-    read.getUserNFTs.mockResolvedValue(mockNFTs)
+    read.getUserNFTs.mockResolvedValue({ data: mockNFTs, error: null })
 
     render(<HomePage />)
     
@@ -55,7 +55,7 @@ describe('HomePage', () => {
   })
 
   it('displays empty state when no badges found', async () => {
-    read.getUserNFTs.mockResolvedValue([])
+    read.getUserNFTs.mockResolvedValue({ data: [], error: null })
     
     render(<HomePage />)
     

@@ -54,6 +54,13 @@ describe('VotePage', () => {
     expect(screen.getByText('You are not whitelisted on any poll yet.')).toBeInTheDocument()
   })
 
+  it('renders connection error state', () => {
+    useWhitelistedPolls.mockReturnValue({ isLoading: false, polls: [], error: 'Network Error' })
+    render(<VotePage />)
+    expect(screen.getByText('Connection Error')).toBeInTheDocument()
+    expect(screen.getByText(/Could not connect to the network/i)).toBeInTheDocument()
+  })
+
   it('renders list of polls', () => {
     const mockPolls = [
       { pollId: 1n, title: 'Poll 1', state: 1, creator: '0x456' },

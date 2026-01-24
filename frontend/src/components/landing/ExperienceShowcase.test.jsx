@@ -72,4 +72,34 @@ describe('ExperienceShowcase', () => {
     expect(nftCard).toHaveAttribute('data-expanded', 'true')
     expect(nftCard).toHaveAttribute('data-interactive', 'true')
   })
+
+  it('switches back to Creator journey when tab is clicked', async () => {
+    render(<ExperienceShowcase />)
+    
+    // First switch to Voter
+    fireEvent.click(screen.getByText('I Want to Vote'))
+    await waitFor(() => {
+      expect(screen.getByText('Browse Available Polls')).toBeInTheDocument()
+    })
+    
+    // Then switch back to Creator
+    fireEvent.click(screen.getByText('I Want to Create a Poll'))
+    await waitFor(() => {
+      expect(screen.getByText('Create Your Poll')).toBeInTheDocument()
+    })
+  })
+
+  it('renders both tab buttons', () => {
+    render(<ExperienceShowcase />)
+    
+    expect(screen.getByText('I Want to Create a Poll')).toBeInTheDocument()
+    expect(screen.getByText('I Want to Vote')).toBeInTheDocument()
+  })
+
+  it('renders journey step descriptions', () => {
+    render(<ExperienceShowcase />)
+    
+    // Check step descriptions visible on the creator journey
+    expect(screen.getByText(/Set up your governance proposal/i)).toBeInTheDocument()
+  })
 })

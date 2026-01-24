@@ -23,11 +23,14 @@ export default function LandingPage() {
   if (isConnected) return null
 
   return (
-    <div className="flex flex-col items-center pt-32 pb-32 w-full">
-      <HeroSection />
-      <StatsBanner />
+    <div className="flex flex-col items-center pb-16 w-full">
+      {/* First viewport section - Hero + Banner */}
+      <div className="flex flex-col w-full" style={{ height: 'calc(100vh - 80px)' }}>
+        <HeroSection />
+        <StatsBanner />
+      </div>
       
-      <div className="w-full flex flex-col items-center px-6 space-y-32">
+      <div className="w-full flex flex-col items-center px-6 space-y-16">
         <ExperienceShowcase />
         <HowItWorks />
         <CTASection />

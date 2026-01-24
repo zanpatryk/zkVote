@@ -1,6 +1,6 @@
 import { elgamal, proof as proofUtils } from '@zkvote/lib'
 import * as snarkjs from 'snarkjs'
-import { ELGAMAL_VECTOR_SIZE } from '@/lib/constants'
+import { ELGAMAL_VECTOR_SIZE, TALLY_CIRCUIT_WASM_PATH, TALLY_CIRCUIT_ZKEY_PATH } from '@/lib/constants'
 
 /**
  * Decrypts aggregated ElGamal ciphertexts and generates a ZK proof of correct decryption.
@@ -61,10 +61,7 @@ export async function generateTallyProof(tally, publicKey, ciphertexts, secretKe
     sk
   }
   
-  const wasmPath = `/circuits/elGamalTallyDecrypt_N16/elGamalTallyDecrypt_N16.wasm`
-  const zkeyPath = `/circuits/elGamalTallyDecrypt_N16/elGamalTallyDecrypt_N16_final.zkey`
-  
-  const { proof } = await snarkjs.groth16.fullProve(input, wasmPath, zkeyPath)
+  const { proof } = await snarkjs.groth16.fullProve(input, TALLY_CIRCUIT_WASM_PATH, TALLY_CIRCUIT_ZKEY_PATH)
   
   return proofUtils.formatProofForSolidity(proof)
 }

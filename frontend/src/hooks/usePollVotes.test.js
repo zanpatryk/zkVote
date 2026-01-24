@@ -22,7 +22,7 @@ describe('usePollVotes', () => {
     
     // Default mocks
     getModules.mockResolvedValue({ voteStorage: '0xVoteStorage' })
-    getPollVotes.mockResolvedValue([])
+    getPollVotes.mockResolvedValue({ data: [], error: null })
     useContractEvents.mockReturnValue({ events: [] })
   })
 
@@ -31,7 +31,7 @@ describe('usePollVotes', () => {
       { voteId: '1', voter: '0x1', blockNumber: 100, transactionHash: '0xaaa' },
       { voteId: '2', voter: '0x2', blockNumber: 99, transactionHash: '0xbbb' },
     ]
-    getPollVotes.mockResolvedValue(initialVotes)
+    getPollVotes.mockResolvedValue({ data: initialVotes, error: null })
 
     const { result } = renderHook(() => usePollVotes(mockPollId, POLL_STATE.ACTIVE))
     
@@ -51,7 +51,7 @@ describe('usePollVotes', () => {
 
   it('merges live events', async () => {
     const initialVotes = [{ voteId: '1', voter: '0x1', blockNumber: 100, transactionHash: '0xaaa' }]
-    getPollVotes.mockResolvedValue(initialVotes)
+    getPollVotes.mockResolvedValue({ data: initialVotes, error: null })
     
     // Mock live event hook to return new event later?
     // renderHook supports rerender.
@@ -79,7 +79,7 @@ describe('usePollVotes', () => {
   })
 
   it('handles fetch errors gracefully', async () => {
-    getPollVotes.mockRejectedValue(new Error('Fetch failed'))
+    getPollVotes.mockResolvedValue({ data: [], error: 'Fetch failed' })
     
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
     
@@ -97,7 +97,7 @@ describe('usePollVotes', () => {
 
   it('avoids duplicates when merging', async () => {
     const initialVotes = [{ voteId: '1', voter: '0x1', blockNumber: 100, transactionHash: '0xaaa' }]
-    getPollVotes.mockResolvedValue(initialVotes)
+    getPollVotes.mockResolvedValue({ data: initialVotes, error: null })
     
     // Live event is same as initial
     const duplicateEvent = { voteId: '1', voter: '0x1', blockNumber: 100, transactionHash: '0xaaa' }
@@ -108,5 +108,30 @@ describe('usePollVotes', () => {
     await waitFor(() => {
       expect(result.current.votes).toHaveLength(1)
     })
+  })
+
+  it('handles getModules error gracefully', async () => {
+    getModules.mockRejectedValue(new Error('Failed to get modules'))
+    getPollVotes.mockResolvedValue({ data: [], error: null })
+    
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    
+    const { result } = renderHook(() => usePollVotes(mockPollId, POLL_STATE.ACTIVE))
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to get vote storage address:', expect.any(Error))
+    consoleSpy.mockRestore()
+  })
+
+  it('does not fetch when pollId is null', async () => {
+    const { result } = renderHook(() => usePollVotes(null, POLL_STATE.ACTIVE))
+
+    // Should not call any fetch functions
+    expect(getPollVotes).not.toHaveBeenCalled()
+    expect(getModules).not.toHaveBeenCalled()
+    expect(result.current.votes).toEqual([])
   })
 })

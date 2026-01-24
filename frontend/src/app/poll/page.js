@@ -8,11 +8,12 @@ import StatusFilter from '@/components/StatusFilter.jsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useOwnedPolls } from '@/hooks/usePolls'
 import { usePollFilter } from '@/hooks/usePollFilter'
+import ConnectionError from '@/components/ConnectionError'
 
 export default function PollsPage() {
   const { address, isConnected } = useAccount()
   
-  const { polls, isLoading } = useOwnedPolls(address, isConnected)
+  const { polls, isLoading, error } = useOwnedPolls(address, isConnected)
   
   const {
     searchQuery,
@@ -34,14 +35,14 @@ export default function PollsPage() {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between mb-12"
+        className="flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-12 gap-6 md:gap-0"
       >
         <div>
           <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">My Polls</h1>
           <p className="text-gray-500 text-lg">Manage your secure voting events.</p>
         </div>
-        <Link href="/poll/create">
-          <button className="bg-black text-white px-8 py-4 rounded-lg text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
+        <Link href="/poll/create" className="w-full md:w-auto">
+          <button className="w-full md:w-auto bg-black text-white px-8 py-4 rounded-lg text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
             + Create New Poll
           </button>
         </Link>
@@ -76,6 +77,8 @@ export default function PollsPage() {
       <div>
         {showLoading ? (
           <div className="text-center py-20 text-xl text-gray-600 font-serif italic">Loading your polls...</div>
+        ) : error ? (
+           <ConnectionError error={error} />
         ) : filteredPolls.length === 0 ? (
           <div className="text-center py-24 border-2 border-dashed border-gray-300 rounded-xl">
              <p className="text-xl text-gray-400 font-serif italic">

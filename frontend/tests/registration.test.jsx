@@ -88,7 +88,7 @@ describe('Integration Test: Registration Page', () => {
         
         mockUseAccount.mockReturnValue({ isConnected: true })
         mockUsePollRegistry.mockReturnValue({ isRegistered: false, refetchRegistration: mockRefetchRegistration })
-        mockGetPollById.mockResolvedValue({ title: 'ZK Poll' })
+        mockGetPollById.mockResolvedValue({ data: { title: 'ZK Poll' }, error: null })
     })
 
     it('renders loading state', async () => {

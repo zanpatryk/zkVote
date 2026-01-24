@@ -130,8 +130,8 @@ function JourneyStep({ number, title, description, children, reverse = false, ac
         pointerEvents: active ? 'auto' : 'none',
         display: active ? 'flex' : 'none'
       }}
-      transition={{ duration: 0.6, ease: "circOut" }}
-      className="absolute inset-0 flex items-center justify-center p-4 md:p-8"
+      transition={{ duration: 0.25, ease: "circOut" }}
+      className="absolute inset-0 flex items-start md:items-center justify-center p-4 pt-20 md:p-8"
     >
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <div className={`flex items-start gap-6 ${reverse ? 'lg:order-2' : ''}`}>
@@ -144,7 +144,9 @@ function JourneyStep({ number, title, description, children, reverse = false, ac
           </div>
         </div>
         <div className={`flex justify-center items-center ${reverse ? 'lg:order-1' : ''}`}>
-          {children}
+          <div className="w-full h-full flex items-center justify-center transform scale-[0.65] sm:scale-90 md:scale-100 origin-center lg:origin-top">
+            {children}
+          </div>
         </div>
       </div>
     </motion.div>
@@ -167,7 +169,7 @@ export default function ExperienceShowcase() {
 
   // Smooth out the scroll progress to prevent jumping too many steps
   const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
+    stiffness: 200,
     damping: 30,
     restDelta: 0.001
   })
@@ -196,7 +198,7 @@ export default function ExperienceShowcase() {
   }, [activeTab])
 
   return (
-    <div ref={containerRef} className="w-full relative h-[1200vh]">
+    <div ref={containerRef} className="w-full relative h-[400vh]">
       {/* Sticky Display Area - Adjusted for Navbar height (64px/4rem) */}
       <div className="sticky top-16 h-[calc(100vh-64px)] w-full flex items-center justify-center overflow-hidden">
         {/* Background decoration */}
@@ -221,7 +223,7 @@ export default function ExperienceShowcase() {
             </motion.p>
 
             {/* Tab Buttons */}
-            <div className="flex justify-center gap-6">
+            <div className="flex flex-col md:flex-row justify-center items-center gap-6">
               <motion.button
                 onClick={() => setActiveTab('creator')}
                 animate={{

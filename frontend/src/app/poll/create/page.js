@@ -100,13 +100,15 @@ export default function CreatePollPage() {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-12 flex justify-between items-center"
+        className="mb-8 md:mb-12 flex flex-col-reverse md:flex-row justify-between items-start md:items-center gap-6 md:gap-0"
       >
         <div>
-          <h1 className="text-5xl font-serif font-bold text-gray-900 mb-4">Create New Poll</h1>
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-2 md:mb-4">Create New Poll</h1>
           <p className="text-lg text-gray-600">Launch a secure, tamper-proof vote.</p>
         </div>
-        <BackButton href="/poll" label="Back to Dashboard" />
+        <div className="w-full md:w-auto flex justify-end">
+           <BackButton href="/poll" label="Back to Dashboard" />
+        </div>
       </motion.div>
 
       <form onSubmit={handleSubmit} className="flex flex-col">

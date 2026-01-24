@@ -36,12 +36,12 @@ describe('useWhitelistedAddresses', () => {
     getModules.mockResolvedValue({ eligibilityModule: '0xEligibility' })
     useBlockNumber.mockReturnValue({ data: 10000n })
     useMultiContractEvents.mockReturnValue({ events: [] })
-    getWhitelistedAddresses.mockResolvedValue([])
+    getWhitelistedAddresses.mockResolvedValue({ data: [], error: null })
   })
 
   it('initializes and fetches first batch', async () => {
     const initialAddresses = ['0x1', '0x2']
-    getWhitelistedAddresses.mockResolvedValue(initialAddresses)
+    getWhitelistedAddresses.mockResolvedValue({ data: initialAddresses, error: null })
 
     const { result } = renderHook(() => useWhitelistedAddresses(mockPollId))
     
@@ -73,7 +73,7 @@ describe('useWhitelistedAddresses', () => {
     
     // Round 2
     getWhitelistedAddresses.mockClear()
-    getWhitelistedAddresses.mockResolvedValue(['0x3'])
+    getWhitelistedAddresses.mockResolvedValue({ data: ['0x3'], error: null })
     
     await act(async () => {
         await result.current.loadMore()
@@ -114,7 +114,7 @@ describe('useWhitelistedAddresses', () => {
   })
 
   it('handles fetch errors gracefully', async () => {
-    getWhitelistedAddresses.mockRejectedValue(new Error('Fetch failed'))
+    getWhitelistedAddresses.mockResolvedValue({ data: [], error: 'Fetch failed' })
     
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
     
@@ -125,5 +125,89 @@ describe('useWhitelistedAddresses', () => {
     })
     
     consoleSpy.mockRestore()
+  })
+
+  it('does not fetch when pollId is null', async () => {
+    const { result } = renderHook(() => useWhitelistedAddresses(null))
+
+    expect(getWhitelistedAddresses).not.toHaveBeenCalled()
+    expect(getModules).not.toHaveBeenCalled()
+    expect(result.current.addresses.size).toBe(0)
+  })
+
+  it('handles getModules error gracefully', async () => {
+    getModules.mockRejectedValue(new Error('Module fetch failed'))
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+    renderHook(() => useWhitelistedAddresses(mockPollId))
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to fetch eligibility module:', expect.any(Error))
+    })
+
+    consoleSpy.mockRestore()
+  })
+
+  it('does not add duplicate live events', async () => {
+    const existingAddress = '0xExisting'
+    getWhitelistedAddresses.mockResolvedValue({ data: [existingAddress], error: null })
+
+    let liveEvents = []
+    useMultiContractEvents.mockImplementation(() => ({ events: liveEvents }))
+
+    const { result, rerender } = renderHook(() => useWhitelistedAddresses(mockPollId))
+
+    await waitFor(() => {
+      expect(result.current.addresses.has(existingAddress)).toBe(true)
+    })
+
+    // Simulate duplicate event
+    liveEvents = [{ user: existingAddress, transactionHash: '0xhash' }]
+    rerender()
+
+    // Should still have only 1 address
+    await waitFor(() => {
+      expect(result.current.addresses.size).toBe(1)
+    })
+    
+    // Toast should not be called since it's a duplicate
+    expect(toast.success).not.toHaveBeenCalled()
+  })
+
+  it('handles null addresses data', async () => {
+    getWhitelistedAddresses.mockResolvedValue({ data: null, error: null })
+
+    const { result } = renderHook(() => useWhitelistedAddresses(mockPollId))
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    expect(result.current.addresses.size).toBe(0)
+  })
+
+  it('stops loading more when block 0 is reached', async () => {
+    const { result } = renderHook(() => useWhitelistedAddresses(mockPollId))
+    
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    
+    // Set internal state to block 0 (genesis scanned)
+    // Actually paginates correctly on loadMore already sets hasMore false if startBlock === 0n.
+    // But let's trigger the early return at the top of loadMore.
+    
+    // We already have a test 'paginates correctly on loadMore' that reaches block 0 and sets hasMore false.
+    // If we call loadMore AGAIN, it should return early.
+    
+    await act(async () => {
+        await result.current.loadMore() // This reaches 0 and sets hasMore false
+    })
+    
+    getWhitelistedAddresses.mockClear()
+    
+    await act(async () => {
+        await result.current.loadMore() // This should return early
+    })
+    
+    expect(getWhitelistedAddresses).not.toHaveBeenCalled()
   })
 })

@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import VoteBallot from '@/components/VoteBallot'
 import BackButton from '@/components/BackButton'
 import IdentityAuthenticator from '@/components/vote-poll/IdentityAuthenticator'
+import ConnectionError from '@/components/ConnectionError'
 
 export default function VoteOnPoll() {
   const { pollId } = useParams()
@@ -28,6 +29,8 @@ export default function VoteOnPoll() {
   const [alreadyVoted, setAlreadyVoted] = useState(false)
   const [voteTxHash, setVoteTxHash] = useState(null)
   
+  const [loadError, setLoadError] = useState(null)
+  
   // ZK Identity State
   const [loadedIdentity, setLoadedIdentity] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -38,21 +41,25 @@ export default function VoteOnPoll() {
 
     async function loadData() {
       try {
-        const pollData = await getPollById(pollId)
+        const { data: pollData, error: pollError } = await getPollById(pollId)
+        if (pollError) throw new Error(pollError)
         if (!cancelled) setPoll(pollData)
 
         if (isConnected && address) {
-          const voted = await hasVoted(pollId, address)
+          const { data: voted, error: voteError } = await hasVoted(pollId, address)
+          if (voteError) throw new Error(voteError)
+          
           if (!cancelled) {
             setAlreadyVoted(voted)
             if (voted) {
-              const tx = await getVoteTransaction(pollId, address)
+              const { data: tx } = await getVoteTransaction(pollId, address)
               if (!cancelled) setVoteTxHash(tx)
             }
           }
         }
       } catch (error) {
         console.error('Failed to load poll data:', error)
+        if (!cancelled) setLoadError(error.message || 'Failed to load poll data')
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -173,15 +180,33 @@ export default function VoteOnPoll() {
           >
             Loading ballot...
           </motion.p>
-        ) : !poll ? (
-          <motion.p 
+        ) : !poll || loadError ? (
+          <motion.div 
             key="error"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-red-600 font-bold text-center py-20"
+            className="text-center py-20 border-2 border-red-200 bg-red-50 rounded-xl"
           >
-            Poll data could not be loaded.
-          </motion.p>
+            <div className="text-red-500 mb-4">
+               <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+               </svg>
+             </div>
+             {(loadError && loadError.toString().toLowerCase().includes('network')) && (
+                <h3 className="text-xl font-bold text-red-800 mb-2">Connection Error</h3>
+             )}
+             <p className="text-red-600 font-bold text-lg mb-4">
+               {loadError && loadError.toString().toLowerCase().includes('network')
+                 ? 'Could not connect to the network. Please make sure you are on the correct chain.'
+                 : (loadError || "Poll data could not be loaded.")}
+             </p>
+             <button 
+               onClick={() => window.location.reload()}
+               className="text-sm underline text-red-800 hover:text-black font-semibold"
+             >
+               Try Again
+             </button>
+          </motion.div>
         ) : (
           <motion.div 
             key="content"

@@ -23,16 +23,22 @@ jest.mock('wagmi', () => ({
 // Mock blockchain read/write
 const mockGetPollById = jest.fn()
 const mockIsUserWhitelisted = jest.fn()
-const mockGetUserNFTs = jest.fn()
 const mockGetZKPollState = jest.fn()
 const mockMintResultNFT = jest.fn()
 
 jest.mock('../src/lib/blockchain/engine/read', () => ({
   getPollById: (...args) => mockGetPollById(...args),
   isUserWhitelisted: (...args) => mockIsUserWhitelisted(...args),
-  getUserNFTs: (...args) => mockGetUserNFTs(...args),
   getZKPollState: (...args) => mockGetZKPollState(...args),
 }))
+
+// Mock the useUserNFTs hook
+const mockRefetchNFTs = jest.fn()
+jest.mock('../src/hooks/useUserNFTs', () => ({
+  useUserNFTs: jest.fn(),
+}))
+
+import { useUserNFTs } from '../src/hooks/useUserNFTs'
 
 jest.mock('../src/lib/blockchain/engine/write', () => ({
     mintResultNFT: (...args) => mockMintResultNFT(...args),
@@ -64,12 +70,15 @@ describe('Integration Test: NFT Claim Page', () => {
         mockUseAccount.mockReturnValue({ isConnected: true, address: '0xUser' })
         // Default: Poll exists, Ended, User not minted yet
         mockGetPollById.mockResolvedValue({
-            creator: '0xCreator',
-            state: POLL_STATE.ENDED
+            data: {
+              creator: '0xCreator',
+              state: POLL_STATE.ENDED
+            },
+            error: null
         })
-        mockGetUserNFTs.mockResolvedValue([])
-        mockGetZKPollState.mockResolvedValue(null) // Not ZK by default
-        mockIsUserWhitelisted.mockResolvedValue(true) // Eligible
+        useUserNFTs.mockReturnValue({ nfts: [], isLoading: false, error: null, refetch: mockRefetchNFTs })
+        mockGetZKPollState.mockResolvedValue({ data: { resultsPublished: true }, error: null })
+        mockIsUserWhitelisted.mockResolvedValue({ data: true, error: null }) // Eligible
     })
 
     it('renders access denied if disconnected', async () => {
@@ -80,8 +89,11 @@ describe('Integration Test: NFT Claim Page', () => {
 
     it('redirects if poll is not ended', async () => {
         mockGetPollById.mockResolvedValue({
-            creator: '0xCreator',
-            state: POLL_STATE.ACTIVE // Not ended
+            data: {
+              creator: '0xCreator',
+              state: POLL_STATE.ACTIVE // Not ended
+            },
+            error: null
         })
 
         render(<MintNFTPage />)
@@ -93,8 +105,8 @@ describe('Integration Test: NFT Claim Page', () => {
     })
 
     it('redirects if ZK poll results not published', async () => {
-        mockGetPollById.mockResolvedValue({ creator: '0xCreator', state: POLL_STATE.ENDED })
-        mockGetZKPollState.mockResolvedValue({ resultsPublished: false })
+        mockGetPollById.mockResolvedValue({ data: { creator: '0xCreator', state: POLL_STATE.ENDED }, error: null })
+        mockGetZKPollState.mockResolvedValue({ data: { resultsPublished: false }, error: null })
 
         render(<MintNFTPage />)
         
@@ -105,8 +117,8 @@ describe('Integration Test: NFT Claim Page', () => {
     })
 
     it('renders unauthorized if user is not eligible', async () => {
-        mockGetPollById.mockResolvedValue({ creator: '0xCreator', state: POLL_STATE.ENDED })
-        mockIsUserWhitelisted.mockResolvedValue(false)
+        mockGetPollById.mockResolvedValue({ data: { creator: '0xCreator', state: POLL_STATE.ENDED }, error: null })
+        mockIsUserWhitelisted.mockResolvedValue({ data: false, error: null })
         // Ensure user is not creator
         mockUseAccount.mockReturnValue({ isConnected: true, address: '0xStranger' })
 
@@ -118,8 +130,8 @@ describe('Integration Test: NFT Claim Page', () => {
     })
 
     it('renders mint button if user is eligible', async () => {
-        mockGetPollById.mockResolvedValue({ creator: '0xCreator', state: POLL_STATE.ENDED })
-        mockIsUserWhitelisted.mockResolvedValue(true)
+        mockGetPollById.mockResolvedValue({ data: { creator: '0xCreator', state: POLL_STATE.ENDED }, error: null })
+        mockIsUserWhitelisted.mockResolvedValue({ data: true, error: null })
         
         render(<MintNFTPage />)
 
@@ -129,8 +141,8 @@ describe('Integration Test: NFT Claim Page', () => {
     })
 
     it('calls mint function on click', async () => {
-        mockGetPollById.mockResolvedValue({ creator: '0xCreator', state: POLL_STATE.ENDED })
-        mockIsUserWhitelisted.mockResolvedValue(true)
+        mockGetPollById.mockResolvedValue({ data: { creator: '0xCreator', state: POLL_STATE.ENDED }, error: null })
+        mockIsUserWhitelisted.mockResolvedValue({ data: true, error: null })
         mockMintResultNFT.mockResolvedValue({ hash: '0x123' })
         
         render(<MintNFTPage />)
@@ -149,10 +161,10 @@ describe('Integration Test: NFT Claim Page', () => {
     })
 
     it('shows already minted state if user owns the NFT', async () => {
-        mockGetPollById.mockResolvedValue({ creator: '0xCreator', state: POLL_STATE.ENDED })
-        mockIsUserWhitelisted.mockResolvedValue(true)
+        mockGetPollById.mockResolvedValue({ data: { creator: '0xCreator', state: POLL_STATE.ENDED }, error: null })
+        mockIsUserWhitelisted.mockResolvedValue({ data: true, error: null })
         // User already has this NFT
-        mockGetUserNFTs.mockResolvedValue([{ name: 'Poll #100 Results' }])
+        useUserNFTs.mockReturnValue({ nfts: [{ name: 'Poll #100 Results' }], isLoading: false, error: null, refetch: mockRefetchNFTs })
 
         render(<MintNFTPage />)
 

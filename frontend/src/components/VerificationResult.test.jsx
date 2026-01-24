@@ -49,8 +49,8 @@ describe('VerificationResult', () => {
   })
 
   it('renders error state when vote not found', async () => {
-    getVote.mockResolvedValue(null)
-    getPollById.mockResolvedValue({ id: '123', title: 'Test Poll' })
+    getVote.mockResolvedValue({ data: null, error: 'Vote not found' })
+    getPollById.mockResolvedValue({ data: { id: '123', title: 'Test Poll' }, error: null })
     
     render(<VerificationResult {...defaultProps} />)
     
@@ -64,18 +64,24 @@ describe('VerificationResult', () => {
 
   it('renders successful verification details', async () => {
     getVote.mockResolvedValue({
-      pollId: '123',
-      voteId: '456',
-      optionIdx: 0,
-      voter: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Address for mock nullifier
-      timestamp: 1672531200
+      data: {
+        pollId: '123',
+        voteId: '456',
+        optionIdx: 0,
+        voter: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Address for mock nullifier
+        timestamp: 1672531200
+      },
+      error: null
     })
     getPollById.mockResolvedValue({
-      id: '123',
-      title: 'Test Poll',
-      options: ['Option A', 'Option B'],
-      state: 1, // Active
-      creator: '0xCreator'
+      data: {
+        id: '123',
+        title: 'Test Poll',
+        options: ['Option A', 'Option B'],
+        state: 1, // Active
+        creator: '0xCreator'
+      },
+      error: null
     })
 
     render(<VerificationResult {...defaultProps} />)
@@ -89,15 +95,21 @@ describe('VerificationResult', () => {
 
   it('handles encrypted votes (null option text)', async () => {
     getVote.mockResolvedValue({
-      pollId: '123',
-      voteId: '456',
-      optionIdx: null,
-      voter: '0xVoter'
+      data: {
+        pollId: '123',
+        voteId: '456',
+        optionIdx: null,
+        voter: '0xVoter'
+      },
+      error: null
     })
     getPollById.mockResolvedValue({
-      id: '123',
-      title: 'Encrypted Poll',
-      state: 1
+      data: {
+        id: '123',
+        title: 'Encrypted Poll',
+        state: 1
+      },
+      error: null
     })
 
     render(<VerificationResult {...defaultProps} />)
@@ -108,8 +120,8 @@ describe('VerificationResult', () => {
   })
 
   it('navigates to poll page on button click when active', async () => {
-    getVote.mockResolvedValue({ pollId: '123', voteId: '456', optionIdx: 0 })
-    getPollById.mockResolvedValue({ id: '123', state: 1 })
+    getVote.mockResolvedValue({ data: { pollId: '123', voteId: '456', optionIdx: 0 }, error: null })
+    getPollById.mockResolvedValue({ data: { id: '123', state: 1 }, error: null })
 
     render(<VerificationResult {...defaultProps} />)
 
@@ -121,8 +133,8 @@ describe('VerificationResult', () => {
   })
 
   it('navigates to NFT page on button click when ended', async () => {
-     getVote.mockResolvedValue({ pollId: '123', voteId: '456', optionIdx: 0 })
-     getPollById.mockResolvedValue({ id: '123', state: 2 })
+     getVote.mockResolvedValue({ data: { pollId: '123', voteId: '456', optionIdx: 0 }, error: null })
+     getPollById.mockResolvedValue({ data: { id: '123', state: 2 }, error: null })
 
      render(<VerificationResult {...defaultProps} />)
 
@@ -134,8 +146,8 @@ describe('VerificationResult', () => {
   })
 
   it('triggers onReset on "Verify Another Receipt" click', async () => {
-    getVote.mockResolvedValue({ pollId: '123', voteId: '456', optionIdx: 0 })
-    getPollById.mockResolvedValue({ id: '123', state: 1 })
+    getVote.mockResolvedValue({ data: { pollId: '123', voteId: '456', optionIdx: 0 }, error: null })
+    getPollById.mockResolvedValue({ data: { id: '123', state: 1 }, error: null })
 
     render(<VerificationResult {...defaultProps} />)
 

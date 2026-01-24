@@ -17,6 +17,9 @@ if (typeof window !== 'undefined') {
   window.Worker = MockWorker
 }
 global.Worker = MockWorker
+import { TextEncoder, TextDecoder } from 'util'
+global.TextEncoder = TextEncoder
+global.TextDecoder = TextDecoder
 
 // Mock IntersectionObserver for framer-motion whileInView
 class MockIntersectionObserver {
@@ -114,6 +117,8 @@ jest.mock('viem', () => {
     encodeAbiParameters: jest.fn(),
     createPublicClient: jest.fn(),
     http: jest.fn(),
+    parseAbiItem: jest.fn(i => i),
+    isAddress: jest.fn(() => true),
   }
   return {
     __esModule: true,

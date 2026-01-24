@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react'
-import { getGroupMembers, getModules } from '@/lib/blockchain/engine/read'
+import { getGroupMembers, getModules, getMemberAddedEventSignature, parseMemberAddedLog } from '@/lib/blockchain/engine/read'
 import { useContractEvents } from '@/hooks/useContractEvents'
 import { POLL_STATE } from '@/lib/constants'
-
-// Parser for MemberAdded events
-const parseRegistrationLog = (log) => ({
-  identityCommitment: (log.args.identityCommitment || log.args[2]).toString(),
-  transactionHash: log.transactionHash,
-  blockNumber: log.blockNumber,
-})
 
 /**
  * Hook to manage poll registrations with real-time updates
@@ -31,10 +24,12 @@ export function usePollRegistrations(pollId, pollState) {
       
       try {
         setLoading(true)
-        const members = await getGroupMembers(pollId)
+        const { data: members, error } = await getGroupMembers(pollId)
+        if (error) throw new Error(error)
+        
         if (mounted) {
             // Sort by block number descending (newest first)
-            const sorted = members.sort((a, b) => Number(b.blockNumber || 0) - Number(a.blockNumber || 0))
+            const sorted = (members || []).sort((a, b) => Number(b.blockNumber || 0) - Number(a.blockNumber || 0))
             setRegistrations(sorted)
         }
 
@@ -57,11 +52,11 @@ export function usePollRegistrations(pollId, pollState) {
   // Real-time updates
   const { events: liveRegistrations } = useContractEvents({
     address: eligibilityModuleAddress,
-    eventSignature: 'event MemberAdded(uint256 indexed groupId, uint256 index, uint256 identityCommitment, uint256 merkleTreeRoot)',
+    eventSignature: getMemberAddedEventSignature(),
     eventName: 'MemberAdded',
     args: { groupId: pollId ? BigInt(pollId) : undefined },
     enabled: pollState === POLL_STATE.CREATED,
-    parseLog: parseRegistrationLog,
+    parseLog: parseMemberAddedLog,
   })
 
   // Merge live events with initial data

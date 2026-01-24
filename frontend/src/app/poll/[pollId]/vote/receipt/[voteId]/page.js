@@ -19,7 +19,6 @@ export default function VoteReceiptPage() {
       voteId,
       txHash,
       nullifier,
-      proof,
       timestamp: Date.now()
     }
     
@@ -41,13 +40,15 @@ export default function VoteReceiptPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex justify-between items-start mb-12"
+        className="flex flex-col-reverse md:flex-row justify-between items-start md:items-center mb-12 gap-6 md:gap-0"
       >
          <div className="text-left">
-            <h1 className="text-5xl font-black font-serif mb-2 tracking-tight">Vote Submitted</h1>
+            <h1 className="text-4xl md:text-5xl font-black font-serif mb-2 tracking-tight">Vote Submitted</h1>
             <p className="text-xl text-gray-600 font-medium">Your vote has been successfully cast.</p>
          </div>
-         <BackButton href="/vote" label="Back to Voting" />
+         <div className="w-full md:w-auto flex justify-end">
+            <BackButton href="/vote" label="Back to Voting" />
+         </div>
       </motion.div>
 
       <motion.div 

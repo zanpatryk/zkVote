@@ -343,4 +343,134 @@ describe('useMultiContractEvents', () => {
       expect.objectContaining({ enabled: false })
     )
   })
+
+  it('adds new events when logs are received via handleLogs', () => {
+    let capturedOnLogs = null
+    useWatchContractEvent.mockImplementation(({ onLogs }) => {
+      if (!capturedOnLogs) capturedOnLogs = onLogs
+    })
+
+    const { result } = renderHook(() =>
+      useMultiContractEvents({
+        address: mockAddress,
+        eventConfigs: mockEventConfigs,
+        parseLog: mockParseLog,
+      })
+    )
+
+    const mockLogs = [
+      { transactionHash: '0xaaa', blockNumber: 100 },
+      { transactionHash: '0xbbb', blockNumber: 101 },
+    ]
+
+    act(() => {
+      capturedOnLogs(mockLogs)
+    })
+
+    expect(result.current.events).toHaveLength(2)
+  })
+
+  it('deduplicates events in useMultiContractEvents', () => {
+    let capturedOnLogs = null
+    useWatchContractEvent.mockImplementation(({ onLogs }) => {
+      if (!capturedOnLogs) capturedOnLogs = onLogs
+    })
+
+    const initialEvents = [{ transactionHash: '0xaaa', blockNumber: 100 }]
+
+    const { result } = renderHook(() =>
+      useMultiContractEvents({
+        address: mockAddress,
+        eventConfigs: mockEventConfigs,
+        parseLog: mockParseLog,
+        initialEvents,
+      })
+    )
+
+    // Try to add a duplicate
+    act(() => {
+      capturedOnLogs([{ transactionHash: '0xaaa', blockNumber: 100 }])
+    })
+
+    expect(result.current.events).toHaveLength(1)
+  })
+
+  it('handles parse errors gracefully in useMultiContractEvents', () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    let capturedOnLogs = null
+    useWatchContractEvent.mockImplementation(({ onLogs }) => {
+      if (!capturedOnLogs) capturedOnLogs = onLogs
+    })
+
+    const badParseLog = jest.fn(() => {
+      throw new Error('Parse failed')
+    })
+
+    const { result } = renderHook(() =>
+      useMultiContractEvents({
+        address: mockAddress,
+        eventConfigs: mockEventConfigs,
+        parseLog: badParseLog,
+      })
+    )
+
+    act(() => {
+      capturedOnLogs([{ transactionHash: '0xaaa', blockNumber: 100 }])
+    })
+
+    expect(result.current.events).toHaveLength(0)
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to parse log:', expect.any(Error))
+    consoleSpy.mockRestore()
+  })
+
+  it('ignores empty log arrays in useMultiContractEvents', () => {
+    let capturedOnLogs = null
+    useWatchContractEvent.mockImplementation(({ onLogs }) => {
+      if (!capturedOnLogs) capturedOnLogs = onLogs
+    })
+
+    const { result } = renderHook(() =>
+      useMultiContractEvents({
+        address: mockAddress,
+        eventConfigs: mockEventConfigs,
+        parseLog: mockParseLog,
+      })
+    )
+
+    act(() => {
+      capturedOnLogs([])
+    })
+
+    expect(result.current.events).toEqual([])
+    expect(mockParseLog).not.toHaveBeenCalled()
+  })
+
+  it('sorts events by block number in useMultiContractEvents', () => {
+    let capturedOnLogs = null
+    useWatchContractEvent.mockImplementation(({ onLogs }) => {
+      if (!capturedOnLogs) capturedOnLogs = onLogs
+    })
+
+    const { result } = renderHook(() =>
+      useMultiContractEvents({
+        address: mockAddress,
+        eventConfigs: mockEventConfigs,
+        parseLog: mockParseLog,
+      })
+    )
+
+    const mockLogs = [
+      { transactionHash: '0xold', blockNumber: 50 },
+      { transactionHash: '0xnew', blockNumber: 200 },
+      { transactionHash: '0xmid', blockNumber: 100 },
+    ]
+
+    act(() => {
+      capturedOnLogs(mockLogs)
+    })
+
+    expect(result.current.events[0].blockNumber).toBe(200)
+    expect(result.current.events[1].blockNumber).toBe(100)
+    expect(result.current.events[2].blockNumber).toBe(50)
+  })
 })

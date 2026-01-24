@@ -42,7 +42,7 @@ describe('WhitelistManager', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     useAccount.mockReturnValue({ isConnected: true })
-    read.isUserWhitelisted.mockResolvedValue(false)
+    read.isUserWhitelisted.mockResolvedValue({ data: false, error: null })
   })
 
   it('validates address format', async () => {
@@ -58,7 +58,7 @@ describe('WhitelistManager', () => {
   })
 
   it('prevents adding already whitelisted user', async () => {
-    read.isUserWhitelisted.mockResolvedValueOnce(true)
+    read.isUserWhitelisted.mockResolvedValueOnce({ data: true, error: null })
     render(<WhitelistManager pollId="123" pollState={0} />)
     const validAddress = '0x1234567890123456789012345678901234567890'
     const input = screen.getByPlaceholderText('0x...')
@@ -101,5 +101,59 @@ describe('WhitelistManager', () => {
     await waitFor(() => {
       expect(onSuccess).toHaveBeenCalled()
     })
+  })
+
+  it('renders in demo mode without errors', () => {
+    render(<WhitelistManager pollId="123" pollState={0} demo={true} />)
+    expect(screen.getByText('Single Address')).toBeInTheDocument()
+    expect(screen.getByText('Batch Upload')).toBeInTheDocument()
+  })
+
+  it('does not call whitelistUser in demo mode', () => {
+    render(<WhitelistManager pollId="123" pollState={0} demo={true} />)
+    
+    fireEvent.click(screen.getByText('Whitelist Address'))
+    expect(write.whitelistUser).not.toHaveBeenCalled()
+  })
+
+  it('switches between single and batch mode', () => {
+    render(<WhitelistManager pollId="123" pollState={0} />)
+    
+    fireEvent.click(screen.getByText('Batch Upload'))
+    expect(screen.getByText('Upload File')).toBeInTheDocument()
+    
+    fireEvent.click(screen.getByText('Single Address'))
+    expect(screen.getByPlaceholderText('0x...')).toBeInTheDocument()
+  })
+
+  it('handles whitelistUser error gracefully', async () => {
+    write.whitelistUser.mockRejectedValueOnce({ shortMessage: 'Transaction failed' })
+    
+    render(<WhitelistManager pollId="123" pollState={0} />)
+    const validAddress = '0x1234567890123456789012345678901234567890'
+    
+    fireEvent.change(screen.getByPlaceholderText('0x...'), { target: { value: validAddress } })
+    fireEvent.click(screen.getByText('Whitelist Address'))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Transaction failed')
+    })
+  })
+
+  it('shows error when not connected and trying to submit', () => {
+    useAccount.mockReturnValue({ isConnected: false })
+    render(<WhitelistManager pollId="123" pollState={0} />)
+    const validAddress = '0x1234567890123456789012345678901234567890'
+    
+    fireEvent.change(screen.getByPlaceholderText('0x...'), { target: { value: validAddress } })
+    fireEvent.click(screen.getByText('Whitelist Address'))
+
+    expect(toast.error).toHaveBeenCalledWith('Please connect your wallet first')
+  })
+
+  it('disables input when poll is not in created state', () => {
+    render(<WhitelistManager pollId="123" pollState={1} />)
+    const input = screen.getByPlaceholderText('Whitelisting closed')
+    expect(input).toBeDisabled()
   })
 })

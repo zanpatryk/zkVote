@@ -16,13 +16,14 @@ export default function PollDetails({ pollId, showResults = false }) {
       if (!pollId) return
       
       try {
-        const pollData = await getPollById(pollId)
+        const { data: pollData, error: pollError } = await getPollById(pollId)
+        if (pollError) throw new Error(pollError)
         if (cancelled) return
         setPoll(pollData)
 
         if (showResults && pollData && pollData.options) {
-             const res = await getPollResults(pollId, pollData.options.length)
-             if (!cancelled) setResults(res)
+             const { data: res } = await getPollResults(pollId, pollData.options.length)
+             if (!cancelled) setResults(res || [])
         }
       } catch (error) {
         console.error('Failed to load poll data:', error)

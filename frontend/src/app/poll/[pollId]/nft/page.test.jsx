@@ -10,13 +10,20 @@ import '@testing-library/jest-dom'
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getPollById: jest.fn(),
   isUserWhitelisted: jest.fn(),
-  getUserNFTs: jest.fn(),
   getZKPollState: jest.fn(),
 }))
 
 jest.mock('@/lib/blockchain/engine/write', () => ({
   mintResultNFT: jest.fn(),
 }))
+
+// Mock the useUserNFTs hook
+const mockRefetchNFTs = jest.fn()
+jest.mock('@/hooks/useUserNFTs', () => ({
+  useUserNFTs: jest.fn(),
+}))
+
+import { useUserNFTs } from '@/hooks/useUserNFTs'
 
 jest.mock('@/components/PollDetails', () => ({
   __esModule: true,
@@ -46,8 +53,21 @@ describe('MintNFTPage', () => {
     jest.clearAllMocks()
     useRouter.mockReturnValue({ push: mockPush, replace: mockReplace })
     useParams.mockReturnValue({ pollId: mockPollId })
-    // Default: not minted
-    read.getUserNFTs.mockResolvedValue([])
+    // Default: not minted (empty NFTs)
+    useUserNFTs.mockReturnValue({ nfts: [], isLoading: false, error: null, refetch: mockRefetchNFTs })
+    read.getZKPollState.mockResolvedValue({ data: { resultsPublished: true }, error: null })
+  })
+
+  it('renders connection error state', async () => {
+    wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
+    read.getPollById.mockResolvedValue({ data: null, error: 'Network Error' })
+
+    render(<MintNFTPage />)
+
+    await waitFor(() => {
+        expect(screen.getByText('Connection Error')).toBeInTheDocument()
+        expect(screen.getByText(/Could not connect to the network/i)).toBeInTheDocument()
+    })
   })
 
   it('redirects if wallet not connected', async () => {
@@ -61,9 +81,23 @@ describe('MintNFTPage', () => {
     })
   })
 
+  it('renders connection error if whitelist check fails', async () => {
+    wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
+    // Not owner, so it proceeds to check whitelist
+    read.getPollById.mockResolvedValue({ data: { state: 2, creator: '0xOther' }, error: null })
+    read.isUserWhitelisted.mockResolvedValue({ data: false, error: 'Network Error' })
+    
+    render(<MintNFTPage />)
+    
+    await waitFor(() => {
+        expect(screen.getByText('Connection Error')).toBeInTheDocument()
+        expect(screen.getByText(/Could not connect to the network/i)).toBeInTheDocument()
+    })
+  })
+
   it('redirects if poll is not ended (state != 2)', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 1, creator: '0xOther' }) // Active
+    read.getPollById.mockResolvedValue({ data: { state: 1, creator: '0xOther' }, error: null }) // Active
     
     render(<MintNFTPage />)
     
@@ -74,8 +108,8 @@ describe('MintNFTPage', () => {
 
   it('shows not authorized if not owner and not whitelisted', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 2, creator: '0xOther' }) // Ended
-    read.isUserWhitelisted.mockResolvedValue(false)
+    read.getPollById.mockResolvedValue({ data: { state: 2, creator: '0xOther' }, error: null }) // Ended
+    read.isUserWhitelisted.mockResolvedValue({ data: false, error: null })
     
     render(<MintNFTPage />)
     
@@ -86,7 +120,7 @@ describe('MintNFTPage', () => {
 
   it('shows mint button if owner (and not minted)', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 2, creator: mockUserAddress.toLowerCase() }) // Ended, Owner
+    read.getPollById.mockResolvedValue({ data: { state: 2, creator: mockUserAddress.toLowerCase() }, error: null }) // Ended, Owner
     
     render(<MintNFTPage />)
     
@@ -98,8 +132,8 @@ describe('MintNFTPage', () => {
 
   it('shows mint button if whitelisted (and not minted)', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 2, creator: '0xOther' }) // Ended
-    read.isUserWhitelisted.mockResolvedValue(true)
+    read.getPollById.mockResolvedValue({ data: { state: 2, creator: '0xOther' }, error: null }) // Ended
+    read.isUserWhitelisted.mockResolvedValue({ data: true, error: null })
     
     render(<MintNFTPage />)
     
@@ -111,7 +145,7 @@ describe('MintNFTPage', () => {
 
   it('calls mintResultNFT when button clicked and shows results', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 2, creator: mockUserAddress.toLowerCase() })
+    read.getPollById.mockResolvedValue({ data: { state: 2, creator: mockUserAddress.toLowerCase() }, error: null })
     
     render(<MintNFTPage />)
     
@@ -133,8 +167,8 @@ describe('MintNFTPage', () => {
 
   it('shows results immediately if already minted', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 2, creator: mockUserAddress.toLowerCase() })
-    read.getUserNFTs.mockResolvedValue([{ name: `Poll #${mockPollId} Results` }])
+    read.getPollById.mockResolvedValue({ data: { state: 2, creator: mockUserAddress.toLowerCase() }, error: null })
+    useUserNFTs.mockReturnValue({ nfts: [{ name: `Poll #${mockPollId} Results` }], isLoading: false, error: null, refetch: mockRefetchNFTs })
 
     render(<MintNFTPage />)
 

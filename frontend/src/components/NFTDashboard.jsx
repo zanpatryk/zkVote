@@ -4,26 +4,31 @@ import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { getUserNFTs } from '@/lib/blockchain/engine/read'
 import NFTCard from './NFTCard'
+import ConnectionError from './ConnectionError'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function NFTDashboard() {
   const { address, isConnected } = useAccount()
   const [nfts, setNfts] = useState([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     async function fetchBadges() {
       if (!isConnected || !address) return
       setLoading(true)
-      try {
-        const data = await getUserNFTs(address)
+      setError(null)
+      
+      const { data, error: fetchError } = await getUserNFTs(address)
+      
+      if (fetchError) {
+        setError(fetchError)
+      } else {
         setNfts(data)
-      } catch (error) {
-        console.error("Failed to fetch badges", error)
-      } finally {
-        setLoading(false)
       }
+      
+      setLoading(false)
     }
 
     fetchBadges()
@@ -50,7 +55,9 @@ export default function NFTDashboard() {
           />
       </div>
 
-      {loading ? (
+      {error ? (
+        <ConnectionError error={error} />
+      ) : loading ? (
           <motion.p 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 

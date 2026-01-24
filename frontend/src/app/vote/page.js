@@ -6,11 +6,12 @@ import StatusFilter from '@/components/StatusFilter.jsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWhitelistedPolls } from '@/hooks/usePolls'
 import { usePollFilter } from '@/hooks/usePollFilter'
+import ConnectionError from '@/components/ConnectionError'
 
 export default function VotePage() {
   const { address, isConnected } = useAccount()
   
-  const { polls, isLoading } = useWhitelistedPolls(address, isConnected)
+  const { polls, isLoading, error } = useWhitelistedPolls(address, isConnected)
   
   const { 
     searchQuery, 
@@ -64,10 +65,12 @@ export default function VotePage() {
           <div className="text-center py-20 text-xl text-gray-600 font-serif italic">
             Loading polls...
           </div>
+        ) : error ? (
+           <ConnectionError error={error} />
         ) : filteredPolls.length === 0 ? (
           <div className="text-center py-24 border-2 border-dashed border-gray-300 rounded-xl">
              <p className="text-xl text-gray-400 font-serif italic">
-               {!polls || polls.length === 0 ? "You are not whitelisted on any poll yet." : "No polls found matching your filters."}
+                {!polls || polls.length === 0 ? "You are not whitelisted on any poll yet." : "No polls found matching your filters."}
              </p>
           </div>
         ) : (

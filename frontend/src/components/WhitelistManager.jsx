@@ -59,7 +59,7 @@ export default function WhitelistManager({ pollId, pollState, onSuccess, demo = 
 
     setIsSubmitting(true)
     try {
-      const isAlreadyWhitelisted = await isUserWhitelisted(pollId, address)
+      const { data: isAlreadyWhitelisted } = await isUserWhitelisted(pollId, address)
       if (isAlreadyWhitelisted) {
         toast.error('User is already whitelisted.')
         setSingleAddress('')

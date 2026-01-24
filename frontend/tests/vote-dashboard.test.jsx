@@ -44,7 +44,7 @@ describe('Integration Test: Vote Dashboard Page', () => {
 
   it('shows loading state initially', () => {
     mockUseAccount.mockReturnValue({ isConnected: true, address: '0x123' })
-    mockUseQuery.mockReturnValue({ data: [], isLoading: true })
+    mockUseQuery.mockReturnValue({ data: { data: [], error: null }, isLoading: true })
 
     render(<VotePage />)
 
@@ -53,7 +53,7 @@ describe('Integration Test: Vote Dashboard Page', () => {
 
   it('shows empty state if no whitelisted polls', () => {
     mockUseAccount.mockReturnValue({ isConnected: true, address: '0x123' })
-    mockUseQuery.mockReturnValue({ data: [], isLoading: false })
+    mockUseQuery.mockReturnValue({ data: { data: [], error: null }, isLoading: false })
 
     render(<VotePage />)
 
@@ -68,7 +68,7 @@ describe('Integration Test: Vote Dashboard Page', () => {
       { pollId: 2n, title: 'Poll 2', state: 1, creator: '0x789' },
     ]
 
-    mockUseQuery.mockReturnValue({ data: mockPolls, isLoading: false })
+    mockUseQuery.mockReturnValue({ data: { data: mockPolls, error: null }, isLoading: false })
 
     render(<VotePage />)
 
@@ -84,7 +84,7 @@ describe('Integration Test: Vote Dashboard Page', () => {
     mockUseAccount.mockReturnValue({ isConnected: false, address: undefined })
     
     // useQuery should be disabled, returning empty data
-    mockUseQuery.mockReturnValue({ data: [], isLoading: false })
+    mockUseQuery.mockReturnValue({ data: { data: [], error: null }, isLoading: false })
 
     render(<VotePage />)
 

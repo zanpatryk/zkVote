@@ -3,29 +3,31 @@ import { getWhitelistedPolls, getOwnedPolls } from '@/lib/blockchain/engine/read
 import { isUserWhitelisted } from '@/lib/blockchain/engine/read'
 
 export function useWhitelistedPolls(address, isConnected) {
-  const { data: polls = [], isLoading, error } = useQuery({
+  const { data: result = { data: [], error: null }, isLoading, error: queryError } = useQuery({
     queryKey: ['whitelistedPolls', address],
     queryFn: () => getWhitelistedPolls(address),
     enabled: isConnected && !!address,
   })
 
-  return { polls, isLoading, error }
+  return { polls: result.data || [], isLoading, error: queryError || result.error }
 }
 
 export function useOwnedPolls(address, isConnected) {
-  const { data: polls = [], isLoading, error } = useQuery({
+  const { data: result = { data: [], error: null }, isLoading, error: queryError } = useQuery({
     queryKey: ['ownedPolls', address],
     queryFn: async () => {
-      const data = await getOwnedPolls(address)
+      const { data, error } = await getOwnedPolls(address)
+      if (error || !data) return { data: [], error }
+      
       // Check whitelist status for each poll
       const pollsWithWhitelist = await Promise.all(data.map(async (poll) => {
-        const isWhitelisted = await isUserWhitelisted(poll.pollId, address)
+        const { data: isWhitelisted } = await isUserWhitelisted(poll.pollId, address)
         return { ...poll, isWhitelisted }
       }))
-      return pollsWithWhitelist
+      return { data: pollsWithWhitelist, error: null }
     },
     enabled: isConnected && !!address,
   })
 
-  return { polls, isLoading, error }
+  return { polls: result.data || [], isLoading, error: queryError || result.error }
 }

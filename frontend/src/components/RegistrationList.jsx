@@ -24,7 +24,7 @@ export default function RegistrationList({ pollId, pollState }) {
 
   return (
     <div className="bg-white rounded-xl border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-3 md:gap-0">
             <h3 className="text-xl font-bold font-serif">Registered Identities ({registrations.length})</h3>
             <div className="flex gap-2">
                 {pollState === POLL_STATE.CREATED && (

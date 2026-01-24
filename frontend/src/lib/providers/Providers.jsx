@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
@@ -54,6 +54,7 @@ const customTheme = {
 }
 
 export default function Providers({ children }) {
+  const [mounted, setMounted] = useState(false)
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
@@ -64,6 +65,15 @@ export default function Providers({ children }) {
       },
     },
   }))
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Prevent SSR issues with WalletConnect localStorage
+  if (!mounted) {
+    return null
+  }
 
   return (
     <WagmiProvider config={wagmiConfig}>

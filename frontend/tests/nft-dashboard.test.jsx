@@ -40,13 +40,13 @@ describe('Integration Test: NFT Dashboard', () => {
     })
 
     it('renders dashboard title', async () => {
-        mockGetUserNFTs.mockResolvedValue([])
+        mockGetUserNFTs.mockResolvedValue({ data: [], error: null })
         render(<NFTsPage />)
         expect(screen.getByText('My NFT Badges')).toBeInTheDocument()
     })
 
     it('displays empty state when no NFTs found', async () => {
-        mockGetUserNFTs.mockResolvedValue([])
+        mockGetUserNFTs.mockResolvedValue({ data: [], error: null })
         render(<NFTsPage />)
 
         expect(screen.getByText('My NFT Badges')).toBeInTheDocument()
@@ -61,7 +61,7 @@ describe('Integration Test: NFT Dashboard', () => {
             { tokenId: '1', name: 'Poll #1 Results', description: 'Results for poll 1' },
             { tokenId: '2', name: 'Poll #2 Results', description: 'Results for poll 2' }
         ]
-        mockGetUserNFTs.mockResolvedValue(mockNFTs)
+        mockGetUserNFTs.mockResolvedValue({ data: mockNFTs, error: null })
 
         render(<NFTsPage />)
 
@@ -74,7 +74,7 @@ describe('Integration Test: NFT Dashboard', () => {
 
     it('handles loading state', async () => {
         // Delay resolution
-        mockGetUserNFTs.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve([]), 100)))
+        mockGetUserNFTs.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ data: [], error: null }), 100)))
         
         render(<NFTsPage />)
         

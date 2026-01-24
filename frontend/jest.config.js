@@ -17,7 +17,6 @@ const customJestConfig = {
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/pages/_app.js',
     '!src/pages/_document.js',
-    '!src/lib/**/*',
   ],
   coverageReporters: ['text', 'html'],
   transformIgnorePatterns: [

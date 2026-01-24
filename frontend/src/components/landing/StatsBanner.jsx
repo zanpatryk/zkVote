@@ -12,7 +12,7 @@ export default function StatsBanner() {
   ]
 
   return (
-    <div className="w-screen bg-black text-white overflow-hidden py-6 mb-24 border-y-2 border-black flex whitespace-nowrap">
+    <div className="w-screen bg-black text-white overflow-hidden py-6 border-y-2 border-black flex whitespace-nowrap">
       <div className="relative flex whitespace-nowrap">
         {/* We render the list twice to create a seamless loop */}
         <motion.div

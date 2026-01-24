@@ -87,7 +87,13 @@ export default function Navbar() {
 
         {/* Right Side: Connect Button + Mobile Menu Toggle */}
         <div className="flex items-center gap-4">
-          <ConnectButton showBalance={false} />
+          <ConnectButton 
+            showBalance={false} 
+            accountStatus={{
+              smallScreen: 'avatar',
+              largeScreen: 'full',
+            }}
+          />
 
           {isConnected && (
             <button

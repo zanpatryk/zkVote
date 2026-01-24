@@ -51,17 +51,21 @@ describe('Integration Test: Manage Poll Page', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockUseAccount.mockReturnValue({ isConnected: true, address: '0xOwner' })
-    mockGetModules.mockResolvedValue({ voteStorage: '0xStandardStorage' })
+    mockGetModules.mockResolvedValue({ voteStorage: '0xStandardStorage', eligibilityModule: '0xStandardEligibility' })
+    mockGetMerkleTreeDepth.mockResolvedValue({ data: 0, error: null })
   })
 
   // Removed "determines if poll is secret... Switch to Results" test because Results is hidden if not secret.
 
   it('identifies secret poll correctly', async () => {
     mockGetPollById.mockResolvedValue({
-      creator: '0xOwner',
-      state: 1
+      data: {
+        creator: '0xOwner',
+        state: 1
+      },
+      error: null
     })
-    mockGetMerkleTreeDepth.mockResolvedValue(20)
+    mockGetMerkleTreeDepth.mockResolvedValue({ data: 20, error: null })
     mockGetModules.mockResolvedValue({ voteStorage: '0xZKStorage', eligibilityModule: '0xSemaphoreEligibility' })
     
     // 0xZKStorage matches CONTRACT_ADDRESSES.zkElGamalVoteVector
@@ -81,8 +85,11 @@ describe('Integration Test: Manage Poll Page', () => {
 
   it('redirects if user is not owner', async () => {
     mockGetPollById.mockResolvedValue({
-      creator: '0xSomeoneElse',
-      state: 0
+      data: {
+        creator: '0xSomeoneElse',
+        state: 0
+      },
+      error: null
     })
     
     render(<ManagePollPage />)
@@ -95,10 +102,13 @@ describe('Integration Test: Manage Poll Page', () => {
 
   it('renders standard poll tabs (No ZK, No Results)', async () => {
     mockGetPollById.mockResolvedValue({
-      creator: '0xOwner',
-      state: 1
+      data: {
+        creator: '0xOwner',
+        state: 1
+      },
+      error: null
     })
-    mockGetMerkleTreeDepth.mockResolvedValue(0)
+    mockGetMerkleTreeDepth.mockResolvedValue({ data: 0, error: null })
     mockGetModules.mockResolvedValue({ voteStorage: '0xStandardStorage', eligibilityModule: '0xStandardEligibility' })
     
     render(<ManagePollPage />)
@@ -122,8 +132,11 @@ describe('Integration Test: Manage Poll Page', () => {
 
   it('switches tabs correctly', async () => {
     mockGetPollById.mockResolvedValue({
-      creator: '0xOwner',
-      state: 1
+      data: {
+        creator: '0xOwner',
+        state: 1
+      },
+      error: null
     })
     
     render(<ManagePollPage />)
@@ -142,10 +155,13 @@ describe('Integration Test: Manage Poll Page', () => {
 
   it('renders registration tab content for ZK poll', async () => {
     mockGetPollById.mockResolvedValue({
-      creator: '0xOwner',
-      state: 1
+      data: {
+        creator: '0xOwner',
+        state: 1
+      },
+      error: null
     })
-    mockGetMerkleTreeDepth.mockResolvedValue(20)
+    mockGetMerkleTreeDepth.mockResolvedValue({ data: 20, error: null })
     mockGetModules.mockResolvedValue({ voteStorage: '0xZKStorage', eligibilityModule: '0xSemaphoreEligibility' })
     
     render(<ManagePollPage />)

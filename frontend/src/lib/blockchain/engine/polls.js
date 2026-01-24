@@ -1,0 +1,229 @@
+import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
+import { wagmiConfig as config } from '@/lib/wagmi/config'
+import { parseAbiItem, encodeAbiParameters, parseAbiParameters, encodeEventTopics, decodeEventLog } from 'viem'
+import { 
+  votingSystemContract, 
+  PollManagerABI, 
+  pollManagerContract,
+  MODULE_ADDRESSES,
+  CONTRACT_ADDRESSES
+} from '@/lib/contracts'
+import { getModules } from './core'
+import { toast } from 'react-hot-toast'
+import { toastTransactionError } from '@/lib/blockchain/utils/error-handler'
+
+// --- READS ---
+
+export async function getPollById(pollId) {
+  if (!pollId) return { data: null, error: null }
+  
+  try {
+    const publicClient = getPublicClient(config)
+    const { pollManager } = await getModules(pollId)
+
+    const [id, owner, title, description, options, state] = await publicClient.readContract({
+      address: pollManager,
+      abi: PollManagerABI,
+      functionName: 'getPoll',
+      args: [BigInt(pollId)],
+    })
+
+    return {
+      data: {
+        pollId: id.toString(),
+        title,
+        description,
+        creator: owner,
+        options: [...options],
+        state: state
+      },
+      error: null
+    }
+  } catch (err) {
+    console.error('getPollById failed:', err)
+    return { data: null, error: 'Could not fetch poll data. Please check your network.' }
+  }
+}
+
+export async function getOwnedPolls(address) {
+  if (!address) return { data: [], error: null }
+  
+  try {
+    const publicClient = getPublicClient(config)
+    const { pollManager } = await getModules()
+
+    const logs = await publicClient.getLogs({
+      address: pollManager,
+      event: parseAbiItem('event PollCreated(uint256 indexed pollId, address indexed creator)'),
+      args: { creator: address },
+      fromBlock: 'earliest'
+    })
+
+    const pollIds = logs.map(log => log.args.pollId)
+    const pollResults = await Promise.all(pollIds.map(id => getPollById(id)))
+    const polls = pollResults.map(r => r.data).filter(Boolean)
+    return { data: polls, error: null }
+  } catch (err) {
+    console.error('getOwnedPolls failed:', err)
+    return { data: [], error: 'Could not fetch owned polls. Please check your network.' }
+  }
+}
+
+export async function getWhitelistedPolls(address) {
+  if (!address) return { data: [], error: null }
+  
+  try {
+    const publicClient = getPublicClient(config)
+    
+    const modulesToQuery = [
+      CONTRACT_ADDRESSES.eligibilityV0,
+      CONTRACT_ADDRESSES.semaphoreEligibility
+    ].filter(Boolean)
+
+    const allLogs = await Promise.all(
+      modulesToQuery.flatMap(moduleAddr => [
+        publicClient.getLogs({
+          address: moduleAddr,
+          event: parseAbiItem('event Whitelisted(address indexed user, uint256 indexed pollId)'),
+          args: { user: address },
+          fromBlock: 'earliest'
+        }),
+        publicClient.getLogs({
+          address: moduleAddr,
+          event: parseAbiItem('event EligibilityModuleV0__AddressWhitelisted(address indexed user, uint256 indexed pollId)'),
+          args: { user: address },
+          fromBlock: 'earliest'
+        })
+      ])
+    )
+
+    const logs = allLogs.flat()
+    const pollIds = [...new Set(logs.map(log => log.args.pollId))]
+    const pollResults = await Promise.all(pollIds.map(id => getPollById(id)))
+    const polls = pollResults.map(r => r.data).filter(Boolean)
+    return { data: polls, error: null }
+  } catch (err) {
+    console.error('getWhitelistedPolls failed:', err)
+    return { data: [], error: 'Could not fetch whitelisted polls. Please check your network.' }
+  }
+}
+
+// --- WRITES ---
+
+export async function createPoll(pollDetails) {
+  const { address } = getAccount(config)
+  if (!address) throw new Error('Wallet not connected')
+
+  const toastId = 'poll-creation'
+  try {
+    toast.loading('Initializing poll creation...', { id: toastId })
+
+    const {
+      title,
+      description,
+      options,
+      merkleTreeDepth,
+      eligibilityModule,
+      voteStorage,
+      voteStorageParams
+    } = pollDetails
+
+    const depth = merkleTreeDepth ? BigInt(merkleTreeDepth) : BigInt(20)
+    const eligibilityConfig = encodeAbiParameters(parseAbiParameters('uint256'), [depth])
+
+    let voteStorageConfig = '0x'
+    if (voteStorage === MODULE_ADDRESSES.zkElGamalVoteVector && voteStorageParams?.publicKey) {
+      voteStorageConfig = encodeAbiParameters(
+        parseAbiParameters('uint256[2], address, address'),
+        [
+          voteStorageParams.publicKey.map(v => BigInt(v)),
+          MODULE_ADDRESSES.elgamalVoteVerifier,
+          MODULE_ADDRESSES.elgamalTallyVerifier
+        ]
+      )
+    }
+
+    const hash = await writeContract(config, {
+      address: votingSystemContract.address,
+      abi: votingSystemContract.abi,
+      functionName: 'createPoll',
+      args: [
+        title,
+        description || '',
+        options,
+        voteStorageConfig,
+        eligibilityConfig,
+        eligibilityModule || '0x0000000000000000000000000000000000000000',
+        voteStorage || '0x0000000000000000000000000000000000000000'
+      ],
+    })
+
+    const receipt = await waitForTransactionReceipt(config, { hash })
+    if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
+
+    const pollCreatedTopic = encodeEventTopics({ abi: pollManagerContract.abi, eventName: 'PollCreated' })
+    const pollCreatedLog = receipt.logs.find(log => log.topics[0] === pollCreatedTopic[0])
+
+    if (!pollCreatedLog) throw new Error('PollCreated event not found in logs.')
+
+    const decodedEvent = decodeEventLog({
+      abi: pollManagerContract.abi,
+      eventName: 'PollCreated',
+      data: pollCreatedLog.data,
+      topics: pollCreatedLog.topics,
+    })
+
+    toast.success('Poll created!', { id: toastId })
+    return decodedEvent.args.pollId.toString()
+  } catch (error) {
+    console.error('createPoll failed:', error)
+    toastTransactionError(error, 'Failed to create poll', { id: toastId })
+    throw error
+  }
+}
+
+export async function startPoll(pollId) {
+  const { address } = getAccount(config)
+  if (!address) throw new Error('Wallet not connected')
+
+  const toastId = 'poll-management'
+  toast.loading('Starting poll...', { id: toastId })
+
+  try {
+    const hash = await writeContract(config, {
+      address: votingSystemContract.address,
+      abi: votingSystemContract.abi,
+      functionName: 'startPoll',
+      args: [BigInt(pollId)],
+    })
+    await waitForTransactionReceipt(config, { hash })
+    toast.success('Poll started successfully!', { id: toastId })
+  } catch (error) {
+    console.error('startPoll failed:', error)
+    toastTransactionError(error, 'Failed to start poll', { id: toastId })
+    throw error
+  }
+}
+
+export async function endPoll(pollId) {
+  const { address } = getAccount(config)
+  if (!address) throw new Error('Wallet not connected')
+
+  const toastId = 'poll-management'
+  toast.loading('Ending poll...', { id: toastId })
+
+  try {
+    const hash = await writeContract(config, {
+      address: votingSystemContract.address,
+      abi: votingSystemContract.abi,
+      functionName: 'endPoll',
+      args: [BigInt(pollId)],
+    })
+    await waitForTransactionReceipt(config, { hash })
+    toast.success('Poll ended successfully!', { id: toastId })
+  } catch (error) {
+    console.error('endPoll failed:', error)
+    toastTransactionError(error, 'Failed to end poll', { id: toastId })
+    throw error
+  }
+}

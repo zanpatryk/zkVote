@@ -21,7 +21,7 @@ describe('PollDetails', () => {
   })
 
   it('renders error state when poll data fails to load', async () => {
-    read.getPollById.mockRejectedValue(new Error('Failed to fetch'))
+    read.getPollById.mockResolvedValue({ data: null, error: 'Failed to fetch' })
     render(<PollDetails pollId="123" />)
 
     await waitFor(() => {
@@ -35,7 +35,7 @@ describe('PollDetails', () => {
       description: 'Test Description',
       options: ['Option A', 'Option B']
     }
-    read.getPollById.mockResolvedValue(mockPoll)
+    read.getPollById.mockResolvedValue({ data: mockPoll, error: null })
 
     render(<PollDetails pollId="123" />)
 
@@ -53,8 +53,8 @@ describe('PollDetails', () => {
       description: 'Desc',
       options: ['Option 1', 'Option 2']
     }
-    read.getPollById.mockResolvedValue(mockPoll)
-    read.getPollResults.mockResolvedValue(['5', '10'])
+    read.getPollById.mockResolvedValue({ data: mockPoll, error: null })
+    read.getPollResults.mockResolvedValue({ data: ['5', '10'], error: null })
 
     render(<PollDetails pollId="123" showResults={true} />)
 
@@ -67,7 +67,7 @@ describe('PollDetails', () => {
   })
 
   it('handles missing poll data gracefully', async () => {
-    read.getPollById.mockResolvedValue(null)
+    read.getPollById.mockResolvedValue({ data: null, error: null })
     render(<PollDetails pollId="123" />)
 
     await waitFor(() => {
