@@ -96,7 +96,7 @@ describe('RegisterPage', () => {
       isRegistering: false,
     })
 
-    getPollById.mockResolvedValue(mockPollData)
+    getPollById.mockResolvedValue({ data: mockPollData, error: null })
   })
 
   const renderComponent = async () => {
@@ -127,7 +127,7 @@ describe('RegisterPage', () => {
     
     // Resolve the data
     await act(async () => {
-      resolvePoll(mockPollData)
+      resolvePoll({ data: mockPollData, error: null })
     })
     
     await waitFor(() => {
@@ -136,7 +136,7 @@ describe('RegisterPage', () => {
   })
 
   it('renders poll not found if data is missing', async () => {
-    getPollById.mockResolvedValue(null)
+    getPollById.mockResolvedValue({ data: null, error: null })
     await renderComponent()
 
     await waitFor(() => {
@@ -147,9 +147,9 @@ describe('RegisterPage', () => {
   it('renders registration button when not registered', async () => {
     await renderComponent()
 
-    // Button text is "Create Identity & Register"
+    // Button text is "Register & Create Identity"
     await waitFor(() => {
-      expect(screen.getByText('Create Identity & Register')).toBeInTheDocument()
+      expect(screen.getByText('Register & Create Identity')).toBeInTheDocument()
     })
   })
 
@@ -175,10 +175,10 @@ describe('RegisterPage', () => {
     await renderComponent()
 
     await waitFor(() => {
-      expect(screen.getByText('Create Identity & Register')).toBeInTheDocument()
+      expect(screen.getByText('Register & Create Identity')).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByText('Create Identity & Register'))
+    fireEvent.click(screen.getByText('Register & Create Identity'))
 
     // Wait for registration logic
     await waitFor(() => {
@@ -207,10 +207,10 @@ describe('RegisterPage', () => {
     await renderComponent()
 
     await waitFor(() => {
-        expect(screen.getByText('Create Identity & Register')).toBeInTheDocument()
+        expect(screen.getByText('Register & Create Identity')).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByText('Create Identity & Register'))
+    fireEvent.click(screen.getByText('Register & Create Identity'))
 
     expect(toast.error).toHaveBeenCalledWith('Please connect your wallet first')
     expect(mockCreateIdentity).not.toHaveBeenCalled()
@@ -221,9 +221,9 @@ describe('RegisterPage', () => {
      mockCreateIdentity.mockRejectedValue(error)
      
      await renderComponent()
-     await waitFor(() => expect(screen.getByText('Create Identity & Register')).toBeInTheDocument())
+     await waitFor(() => expect(screen.getByText('Register & Create Identity')).toBeInTheDocument())
 
-     fireEvent.click(screen.getByText('Create Identity & Register'))
+     fireEvent.click(screen.getByText('Register & Create Identity'))
 
      await waitFor(() => {
        expect(toast.error).toHaveBeenCalledWith('Registration failed')
@@ -231,7 +231,7 @@ describe('RegisterPage', () => {
   })
 
   it('handles getPollById failure', async () => {
-    getPollById.mockRejectedValue(new Error('Network error'))
+    getPollById.mockResolvedValue({ data: null, error: 'Network error' })
     
     await renderComponent()
 

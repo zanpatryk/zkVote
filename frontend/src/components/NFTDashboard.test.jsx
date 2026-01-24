@@ -28,10 +28,13 @@ describe('NFTDashboard', () => {
 
   it('fetches and displays badges when connected', async () => {
     useAccount.mockReturnValue({ isConnected: true, address: '0x123' })
-    getUserNFTs.mockResolvedValue([
-      { tokenId: '1', name: 'Badge 1', description: 'Desc 1', attributes: [] },
-      { tokenId: '2', name: 'Badge 2', description: 'Desc 2', attributes: [] }
-    ])
+    getUserNFTs.mockResolvedValue({
+      data: [
+        { tokenId: '1', name: 'Badge 1', description: 'Desc 1', attributes: [] },
+        { tokenId: '2', name: 'Badge 2', description: 'Desc 2', attributes: [] }
+      ],
+      error: null
+    })
 
     await act(async () => {
       render(<NFTDashboard />)
@@ -45,7 +48,7 @@ describe('NFTDashboard', () => {
 
   it('displays empty state when user has no NFTs', async () => {
     useAccount.mockReturnValue({ isConnected: true, address: '0x123' })
-    getUserNFTs.mockResolvedValue([])
+    getUserNFTs.mockResolvedValue({ data: [], error: null })
 
     await act(async () => {
       render(<NFTDashboard />)
@@ -58,18 +61,15 @@ describe('NFTDashboard', () => {
 
   it('handles fetch errors gracefully', async () => {
     useAccount.mockReturnValue({ isConnected: true, address: '0x123' })
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-    getUserNFTs.mockRejectedValue(new Error('Fetch failed'))
+    getUserNFTs.mockResolvedValue({ data: [], error: 'Network Error' })
 
     await act(async () => {
         render(<NFTDashboard />)
     })
 
     await waitFor(() => {
-        expect(screen.getByText('No Badges Yet')).toBeInTheDocument()
+        expect(screen.getByText('Connection Error')).toBeInTheDocument()
+        expect(screen.getByText(/Could not connect to the network/i)).toBeInTheDocument()
     })
-    
-    expect(consoleSpy).toHaveBeenCalled()
-    consoleSpy.mockRestore()
   })
 })

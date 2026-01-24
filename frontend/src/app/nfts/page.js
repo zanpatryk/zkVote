@@ -1,9 +1,23 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAccount } from 'wagmi'
 import NFTDashboard from '@/components/NFTDashboard'
 import { motion } from 'framer-motion'
 
 export default function NFTsPage() {
+  const { isConnected } = useAccount()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isConnected) {
+      router.replace('/')
+    }
+  }, [isConnected, router])
+
+  if (!isConnected) return null
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}

@@ -107,11 +107,12 @@ export function useWhitelistedAddresses(pollId) {
 
     setLoading(true)
     try {
-      const newAddresses = await getWhitelistedAddresses(pollId, startBlock, endBlock)
+      const { data: newAddresses, error } = await getWhitelistedAddresses(pollId, startBlock, endBlock)
+      if (error) throw new Error(error)
       
       setAddresses(prev => {
         const next = new Set(prev)
-        newAddresses.forEach(addr => next.add(addr))
+        ;(newAddresses || []).forEach(addr => next.add(addr))
         return next
       })
 

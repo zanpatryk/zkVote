@@ -42,9 +42,10 @@ export function usePollVotes(pollId, pollState) {
       if (!pollId) return
       setLoading(true)
       try {
-        const history = await getPollVotes(pollId)
+        const { data: history, error } = await getPollVotes(pollId)
+        if (error) throw new Error(error)
         // Sort by block number descending (newest first)
-        setVotes(history.sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber)))
+        setVotes((history || []).sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber)))
       } catch (error) {
         console.error('Failed to fetch votes:', error)
       } finally {

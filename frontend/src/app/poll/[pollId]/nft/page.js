@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { getPollById, isUserWhitelisted, getUserNFTs, getZKPollState } from '@/lib/blockchain/engine/read'
+import { getPollById, isUserWhitelisted, getZKPollState } from '@/lib/blockchain/engine/read'
 import { mintResultNFT } from '@/lib/blockchain/engine/write'
+import { useUserNFTs } from '@/hooks/useUserNFTs'
 import PollDetails from '@/components/PollDetails'
 import { toast } from 'react-hot-toast'
 import { motion } from 'framer-motion'
 import BackButton from '@/components/BackButton'
+import ConnectionError from '@/components/ConnectionError'
 import { POLL_STATE } from '@/lib/constants'
 
 export default function MintNFTPage() {
@@ -21,6 +23,9 @@ export default function MintNFTPage() {
   const [poll, setPoll] = useState(null)
   const [minting, setMinting] = useState(false)
   const [hasMinted, setHasMinted] = useState(false)
+  const [loadError, setLoadError] = useState(null)
+
+  const { nfts, refetch: refetchNFTs } = useUserNFTs(userAddress, isConnected)
 
   useEffect(() => {
     async function checkEligibility() {
@@ -30,7 +35,8 @@ export default function MintNFTPage() {
       }
 
       try {
-        const pollData = await getPollById(pollId)
+        const { data: pollData, error: pollError } = await getPollById(pollId)
+        if (pollError) throw new Error(pollError)
         setPoll(pollData)
 
         if (!pollData) {
@@ -46,7 +52,9 @@ export default function MintNFTPage() {
         }
 
         // For Encrypted Polls: Results must be published
-        const zkState = await getZKPollState(pollId)
+        const { data: zkState, error: zkError } = await getZKPollState(pollId)
+        if (zkError) throw new Error(zkError)
+        
         if (zkState && !zkState.resultsPublished) {
              toast.error("Tally Results Not Yet Published")
              router.replace(`/poll/${pollId}`)
@@ -57,7 +65,9 @@ export default function MintNFTPage() {
         let isWhitelisted = false
         
         if (!isCreator) {
-             isWhitelisted = await isUserWhitelisted(pollId, userAddress)
+             const { data: whitelisted, error: whitelistError } = await isUserWhitelisted(pollId, userAddress)
+             if (whitelistError) throw new Error(whitelistError)
+             isWhitelisted = whitelisted
         }
 
         if (isCreator || isWhitelisted) {
@@ -66,14 +76,9 @@ export default function MintNFTPage() {
           setCanMint(false)
         }
 
-        // Check ownership
-        const userNFTs = await getUserNFTs(userAddress)
-        const owned = userNFTs.some(nft => nft.name === `Poll #${pollId} Results`)
-        setHasMinted(owned)
-
       } catch (error) {
         console.error('Failed to check eligibility:', error)
-        toast.error('Failed to verify eligibility.')
+        setLoadError(error.message || 'Failed to verify eligibility.')
       } finally {
         setLoading(false)
       }
@@ -82,13 +87,22 @@ export default function MintNFTPage() {
     checkEligibility()
   }, [pollId, userAddress, isConnected, router])
 
+  // Check NFT ownership when nfts data changes
+  useEffect(() => {
+    if (nfts && nfts.length > 0) {
+      const owned = nfts.some(nft => nft.name === `Poll #${pollId} Results`)
+      setHasMinted(owned)
+    }
+  }, [nfts, pollId])
+
   const handleMint = async () => {
     if (!canMint) return
     setMinting(true)
     try {
       await mintResultNFT(pollId)
       setHasMinted(true)
-      // Optional: Redirect or show success state
+      // Refetch NFTs to update the list
+      refetchNFTs()
     } catch (error) {
       console.error("Minting failed", error)
     } finally {
@@ -102,6 +116,14 @@ export default function MintNFTPage() {
         <p className="text-gray-600">Verifying eligibility...</p>
       </div>
     )
+  }
+  
+  if (loadError) {
+      return (
+        <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 text-center">
+           <ConnectionError error={loadError} />
+        </div>
+      )
   }
 
   if (!isConnected) {

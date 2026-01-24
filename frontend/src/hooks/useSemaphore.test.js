@@ -59,6 +59,12 @@ jest.mock('poseidon-lite', () => ({
   poseidon2: jest.fn(() => '12345'),
 }))
 
+jest.mock('@/lib/constants', () => ({
+  get USE_LOCAL_SEMAPHORE_CIRCUITS() { return global.mockUseLocalCircuits },
+  SEMAPHORE_CIRCUIT_WASM_PATH_TEMPLATE: '/wasm/{depth}.wasm',
+  SEMAPHORE_CIRCUIT_ZKEY_PATH_TEMPLATE: '/zkey/{depth}.zkey',
+}))
+
 describe('useSemaphore', () => {
   const mockSignMessageAsync = jest.fn()
   const mockIdentityInstance = { 
@@ -67,13 +73,16 @@ describe('useSemaphore', () => {
     secretScalar: 'secret' 
   }
 
-  beforeEach(() => {
-    jest.clearAllMocks()
-    useAccount.mockReturnValue({ address: '0x123', isConnected: true })
-    useSignMessage.mockReturnValue({ signMessageAsync: mockSignMessageAsync })
-    Identity.mockImplementation(() => mockIdentityInstance)
-    addMember.mockResolvedValue({})
-  })
+    beforeEach(() => {
+      jest.clearAllMocks()
+      global.mockUseLocalCircuits = false
+      useAccount.mockReturnValue({ address: '0x123', isConnected: true })
+      useSignMessage.mockReturnValue({ signMessageAsync: mockSignMessageAsync })
+      Identity.mockImplementation(() => mockIdentityInstance)
+      addMember.mockResolvedValue({})
+    })
+    
+
 
   it('should return initial state', () => {
     const { result } = renderHook(() => useSemaphore())
@@ -201,11 +210,14 @@ describe('useSemaphore', () => {
 
       Group.mockImplementation(() => mockGroupInstance)
       generateProof.mockResolvedValue(mockProof)
-      getMerkleTreeDepth.mockResolvedValue(20)
-      getGroupMembers.mockResolvedValue([
-        { identityCommitment: 'member1', transactionHash: '0x1', blockNumber: 100 },
-        { identityCommitment: 'member2', transactionHash: '0x2', blockNumber: 101 }
-      ])
+      getMerkleTreeDepth.mockResolvedValue({ data: 20, error: null })
+      getGroupMembers.mockResolvedValue({
+        data: [
+          { identityCommitment: 'member1', transactionHash: '0x1', blockNumber: 100 },
+          { identityCommitment: 'member2', transactionHash: '0x2', blockNumber: 101 }
+        ],
+        error: null
+      })
       mockGroupInstance.indexOf.mockReturnValue(0)
     })
 
@@ -246,10 +258,40 @@ describe('useSemaphore', () => {
         mockGroupInstance,
         1,
         'poll-1',
-        20
+        20,
+        undefined
       )
       expect(castVoteWithProof).toHaveBeenCalledWith('poll-1', { optionIndex: 1 }, mockProof)
       expect(res).toEqual({ voteId: 1, txHash: '0xhash' })
+    })
+
+    it('should use local artifacts if configured', async () => {
+      castVoteWithProof.mockResolvedValue({ voteId: 1, txHash: '0xhash' })
+      
+      // Override mock for this test
+      global.mockUseLocalCircuits = true
+
+      const { result } = renderHook(() => useSemaphore())
+
+      await act(async () => {
+         await result.current.castVote('poll-1', 1, mockIdentityInstance)
+      })
+
+      const { generateProof } = require('@semaphore-protocol/proof')
+      
+      expect(generateProof).toHaveBeenCalledWith(
+        mockIdentityInstance,
+        mockGroupInstance,
+        1,
+        'poll-1',
+        20,
+        {
+            wasmFilePath: '/wasm/20.wasm',
+            zkeyFilePath: '/zkey/20.zkey'
+        }
+      )
+      
+
     })
 
     it('should handle proof generation error', async () => {
@@ -363,12 +405,40 @@ describe('useSemaphore', () => {
          const { result } = renderHook(() => useSemaphore())
          // hasVoted mock setup
          const { hasVoted } = require('@/lib/blockchain/engine/read')
-         hasVoted.mockResolvedValue(true)
+         hasVoted.mockResolvedValue({ data: true, error: null })
 
          const res = await result.current.checkIdentityVoted('123', { secretScalar: '123' })
          
          expect(res.voted).toBe(true)
          expect(res.voterAddress).toBeDefined()
      })
+
+     it('should handle errors in checkIdentityVoted gracefully', async () => {
+         const { result } = renderHook(() => useSemaphore())
+         // Force error by mocking hasVoted to reject
+         const { hasVoted } = require('@/lib/blockchain/engine/read')
+         hasVoted.mockRejectedValue(new Error('RPC Error'))
+
+         const res = await result.current.checkIdentityVoted('123', { secretScalar: '123' })
+         
+         expect(res.voted).toBe(false)
+         expect(res.error).toBeDefined()
+     })
+  })
+
+  describe('castVote error handling - Already Cast', () => {
+    it('should return alreadyVoted: true when contract error says so', async () => {
+      castVoteWithProof.mockRejectedValue(new Error('user already cast a vote'))
+      
+      const { result } = renderHook(() => useSemaphore())
+
+      let res
+      await act(async () => {
+         res = await result.current.castVote('poll-1', 0, mockIdentityInstance)
+      })
+
+      expect(res).toEqual({ alreadyVoted: true })
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('already cast'), expect.any(Object))
+    })
   })
 })

@@ -38,7 +38,10 @@ async function runTests() {
             r: r.toString(),
             selectedOption: "1" 
         };
-        const result = await generateProof(input, WASM_PATH, ZKEY_PATH);
+        const result = await generateProof(input, {
+             wasmFilePath: WASM_PATH,
+             zkeyFilePath: ZKEY_PATH
+        });
         assert(result.proof, "Proof undefined");
         assert(result.publicSignals, "Signals undefined");
         

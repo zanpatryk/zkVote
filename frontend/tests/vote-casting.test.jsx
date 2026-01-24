@@ -88,6 +88,9 @@ describe('Integration Test: Vote Casting Page', () => {
        castVote: jest.fn(),
        isCasting: false,
     })
+    
+    // Default hasVoted response
+    read.hasVoted.mockResolvedValue({ data: false, error: null })
   })
 
   it('renders loading state initially', () => {
@@ -100,9 +103,12 @@ describe('Integration Test: Vote Casting Page', () => {
   it('shows "Voting is not active" if poll is Created (state 0)', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
     read.getPollById.mockResolvedValue({ 
-      title: 'Poll', 
-      state: 0, // Created
-      options: ['A', 'B'] 
+      data: {
+        title: 'Poll', 
+        state: 0, // Created
+        options: ['A', 'B'] 
+      },
+      error: null
     })
     
     render(<VoteOnPoll />)
@@ -117,9 +123,12 @@ describe('Integration Test: Vote Casting Page', () => {
   it('shows "Voting is not active" if poll is Ended (state 2)', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
     read.getPollById.mockResolvedValue({ 
-      title: 'Poll', 
-      state: 2, // Ended
-      options: ['A', 'B'] 
+      data: {
+        title: 'Poll', 
+        state: 2, // Ended
+        options: ['A', 'B'] 
+      },
+      error: null
     })
     
     render(<VoteOnPoll />)
@@ -134,11 +143,14 @@ describe('Integration Test: Vote Casting Page', () => {
   it('renders voting form if poll is Active (state 1)', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
     read.getPollById.mockResolvedValue({ 
-      title: 'Poll', 
-      state: 1, // Active
-      options: ['A', 'B'] 
+      data: {
+        title: 'Poll', 
+        state: 1, // Active
+        options: ['A', 'B'] 
+      },
+      error: null
     })
-    read.hasVoted.mockResolvedValue(false)
+    read.hasVoted.mockResolvedValue({ data: false, error: null })
     
     // Override hook for ZK flow
     usePollRegistry.mockReturnValue({

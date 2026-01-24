@@ -18,10 +18,13 @@ export default function VerificationResult({ pollId, voteId, txHash, nullifier, 
   useEffect(() => {
     async function loadData() {
       try {
-        const [voteData, pollData] = await Promise.all([
+        const [voteResult, pollResult] = await Promise.all([
           getVote(voteId, pollId),
           getPollById(pollId)
         ])
+
+        const voteData = voteResult.data
+        const pollData = pollResult.data
 
         if (!voteData) {
           setError('Vote not found or could not be loaded.')

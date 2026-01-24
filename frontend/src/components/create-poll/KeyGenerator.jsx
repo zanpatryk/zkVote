@@ -25,7 +25,7 @@ export default function KeyGenerator({ generatedKeys, setGeneratedKeys, hasSaved
       initial={{ opacity: 0, height: 0, marginBottom: 0 }}
       animate={{ opacity: 1, height: 'auto', marginBottom: 40 }}
       exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-      className="overflow-hidden"
+      className="overflow-hidden pr-2 pb-2 -mr-2 -mb-2"
     >
       <div className="p-6 border-2 border-black bg-white rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
         <h3 className="text-xl font-bold font-serif mb-2">Encryption Keys Required</h3>
@@ -47,7 +47,7 @@ export default function KeyGenerator({ generatedKeys, setGeneratedKeys, hasSaved
           <div className="space-y-4">
             <div>
               <label className="text-xs font-bold uppercase text-gray-500">Your Secret Key (SAVE THIS)</label>
-              <div className="flex gap-2 mt-1">
+              <div className="flex flex-col md:flex-row gap-2 md:gap-4 mt-2">
                 <code className="flex-1 bg-white p-3 border-2 border-black rounded text-sm font-mono break-all leading-tight">
                   {generatedKeys.sk}
                 </code>
@@ -57,7 +57,7 @@ export default function KeyGenerator({ generatedKeys, setGeneratedKeys, hasSaved
                     navigator.clipboard.writeText(generatedKeys.sk)
                     toast.success('Copied to clipboard')
                   }}
-                  className="px-4 border-2 border-black bg-white hover:bg-black hover:text-white rounded font-bold transition-colors"
+                  className="w-full md:w-auto px-6 py-3 border-2 border-black bg-white hover:bg-black hover:text-white rounded font-bold transition-colors"
                 >
                   Copy
                 </button>

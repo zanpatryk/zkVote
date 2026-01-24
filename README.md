@@ -16,7 +16,7 @@ zkVote allows users to participate in polls with complete privacy. By leveraging
 
 - **Frontend**: [Next.js](https://nextjs.org/), [Tailwind CSS](https://tailwindcss.com/)
 - **Smart Contracts**: [Solidity](https://soliditylang.org/), [Foundry](https://book.getfoundry.sh/)
-- **ZK Circuits**: [Circom](https://iden3.io/circom)
+- **ZK Circuits**: [Circom](https://docs.circom.io/getting-started/installation/)
 - **Identity/Privacy**: [Semaphore Protocol](https://semaphore.appliedzkp.org/)
 - **Package Manager**: [Bun](https://bun.sh/)
 

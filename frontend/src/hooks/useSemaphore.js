@@ -4,9 +4,9 @@ import { Group } from '@semaphore-protocol/group'
 import { generateProof } from '@semaphore-protocol/proof'
 import { useSignMessage, useAccount } from 'wagmi'
 import { addMember, castVoteWithProof } from '@/lib/blockchain/engine/write'
-import { getGroupMembers, getMerkleTreeDepth } from '@/lib/blockchain/engine/read'
+import { getGroupMembers, getMerkleTreeDepth, hasVoted } from '@/lib/blockchain/engine/read'
 import { toast } from 'react-hot-toast'
-import { toastTransactionError, formatTransactionError } from '@/lib/blockchain/utils/error-handler'
+import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 export function useSemaphore() {
   const { address } = useAccount()
@@ -84,10 +84,10 @@ export function useSemaphore() {
     // Ensure signal is valid (number or string-convertible)
     // generateProof expects message/signal.
     
-    const depth = await getMerkleTreeDepth(pollId)
-    const membersData = await getGroupMembers(pollId)
+    const { data: depth } = await getMerkleTreeDepth(pollId)
+    const { data: membersData } = await getGroupMembers(pollId)
     
-    const commitments = membersData.map(m => m.identityCommitment).filter(Boolean)
+    const commitments = (membersData || []).map(m => m.identityCommitment).filter(Boolean)
     const group = new Group(commitments)
     
     const index = group.indexOf(identity.commitment)
@@ -96,12 +96,25 @@ export function useSemaphore() {
     }
 
     // generateProof(identity, group, message, scope, snarkArtifacts)
+    let snarkArtifacts = undefined
+    
+    // Import constants locally to avoid top-level cyclic deps if any (though unlikely here)
+    const { USE_LOCAL_SEMAPHORE_CIRCUITS, SEMAPHORE_CIRCUIT_WASM_PATH_TEMPLATE, SEMAPHORE_CIRCUIT_ZKEY_PATH_TEMPLATE } = await import('@/lib/constants')
+
+    if (USE_LOCAL_SEMAPHORE_CIRCUITS) {
+        snarkArtifacts = {
+            wasmFilePath: SEMAPHORE_CIRCUIT_WASM_PATH_TEMPLATE.replace('{depth}', depth),
+            zkeyFilePath: SEMAPHORE_CIRCUIT_ZKEY_PATH_TEMPLATE.replace('{depth}', depth)
+        }
+    }
+
     const proof = await generateProof(
       identity, 
       group, 
       signal, 
       pollId,
-      depth
+      depth,
+      snarkArtifacts
     )
     return proof
   }, [])
@@ -159,8 +172,7 @@ export function useSemaphore() {
       // Note: We use the full hash value and take last 160 bits
       const voterAddress = getAddress(`0x${(BigInt(manualNullifierHash) & ((1n << 160n) - 1n)).toString(16).padStart(40, '0')}`)
       
-      const { hasVoted } = await import('@/lib/blockchain/engine/read')
-      const voted = await hasVoted(pollId, voterAddress)
+      const { data: voted } = await hasVoted(pollId, voterAddress)
       
       return { voted, voterAddress }
     } catch (error) {

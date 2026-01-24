@@ -2,51 +2,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 
-const CHARS = "!@#$%^&*():{};|,.<>/?qwertyuiopasdfghjklzxcvbnm"
 // Combined charset for random selection
 const GREEK = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω"
 
-// Custom Hook for the scramble effect
-function useScramble(text, duration = 1000, delay = 0) {
-  const [display, setDisplay] = useState(text.split('').map(() => ' '))
-  const [complete, setComplete] = useState(false)
-  
-  useEffect(() => {
-    let timeout
-    let interval
-    
-    timeout = setTimeout(() => {
-      let iteration = 0
-      clearInterval(interval)
-      
-      interval = setInterval(() => {
-        setDisplay(text.split('').map((char, index) => {
-          if (index < iteration) {
-            return text[index]
-          }
-          return CHARS[Math.floor(Math.random() * CHARS.length)]
-        }))
-        
-        if (iteration >= text.length) { 
-          clearInterval(interval)
-          setComplete(true)
-        }
-        
-        iteration += 1 / 3
-      }, 30)
-    }, delay)
-
-    return () => {
-      clearTimeout(timeout)
-      clearInterval(interval)
-    }
-  }, [text, duration, delay])
-
-  return { display: display.join(''), complete }
-}
+const HERO_TEXT = "VOTE WITHOUT A TRACE"
 
 export default function HeroSection() {
-  const { display, complete } = useScramble("VOTE WITHOUT A TRACE", 2000, 500)
+  const [animationComplete, setAnimationComplete] = useState(false)
   const canvasRef = useRef(null)
   
   // Mouse tracking for spotlight
@@ -162,7 +124,7 @@ export default function HeroSection() {
   return (
     <div 
       onMouseMove={handleMouseMove}
-      className="relative w-full min-h-screen -mt-32 flex flex-col items-center justify-center overflow-hidden group cursor-crosshair"
+      className="relative w-full flex-1 flex flex-col items-center justify-center overflow-hidden group cursor-crosshair"
     >
       {/* Canvas Background */}
       <canvas 
@@ -187,7 +149,7 @@ export default function HeroSection() {
       
       {/* Main Content */}
       <motion.div 
-        className="text-center relative z-10 px-4 -mt-12 md:-mt-32"
+        className="text-center relative z-10 px-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
@@ -196,13 +158,19 @@ export default function HeroSection() {
           Zero Knowledge Protocol
         </div>
         
-        <h1 className="text-6xl md:text-9xl font-black font-serif mb-8 tracking-tight leading-none min-h-[1.2em]">
-          {display}
-        </h1>
+        <motion.h1 
+          className="text-4xl sm:text-5xl md:text-9xl font-black font-serif mb-8 tracking-tight leading-none min-h-[1.2em]"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.3 }}
+          onAnimationComplete={() => setAnimationComplete(true)}
+        >
+          {HERO_TEXT}
+        </motion.h1>
         
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: complete ? 1 : 0, y: complete ? 0 : 20 }}
+          animate={{ opacity: animationComplete ? 1 : 0, y: animationComplete ? 0 : 20 }}
           transition={{ duration: 0.8 }}
           className="text-xl md:text-2xl text-gray-500 font-medium max-w-2xl mx-auto leading-relaxed"
         >

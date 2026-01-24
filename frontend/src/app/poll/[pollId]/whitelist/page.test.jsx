@@ -14,7 +14,7 @@ jest.mock('@/lib/blockchain/engine/write', () => ({
 }))
 
 jest.mock('@/lib/blockchain/engine/read', () => ({
-  isUserWhitelisted: jest.fn(),
+  isUserWhitelisted: jest.fn().mockResolvedValue({ data: false, error: null }),
   getPollById: jest.fn(),
 }))
 
@@ -67,7 +67,7 @@ describe('WhitelistPage', () => {
     useRouter.mockReturnValue(mockRouter)
     useAccount.mockReturnValue({ isConnected: true })
     isAddress.mockReturnValue(true)
-    getPollById.mockResolvedValue({ state: 0 }) // Mock Poll Created State
+    getPollById.mockResolvedValue({ data: { state: 0 }, error: null }) // Mock Poll Created State
   })
 
   it('renders correctly', async () => {

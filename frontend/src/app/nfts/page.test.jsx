@@ -14,12 +14,41 @@ jest.mock('framer-motion', () => ({
   }
 }))
 
+// Mock wagmi
+const mockUseAccount = jest.fn()
+jest.mock('wagmi', () => ({
+  useAccount: () => mockUseAccount()
+}))
+
+// Mock next/navigation
+const mockPush = jest.fn()
+const mockReplace = jest.fn()
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: mockReplace
+  })
+}))
+
 describe('NFTsPage', () => {
-  it('renders the dashboard and title', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('renders the dashboard when connected', () => {
+    mockUseAccount.mockReturnValue({ isConnected: true })
     render(<NFTsPage />)
     
     expect(screen.getByText('My NFT Badges')).toBeInTheDocument()
     expect(screen.getByText(/Collection of your/i)).toBeInTheDocument()
     expect(screen.getByTestId('nft-dashboard')).toBeInTheDocument()
+  })
+
+  it('redirects to home when disconnected', () => {
+    mockUseAccount.mockReturnValue({ isConnected: false })
+    render(<NFTsPage />)
+    
+    expect(mockReplace).toHaveBeenCalledWith('/')
+    expect(screen.queryByText('My NFT Badges')).not.toBeInTheDocument()
   })
 })

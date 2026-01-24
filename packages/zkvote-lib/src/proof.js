@@ -7,12 +7,14 @@ import * as snarkjs from "snarkjs";
 /**
  * Generate a Groth16 proof
  * @param {Object} input - Circuit input signals
- * @param {string} wasmPath - Path to circuit .wasm file
- * @param {string} zkeyPath - Path to circuit .zkey file
+ * @param {Object} snarkArtifacts - Paths to circuit artifacts
+ * @param {string} snarkArtifacts.wasmFilePath - Path to circuit .wasm file
+ * @param {string} snarkArtifacts.zkeyFilePath - Path to circuit .zkey file
  * @returns {Promise<{ proof: Object, publicSignals: string[] }>}
  */
-export async function generateProof(input, wasmPath, zkeyPath) {
-    const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, wasmPath, zkeyPath);
+export async function generateProof(input, snarkArtifacts) {
+    const { wasmFilePath, zkeyFilePath } = snarkArtifacts;
+    const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, wasmFilePath, zkeyFilePath);
     return { proof, publicSignals };
 }
 

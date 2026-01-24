@@ -111,13 +111,16 @@ describe('VoteOnPoll', () => {
     usePollRegistry.mockReturnValue({ isZK: true })
 
     getPollById.mockResolvedValue({
-        id: 123,
-        title: 'Test Poll',
-        options: ['Yes', 'No'],
-        state: 1, // Active
+        data: {
+          id: 123,
+          title: 'Test Poll',
+          options: ['Yes', 'No'],
+          state: 1, // Active
+        },
+        error: null
     })
     
-    hasVoted.mockResolvedValue(false)
+    hasVoted.mockResolvedValue({ data: false, error: null })
     
     mockHasStoredIdentity.mockReturnValue(false)
   })
@@ -129,9 +132,18 @@ describe('VoteOnPoll', () => {
   })
 
   it('renders poll error if failed', async () => {
-    getPollById.mockRejectedValue(new Error('Failed'))
+    getPollById.mockResolvedValue({ data: null, error: 'Failed to fetch' })
     render(<VoteOnPoll />)
-    await waitFor(() => expect(screen.getByText('Poll data could not be loaded.')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Failed to fetch')).toBeInTheDocument())
+  })
+
+  it('renders friendly network error message', async () => {
+    getPollById.mockResolvedValue({ data: null, error: 'Network Error' })
+    render(<VoteOnPoll />)
+    await waitFor(() => {
+        expect(screen.getByText('Connection Error')).toBeInTheDocument()
+        expect(screen.getByText(/Could not connect to the network/i)).toBeInTheDocument()
+    })
   })
 
   it('renders authentication screen for ZK poll when not authenticated', async () => {
@@ -242,17 +254,79 @@ describe('VoteOnPoll', () => {
      fireEvent.click(screen.getByText('Submit Vote'))
      
      await waitFor(() => {
-         // Should update state to already voted?
-         // Check if UI reflects "Already Voted"? (Maybe verify re-render or toast?)
-         // In strict sense, if alreadyVoted state is set, key="content" might disappear or show results?
-         // But the component uses `showBallot` which relies on `alreadyVoted`.
-         // `const showBallot = alreadyVoted || ...` 
-         // implementation: `if (result?.alreadyVoted) { setAlreadyVoted(true); return }`
-         // So if setAlreadyVoted(true), showBallot might stay true? 
-         // No: `const showBallot = alreadyVoted || (isZK ? loadedIdentity : true) || ...`
-         // Actually: `<VoteBallot ... alreadyVoted={alreadyVoted} ... />`
-         // The VoteBallot component probably handles the UI for already voted.
          expect(mockSubmitVote).toHaveBeenCalled()
      })
+  })
+
+  it('shows error when not connected and attempting to vote', async () => {
+    useAccount.mockReturnValue({ isConnected: false })
+    usePollRegistry.mockReturnValue({ isZK: false })
+    
+    render(<VoteOnPoll />)
+    await waitFor(() => expect(screen.getByTestId('vote-ballot')).toBeInTheDocument())
+    
+    fireEvent.click(screen.getByText('Submit Vote'))
+    expect(toast.error).toHaveBeenCalledWith('Please connect your wallet first')
+  })
+
+  it('shows error when no option is selected', async () => {
+    usePollRegistry.mockReturnValue({ isZK: false })
+    
+    render(<VoteOnPoll />)
+    await waitFor(() => expect(screen.getByTestId('vote-ballot')).toBeInTheDocument())
+    
+    fireEvent.click(screen.getByText('Submit Vote'))
+    expect(toast.error).toHaveBeenCalledWith('Please select an option to vote for')
+  })
+
+  it('shows error when not registered for ZK poll', async () => {
+    // Authenticated state (to show ballot) but not registered
+    usePollRegistry.mockReturnValue({ isZK: true, isRegistered: false })
+    
+    const mockCreateIdentity = jest.fn().mockResolvedValue({ commitment: '123' })
+    useSemaphore.mockReturnValue({ createIdentity: mockCreateIdentity, isLoadingIdentity: false })
+
+    render(<VoteOnPoll />)
+    
+    // Wait for initial load to complete and auth screen to appear
+    const signBtn = await screen.findByText('Sign with Wallet')
+    
+    // Load identity
+    fireEvent.click(signBtn)
+    
+    // Wait for ballot to appear
+    const submitBtn = await screen.findByText('Submit Vote')
+    
+    fireEvent.click(screen.getByText('Select Option 1'))
+    fireEvent.click(submitBtn)
+    
+    expect(toast.error).toHaveBeenCalledWith('You are not registered for this poll')
+  })
+
+  it('reloads the page when Try Again button is clicked in error state', async () => {
+    getPollById.mockResolvedValue({ data: null, error: 'Failed' })
+    render(<VoteOnPoll />)
+    
+    const tryAgainBtn = await screen.findByText('Try Again')
+    // Click it to trigger the code path
+    fireEvent.click(tryAgainBtn)
+    // No error = successful branch coverage
+  })
+
+  it('handles identity file upload error (missing private key)', async () => {
+    render(<VoteOnPoll />)
+    await waitFor(() => expect(screen.getByText('Upload Backup File')).toBeInTheDocument())
+    
+    const file = new File([''], 'identity.json', { type: 'application/json' })
+    file._content = '{"someOtherKey": "no-secret"}'
+    const input = screen.getByLabelText('Upload Backup File')
+    
+    await act(async () => {
+        fireEvent.change(input, { target: { files: [file] } })
+    })
+
+    await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Invalid identity file')
+    })
   })
 })

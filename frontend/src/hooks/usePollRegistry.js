@@ -1,100 +1,50 @@
-import { useReadContract, useReadContracts, useAccount } from 'wagmi'
-import { 
-  votingSystemContract, 
-  ZKElGamalVoteVectorABI, 
-  SemaphoreEligibilityModuleABI 
-} from '@/lib/contracts'
-
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+import { useQuery } from '@tanstack/react-query'
+import { useAccount } from 'wagmi'
+import { getModules, getMerkleTreeDepth, isUserRegistered, getZKPollState } from '@/lib/blockchain/engine/read'
 
 export function usePollRegistry(pollId) {
   const { address } = useAccount()
 
-  // 1. Fetch Module Addresses (Default & Poll-Specific)
-  const { data: moduleData, isLoading: isLoadingModules } = useReadContracts({
-    contracts: [
-      {
-        address: votingSystemContract.address,
-        abi: votingSystemContract.abi,
-        functionName: 's_defaultEligibility',
-      },
-      {
-        address: votingSystemContract.address,
-        abi: votingSystemContract.abi,
-        functionName: 's_pollEligibility',
-        args: [BigInt(pollId || 0)],
-      },
-      {
-        address: votingSystemContract.address,
-        abi: votingSystemContract.abi,
-        functionName: 's_defaultVoteStorage',
-      },
-      {
-        address: votingSystemContract.address,
-        abi: votingSystemContract.abi,
-        functionName: 's_pollVoteStorage',
-        args: [BigInt(pollId || 0)],
-      }
-    ],
-    query: { enabled: !!pollId }
+  // 1. Fetch Modules
+  const { data: modules, isLoading: isLoadingModules } = useQuery({
+    queryKey: ['pollModules', pollId?.toString()],
+    queryFn: () => getModules(pollId),
+    enabled: !!pollId
   })
 
-  const [defaultEliResult, pollEliResult, defaultVoteResult, pollVoteResult] = moduleData || []
-  
-  const eligibilityModuleAddress = (pollEliResult?.result && pollEliResult.result !== ZERO_ADDRESS) 
-    ? pollEliResult.result 
-    : defaultEliResult?.result
+  const eligibilityModuleAddress = modules?.eligibilityModule
+  const voteStorageAddress = modules?.voteStorage
 
-  const voteStorageAddress = (pollVoteResult?.result && pollVoteResult.result !== ZERO_ADDRESS)
-    ? pollVoteResult.result
-    : defaultVoteResult?.result
-
-  // 2. Check if Poll is ZK (depth > 0)
-  const { data: merkleTreeDepth } = useReadContract({
-    address: eligibilityModuleAddress,
-    abi: SemaphoreEligibilityModuleABI,
-    functionName: 'getMerkleTreeDepth',
-    args: [BigInt(pollId || 0)],
-    query: { 
-        enabled: !!eligibilityModuleAddress && !!pollId && eligibilityModuleAddress !== ZERO_ADDRESS,
-        retry: false
-    }
+  // 2. Check ZK Depth
+  const { data: depthData } = useQuery({
+    queryKey: ['merkleDepth', pollId?.toString()],
+    queryFn: () => getMerkleTreeDepth(pollId),
+    enabled: !!pollId
   })
+  const merkleTreeDepth = depthData?.data || 0
+  const isZK = merkleTreeDepth > 0
 
-  // 3. Check if user is already registered
-  const { data: isRegistered, refetch: refetchRegistration } = useReadContract({
-    address: eligibilityModuleAddress,
-    abi: SemaphoreEligibilityModuleABI,
-    functionName: 'isRegistered',
-    args: [BigInt(pollId || 0), address],
-    query: { 
-        enabled: !!eligibilityModuleAddress && !!address && !!pollId && eligibilityModuleAddress !== ZERO_ADDRESS,
-        retry: false
-    }
+  // 3. User Registration
+  const { data: regData, refetch: refetchRegistration } = useQuery({
+    queryKey: ['isRegistered', pollId?.toString(), address],
+    queryFn: () => isUserRegistered(pollId, address),
+    enabled: !!pollId && !!address && !!eligibilityModuleAddress
   })
+  const isRegistered = !!regData?.data
 
-  const isZK = Number(merkleTreeDepth || 0) > 0
-
-  // 4. Check results published (for ZK polls)
-  const { data: pollsState, refetch: refetchPollState } = useReadContract({
-    address: voteStorageAddress,
-    abi: ZKElGamalVoteVectorABI,
-    functionName: 'polls', // returns tuple
-    args: [BigInt(pollId || 0)],
-    query: {
-        enabled: !!voteStorageAddress && voteStorageAddress !== ZERO_ADDRESS && isZK,
-        retry: false
-    }
+  // 4. Poll State (Results Published)
+  const { data: stateData, refetch: refetchPollState } = useQuery({
+    queryKey: ['zkPollState', pollId?.toString()],
+    queryFn: () => getZKPollState(pollId),
+    enabled: !!pollId && isZK && !!voteStorageAddress
   })
-  
-  // pollsState is [initialized, voteCount, resultsPublished, ...]
-  const resultsPublished = pollsState ? pollsState[2] : false
+  const resultsPublished = stateData?.data?.resultsPublished || false
 
   return {
     isZK,
-    isRegistered: !!isRegistered,
+    isRegistered,
     resultsPublished,
-    merkleTreeDepth: merkleTreeDepth ? Number(merkleTreeDepth) : 0,
+    merkleTreeDepth,
     eligibilityModuleAddress,
     voteStorageAddress,
     isLoading: isLoadingModules,

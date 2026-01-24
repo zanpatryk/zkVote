@@ -1,15 +1,14 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useSemaphore } from './useSemaphore'
 import { usePollRegistry } from './usePollRegistry'
 import { elgamal, proof as proofUtils } from '@zkvote/lib'
-import { useReadContract, useAccount } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { castEncryptedVote, castPlainVote, castEncryptedVoteWithProof } from '@/lib/blockchain/engine/write'
-import ZKElGamalVoteVectorABI from '@/lib/contracts/abis/ZKElGamalVoteVector.json'
-import { ELGAMAL_VECTOR_SIZE } from '@/lib/constants'
-import { toast } from 'react-hot-toast'
-import * as snarkjs from 'snarkjs'
+import { getPollPublicKey } from '@/lib/blockchain/engine/read'
+import { ELGAMAL_VECTOR_SIZE, VOTE_CIRCUIT_WASM_PATH, VOTE_CIRCUIT_ZKEY_PATH } from '@/lib/constants'
+
 
 export function useZKVote(pollId) {
   const { address } = useAccount()
@@ -19,18 +18,20 @@ export function useZKVote(pollId) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [steps, setSteps] = useState([])
+  const [pollPk, setPollPk] = useState(null)
 
   // Fetch Poll Public Key if it's a secret poll
-  const { data: pollPk } = useReadContract({
-    address: voteStorageAddress,
-    abi: ZKElGamalVoteVectorABI,
-    functionName: 'getPollPublicKey',
-    args: [BigInt(pollId || 0)],
-    query: { 
-      enabled: !!voteStorageAddress && !!pollId && voteStorageAddress !== '0x0000000000000000000000000000000000000000',
-      retry: false
+  useEffect(() => {
+    async function fetchKey() {
+      if (!pollId || !voteStorageAddress) return
+      
+      // Attempt to fetch key regardless of isZK flag
+      // Non-secret polls will simply return null data
+      const { data } = await getPollPublicKey(pollId)
+      if (data) setPollPk(data)
     }
-  })
+    fetchKey()
+  }, [pollId, voteStorageAddress])
 
   const submitVote = useCallback(async (optionIndex, identity) => {
     if (!pollId) return
@@ -67,8 +68,6 @@ export function useZKVote(pollId) {
              // For secret voting, the signal to Semaphore is 0 (blinded)
              const p = await generateVoteProof(pollId, 0, identity)
              semaphoreData = {
-                 // write.js expects 'points' and 'nullifier' based on existing working code
-                 // But we support standard 'proof'/'nullifierHash' too just in case
                  proof: p.points || p.proof,
                  nullifier: p.nullifier || p.nullifierHash
              }
@@ -98,13 +97,14 @@ export function useZKVote(pollId) {
           r: randoms
         }
 
-        const wasmPath = `/circuits/elgamalVoteVector_N16/elGamalVoteVector_N16.wasm`
-        const zkeyPath = `/circuits/elgamalVoteVector_N16/elGamalVoteVector_N16_final.zkey`
+        const snarkArtifacts = {
+          wasmFilePath: VOTE_CIRCUIT_WASM_PATH,
+          zkeyFilePath: VOTE_CIRCUIT_ZKEY_PATH
+        }
 
-        const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, wasmPath, zkeyPath)
+        const { proof, publicSignals } = await proofUtils.generateProof(input, snarkArtifacts)
         const formattedProof = proofUtils.formatProofForSolidity(proof)
 
-        // Use the encVote from publicSignals to ensure it matches the proof exactly!
         // Circuit outputs: encVote (64 elements)
         // Circuit inputs: pk (2 elements) -> these are at the END of publicSignals
         const circuitEncVote = publicSignals.slice(0, 64)
@@ -124,15 +124,6 @@ export function useZKVote(pollId) {
              // result already has txHash, voteId. Append nullifier for receipt.
              result.nullifier = semaphoreData.nullifier
         } else {
-             // Secret Only (Not Anonymous? e.g. Whitelisted but Public identity)
-             // Currently system enforces Whitelist -> Anonymous via Semaphore?
-             // Or maybe just Whitelisted address check?
-             // If !isZK, isAnonymous is false.
-             // If isZK but not Secret, we use else block.
-             // If Secret but not ZK? Is that possible? 
-             // Yes, VoteStorage=ElGamal, Eligibility=AllowList (without Semaphore).
-             // In that case s_pollEligibility.isWhitelisted(msg.sender) check is passed by Engine. (See Engine logic).
-             // So castEncryptedVote is correct.
              result = await castEncryptedVote(pollId, circuitEncVote, formattedProof)
         }
 

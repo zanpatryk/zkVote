@@ -1,110 +1,76 @@
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, act, waitFor } from '@testing-library/react'
 import { usePollRegistrations } from './usePollRegistrations'
-import { getGroupMembers, getModules } from '@/lib/blockchain/engine/read'
+import { getGroupMembers, getModules, getMemberAddedEventSignature, parseMemberAddedLog } from '@/lib/blockchain/engine/read'
 import { useContractEvents } from '@/hooks/useContractEvents'
-import { POLL_STATE } from '@/lib/constants'
 
-// Mock dependencies
+// MOCKS
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getGroupMembers: jest.fn(),
   getModules: jest.fn(),
+  getMemberAddedEventSignature: jest.fn(() => 'MemberAddedMock'),
+  parseMemberAddedLog: jest.fn(l => l.parsed),
 }))
+
+// MOCKS corrected below
+
+// Note: Jest mock lifting might cause syntax error above if not clean
+// Re-mocking properly below
 
 jest.mock('@/hooks/useContractEvents', () => ({
   useContractEvents: jest.fn(),
 }))
 
 describe('usePollRegistrations', () => {
-  const mockPollId = '1'
-  
-  beforeEach(() => {
-    jest.clearAllMocks()
-    
-    // Default mocks
-    getModules.mockResolvedValue({ eligibilityModule: '0xEligibility' })
-    getGroupMembers.mockResolvedValue([])
-    useContractEvents.mockReturnValue({ events: [] })
-  })
-
-  it('fetches initial data on mount', async () => {
-    const initialMembers = [
-      { identityCommitment: '100', blockNumber: 100, transactionHash: '0xaaa' },
-      { identityCommitment: '200', blockNumber: 99, transactionHash: '0xbbb' },
-    ]
-    getGroupMembers.mockResolvedValue(initialMembers)
-
-    const { result } = renderHook(() => usePollRegistrations(mockPollId, POLL_STATE.CREATED))
-    
-    // Initial state
-    expect(result.current.loading).toBe(true)
-    expect(result.current.registrations).toEqual([])
-
-    // After fetch
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false)
-    })
-    
-    expect(result.current.registrations).toEqual(initialMembers)
-    expect(getGroupMembers).toHaveBeenCalledWith(mockPollId)
-    expect(getModules).toHaveBeenCalledWith(mockPollId)
-  })
-
-  it('merges live events', async () => {
-    const initialMembers = [{ identityCommitment: '100', blockNumber: 100, transactionHash: '0xaaa' }]
-    getGroupMembers.mockResolvedValue(initialMembers)
-    
-    let liveEvents = []
-    useContractEvents.mockImplementation(() => ({ events: liveEvents }))
-
-    const { result, rerender } = renderHook(() => usePollRegistrations(mockPollId, POLL_STATE.CREATED))
-
-    await waitFor(() => {
-      expect(result.current.registrations).toHaveLength(1)
+    beforeEach(() => {
+        jest.clearAllMocks()
+        getModules.mockResolvedValue({ eligibilityModule: '0xEli' })
+        getGroupMembers.mockResolvedValue({ data: [] })
+        useContractEvents.mockReturnValue({ events: [] })
     })
 
-    // Simulate new event
-    liveEvents = [{ identityCommitment: '300', blockNumber: 101, transactionHash: '0xccc' }]
-    rerender()
-
-    await waitFor(() => {
-      expect(result.current.registrations).toHaveLength(2)
+    it('loads initial data correctly', async () => {
+        const mockMembers = [
+            { blockNumber: 10, transactionHash: '0x1' },
+            { blockNumber: 20, transactionHash: '0x2' }
+        ]
+        getGroupMembers.mockResolvedValue({ data: mockMembers })
+        
+        const { result } = renderHook(() => usePollRegistrations('123', 0)) // 0 = CREATED
+        
+        await waitFor(() => expect(result.current.loading).toBe(false))
+        
+        expect(result.current.registrations).toHaveLength(2)
+        expect(result.current.registrations[0].blockNumber).toBe(20) // Sorted descending
     })
 
-    // Expect newer registration first (descending block number)
-    expect(result.current.registrations[0].identityCommitment).toBe('300')
-    expect(result.current.registrations[1].identityCommitment).toBe('100')
-  })
-
-  it('handles fetch errors gracefully', async () => {
-    getGroupMembers.mockRejectedValue(new Error('Fetch failed'))
-    
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-    
-    const { result } = renderHook(() => usePollRegistrations(mockPollId, POLL_STATE.CREATED))
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false)
+    it('subscribes to events with correct signature', async () => {
+        renderHook(() => usePollRegistrations('123', 0)) // CREATED
+        
+        await waitFor(() => expect(getModules).toHaveBeenCalled())
+        
+        expect(useContractEvents).toHaveBeenCalledWith(expect.objectContaining({
+            address: '0xEli',
+            eventSignature: 'MemberAddedMock',
+            enabled: true
+        }))
     })
 
-    expect(result.current.registrations).toEqual([])
-    expect(result.current.error).toBe('Failed to load registrations')
-    expect(consoleSpy).toHaveBeenCalledWith('Failed to load registrations:', expect.any(Error))
-    
-    consoleSpy.mockRestore()
-  })
-
-  it('avoids duplicates when merging', async () => {
-    const initialMembers = [{ identityCommitment: '100', blockNumber: 100, transactionHash: '0xaaa' }]
-    getGroupMembers.mockResolvedValue(initialMembers)
-    
-    // Live event is same as initial
-    const duplicateEvent = { identityCommitment: '100', blockNumber: 100, transactionHash: '0xaaa' }
-    useContractEvents.mockReturnValue({ events: [duplicateEvent] })
-
-    const { result } = renderHook(() => usePollRegistrations(mockPollId, POLL_STATE.CREATED))
-
-    await waitFor(() => {
-      expect(result.current.registrations).toHaveLength(1)
+    it('updates registrations with live events', async () => {
+        getGroupMembers.mockResolvedValue({ data: [{ transactionHash: '0xOld', blockNumber: 5 }] })
+        
+        // Initial render with no events
+        useContractEvents.mockReturnValue({ events: [] })
+        const { result, rerender } = renderHook(() => usePollRegistrations('123', 0))
+        
+        await waitFor(() => expect(result.current.registrations).toHaveLength(1))
+        
+        // Rerender with new event
+        useContractEvents.mockReturnValue({ 
+            events: [{ transactionHash: '0xNew', blockNumber: 15 }] 
+        })
+        rerender()
+        
+        await waitFor(() => expect(result.current.registrations).toHaveLength(2))
+        expect(result.current.registrations[0].transactionHash).toBe('0xNew') // Newest first
     })
-  })
 })

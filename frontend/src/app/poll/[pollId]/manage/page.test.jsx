@@ -8,7 +8,8 @@ import '@testing-library/jest-dom'
 // Mock dependencies
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getPollById: jest.fn(),
-  getMerkleTreeDepth: jest.fn().mockResolvedValue(20),
+  getMerkleTreeDepth: jest.fn().mockResolvedValue({ data: 20, error: null }),
+  getModules: jest.fn().mockResolvedValue({ eligibilityModule: '0xEligibility', voteStorage: '0xVoteStorage' }),
 }))
 
 jest.mock('@/components/PollDetails', () => ({
@@ -107,7 +108,7 @@ describe('ManagePollPage', () => {
 
   it('shows access denied if not owner', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ creator: '0xOther' }) // Not owner
+    read.getPollById.mockResolvedValue({ data: { creator: '0xOther' }, error: null }) // Not owner
 
     render(<ManagePollPage />)
 
@@ -123,7 +124,7 @@ describe('ManagePollPage', () => {
 
   it('renders management view with tabs if owner', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ creator: mockUserAddress.toLowerCase(), state: 0 }) // Is owner
+    read.getPollById.mockResolvedValue({ data: { creator: mockUserAddress.toLowerCase(), state: 0 }, error: null }) // Is owner
 
     render(<ManagePollPage />)
 

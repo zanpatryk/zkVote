@@ -35,7 +35,9 @@ export default function ManagePollPage() {
     }
 
     try {
-      const poll = await getPollById(pollId)
+      const { data: poll, error: pollError } = await getPollById(pollId)
+      if (pollError) throw new Error(pollError)
+      
       if (poll && poll.creator.toLowerCase() === userAddress.toLowerCase()) {
         setIsOwner(true)
         setPollState(poll.state) 
@@ -46,7 +48,7 @@ export default function ManagePollPage() {
         // Check Anonymity (ZK)
         if (eligibilityModule && eligibilityModule.toLowerCase() === CONTRACT_ADDRESSES.semaphoreEligibility.toLowerCase()) {
             setIsZK(true)
-            const depth = await getMerkleTreeDepth(pollId)
+            const { data: depth } = await getMerkleTreeDepth(pollId)
             setMerkleDepth(depth)
             setMaxParticipants(Math.pow(2, depth))
         } else {
@@ -113,13 +115,15 @@ export default function ManagePollPage() {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex justify-between items-center mb-8"
+        className="mb-8 md:mb-12 flex flex-col-reverse md:flex-row justify-between items-start md:items-center gap-6 md:gap-0"
       >
         <div>
-           <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">Manage Poll</h1>
-           <p className="text-gray-500">Admin control panel.</p>
+           <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-2">Manage Poll</h1>
+           <p className="text-gray-500 text-lg">Admin control panel.</p>
         </div>
-        <BackButton href="/poll" label="Back to Dashboard" />
+        <div className="w-full md:w-auto flex justify-end">
+          <BackButton href="/poll" label="Back to Dashboard" />
+        </div>
       </motion.div>
 
       <PollManageTabs 

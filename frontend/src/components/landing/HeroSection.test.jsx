@@ -1,9 +1,9 @@
 
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import HeroSection from './HeroSection'
 
 describe('HeroSection', () => {
-  if (typeof window !== 'undefined') {
+  beforeAll(() => {
     HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
       clearRect: jest.fn(),
       fillStyle: '',
@@ -16,17 +16,36 @@ describe('HeroSection', () => {
       translate: jest.fn(),
       scale: jest.fn(),
     }))
-  }
+  })
 
   it('renders badge and description', () => {
     render(<HeroSection />)
     expect(screen.getByText('Zero Knowledge Protocol')).toBeInTheDocument()
-    // Description appears after animation or is in DOM?
-    // It has `animate={{ opacity: complete ? 1 : 0 }}`.
-    // So initially invisible? toBeInTheDocument() checks presence in DOM, opacity doesn't remove it unless conditional rendering.
-    // It is rendered: <motion.p ... > ... </motion.p>
-    // So it should be in document, just invisible.
     expect(screen.getByText(/Proving your right to vote/i)).toBeInTheDocument()
     expect(screen.getByText(/Mathematical privacy/i)).toBeInTheDocument()
+  })
+
+  it('renders the main headline', () => {
+    render(<HeroSection />)
+    expect(screen.getByText(/VOTE/)).toBeInTheDocument()
+    expect(screen.getByText(/TRACE/)).toBeInTheDocument()
+  })
+
+  it('renders the canvas element for background animation', () => {
+    const { container } = render(<HeroSection />)
+    const canvas = container.querySelector('canvas')
+    expect(canvas).toBeInTheDocument()
+  })
+
+  it('handles mouse move events on the container', () => {
+    const { container } = render(<HeroSection />)
+    // Get the outermost element that has the onMouseMove handler
+    const wrapperDiv = container.firstChild
+    
+    // The component should handle mouse move events without errors
+    if (wrapperDiv) {
+      fireEvent.mouseMove(wrapperDiv, { clientX: 100, clientY: 200 })
+    }
+    // No error means the handler works
   })
 })

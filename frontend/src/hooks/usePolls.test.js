@@ -33,7 +33,7 @@ describe('usePolls Hooks', () => {
   describe('useWhitelistedPolls', () => {
     it('fetches whitelisted polls', async () => {
       const mockData = [{ pollId: 1n, title: 'Poll 1' }]
-      read.getWhitelistedPolls.mockResolvedValue(mockData)
+      read.getWhitelistedPolls.mockResolvedValue({ data: mockData, error: null })
 
       const { result } = renderHook(() => useWhitelistedPolls(mockAddress, true), {
         wrapper: createWrapper(),
@@ -55,6 +55,18 @@ describe('usePolls Hooks', () => {
       // We primarily want to verify the API was not called.
       expect(read.getWhitelistedPolls).not.toHaveBeenCalled()
     })
+
+    it('handles errors from read function', async () => {
+      read.getWhitelistedPolls.mockResolvedValue({ data: [], error: 'Read failed' })
+
+      const { result } = renderHook(() => useWhitelistedPolls(mockAddress, true), {
+        wrapper: createWrapper(),
+      })
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      expect(result.current.error).toBe('Read failed')
+      expect(result.current.polls).toEqual([])
+    })
   })
 
   describe('useOwnedPolls', () => {
@@ -63,8 +75,8 @@ describe('usePolls Hooks', () => {
           { pollId: 1n, title: 'Poll 1' },
           { pollId: 2n, title: 'Poll 2' }
       ]
-      read.getOwnedPolls.mockResolvedValue(mockOwnedPolls)
-      read.isUserWhitelisted.mockImplementation((id) => Promise.resolve(id === 1n)) // Poll 1 whitelisted, Poll 2 not
+      read.getOwnedPolls.mockResolvedValue({ data: mockOwnedPolls, error: null })
+      read.isUserWhitelisted.mockImplementation((id) => Promise.resolve({ data: id === 1n, error: null })) // Poll 1 whitelisted, Poll 2 not
 
       const { result } = renderHook(() => useOwnedPolls(mockAddress, true), {
         wrapper: createWrapper(),
@@ -78,6 +90,39 @@ describe('usePolls Hooks', () => {
       
       expect(read.getOwnedPolls).toHaveBeenCalledWith(mockAddress)
       expect(read.isUserWhitelisted).toHaveBeenCalledTimes(2)
+    })
+
+    it('handles throw errors in fetch function', async () => {
+      read.getOwnedPolls.mockRejectedValue(new Error('Hard crash'))
+
+      const { result } = renderHook(() => useOwnedPolls(mockAddress, true), {
+        wrapper: createWrapper(),
+      })
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      expect(result.current.error).toBeDefined()
+    })
+
+    it('handles null data response', async () => {
+      read.getOwnedPolls.mockResolvedValue({ data: null, error: null })
+
+      const { result } = renderHook(() => useOwnedPolls(mockAddress, true), {
+        wrapper: createWrapper(),
+      })
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      expect(result.current.polls).toEqual([])
+    })
+
+    it('handles query function error response', async () => {
+       read.getOwnedPolls.mockResolvedValue({ data: [], error: 'Custom Error' })
+
+      const { result } = renderHook(() => useOwnedPolls(mockAddress, true), {
+        wrapper: createWrapper(),
+      })
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      expect(result.current.error).toBe('Custom Error')
     })
   })
 })

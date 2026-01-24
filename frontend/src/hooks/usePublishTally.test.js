@@ -5,6 +5,7 @@ import { usePollRegistry } from '@/hooks/usePollRegistry'
 import { publishEncryptedResults } from '@/lib/blockchain/engine/write'
 import { decryptTally, generateTallyProof } from '@/lib/crypto/tally'
 import { toast } from 'react-hot-toast'
+import { toastTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 // Mock dependencies
 jest.mock('wagmi', () => ({
@@ -17,6 +18,10 @@ jest.mock('@/hooks/usePollRegistry', () => ({
 
 jest.mock('@/lib/blockchain/engine/write', () => ({
   publishEncryptedResults: jest.fn(),
+}))
+
+jest.mock('@/lib/blockchain/utils/error-handler', () => ({
+  toastTransactionError: jest.fn(),
 }))
 
 jest.mock('@/lib/crypto/tally', () => ({
@@ -97,6 +102,8 @@ describe('usePublishTally', () => {
     expect(publishEncryptedResults).not.toHaveBeenCalled()
   })
 
+
+
   it('handles decryption/proof generation errors', async () => {
     decryptTally.mockRejectedValue(new Error('Decryption failed'))
     const { result } = renderHook(() => usePublishTally(mockPollId))
@@ -108,7 +115,7 @@ describe('usePublishTally', () => {
         })
     }).rejects.toThrow('Decryption failed')
 
-    expect(toast.error).toHaveBeenCalledWith('Failed: Decryption failed', expect.any(Object))
+    expect(toastTransactionError).toHaveBeenCalledWith(expect.any(Error), 'Decryption or publishing failed', expect.any(Object))
     expect(result.current.isProcessing).toBe(false)
   })
 
@@ -123,7 +130,30 @@ describe('usePublishTally', () => {
         })
     }).rejects.toThrow('Tx failed')
 
-    expect(toast.error).toHaveBeenCalledWith('Failed: Tx failed', expect.any(Object))
+    expect(toastTransactionError).toHaveBeenCalledWith(expect.any(Error), 'Decryption or publishing failed', expect.any(Object))
     expect(result.current.isProcessing).toBe(false)
+  })
+
+  it('throws error when secret key is missing', async () => {
+    const { result } = renderHook(() => usePublishTally(mockPollId))
+
+    await expect(async () => {
+        await act(async () => {
+            await result.current.publishTally(null)
+        })
+    }).rejects.toThrow('Please enter the Secret Key')
+
+    expect(publishEncryptedResults).not.toHaveBeenCalled()
+  })
+
+  it('updates decryptedTally state after successful decryption', async () => {
+    const { result } = renderHook(() => usePublishTally(mockPollId))
+    const mockSk = '0xSecret'
+
+    await act(async () => {
+      await result.current.publishTally(mockSk)
+    })
+
+    expect(result.current.decryptedTally).toEqual([1, 2, 3])
   })
 })

@@ -53,14 +53,7 @@ export default function ReceiptCard({ pollId, voteId, txHash, nullifier, proof, 
           </div>
         )}
 
-        {proof && (
-          <div>
-            <p className="text-xs text-gray-500 uppercase">ZK Proof</p>
-            <p className="text-sm text-gray-600 break-all">
-              {proof.length > 50 ? `${proof.substring(0, 50)}...` : proof}
-            </p>
-          </div>
-        )}
+        {/* Proof is hidden from UI but included in download */ }
       </div>
 
       <div className="border-t-2 border-dashed border-gray-300 pt-6 text-center">
