@@ -153,7 +153,7 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
           )}
           
           {state === POLL_STATE.ACTIVE && (isRegistered || !isZK) && (
-            <InteractiveLink href={`/poll/${pollId}/vote`}>
+            <InteractiveLink href={`/poll/${pollId}/auth`}>
               <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-sm uppercase tracking-wide">
                 Vote Now
               </span>
