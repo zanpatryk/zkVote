@@ -186,8 +186,18 @@ export function useSemaphore() {
     if (!identity) return
 
     try {
-      // Serialize identity to JSON string, handling BigInt if necessary
-      const identityString = JSON.stringify(identity, (key, value) => 
+      // Create export object with pollId to allow automated routing
+      const exportObject = {
+        pollId: pollId.toString(),
+        // Spread the identity internal values (privateKey/secret)
+        // We use the identity's native toJSON (if available) or reconstruct essential parts
+        ...identity, 
+        // Explicitly include secret for easy reconstruction if ...identity doesn't catch private fields
+        secret: identity.privateKey?.toString() || identity.secret?.toString() || identity.secretScalar?.toString()
+      }
+
+      // Serialize to JSON string, handling BigInt
+      const identityString = JSON.stringify(exportObject, (key, value) => 
         typeof value === 'bigint' ? value.toString() : value
       , 2)
       

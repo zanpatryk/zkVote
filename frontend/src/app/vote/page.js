@@ -3,6 +3,7 @@
 import { useAccount } from 'wagmi'
 import PollCard from '@/components/PollCard.jsx'
 import StatusFilter from '@/components/StatusFilter.jsx'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWhitelistedPolls } from '@/hooks/usePolls'
 import { usePollFilter } from '@/hooks/usePollFilter'
@@ -29,8 +30,20 @@ export default function VotePage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-12"
       >
-        <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">Vote on Polls</h1>
-        <p className="text-gray-500 text-lg">Participate in decentralized governance.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-0">
+          <div>
+            <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">Vote on Polls</h1>
+            <p className="text-gray-500 text-lg">Participate in decentralized governance.</p>
+          </div>
+          <Link href="/vote/upload" className="w-full md:w-auto">
+             <button className="w-full md:w-auto bg-black text-white px-8 py-4 rounded-lg text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center gap-3">
+               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+               </svg>
+               Vote with Identity
+             </button>
+          </Link>
+        </div>
       </motion.div>
 
       {/* Search & Filter Bar */}

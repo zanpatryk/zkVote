@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
+import { IdentityTransferProvider } from '@/lib/providers/IdentityTransferContext'
 import { wagmiConfig } from '@/lib/wagmi/config'
 
 // Custom RainbowKit theme - Premium Monochrome
@@ -79,7 +80,9 @@ export default function Providers({ children }) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={customTheme}>
-          {children}
+          <IdentityTransferProvider>
+            {children}
+          </IdentityTransferProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

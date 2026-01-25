@@ -13,15 +13,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 import VoteBallot from '@/components/VoteBallot'
 import BackButton from '@/components/BackButton'
-import IdentityAuthenticator from '@/components/vote-poll/IdentityAuthenticator'
+
+
 import ConnectionError from '@/components/ConnectionError'
+import { useIdentityTransfer } from '@/lib/providers/IdentityTransferContext'
 
 export default function VoteOnPoll() {
   const { pollId } = useParams()
   const router = useRouter()
   const { address, isConnected } = useAccount()
   const { createIdentity, isLoadingIdentity } = useSemaphore()
+  const { consumeIdentity } = useIdentityTransfer()
   const { submitVote, isSubmitting, currentStep, steps } = useZKVote(pollId)
+  const { isZK, isRegistered } = usePollRegistry(pollId)
 
   const [poll, setPoll] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -65,55 +69,45 @@ export default function VoteOnPoll() {
       }
     }
 
+    // Check for transient identity passed from Upload Page or Auth Page
+    if (consumeIdentity && !loadedIdentity) {
+       const pendingIdentity = consumeIdentity(pollId)
+       if (pendingIdentity) {
+          setLoadedIdentity(pendingIdentity)
+          toast.success('Identity loaded')
+       } else if (isZK && !alreadyVoted && !loadedIdentity) {
+          // If ZK poll, no identity loaded, and haven't voted -> Redirect to Auth
+          // (Wait a tick to let alreadyVoted load potentially, but we do this inside useEffect after loadData finishes normally? 
+          // Actually loadData is async. We should probably do this check AFTER loadData sets state.)
+       }
+    }
+    
+    // We'll handle the strict redirect in a separate effect dependent on loading state
+    
     loadData()
 
     return () => {
       cancelled = true
     }
-  }, [pollId, isConnected, address])
+  }, [pollId, isConnected, address, consumeIdentity])
 
-  /**
-   * Regenerate identity from wallet signature (primary method)
-   */
-  async function handleRegenerateIdentity() {
-    const identity = await createIdentity(pollId)
-    if (identity) {
-      setLoadedIdentity(identity)
-      toast.success('Identity loaded from wallet!')
+  // Strict Redirect Effect
+  useEffect(() => {
+    if (!loading && isZK && !alreadyVoted && !loadedIdentity && !isLoadingIdentity) {
+       // Short timeout to avoid flash if identity is being set
+       const timer = setTimeout(() => {
+         if (!loadedIdentity) {
+             toast.error('Please authenticate to vote')
+             router.replace(`/poll/${pollId}/auth`)
+         }
+       }, 500)
+       return () => clearTimeout(timer)
     }
-  }
+  }, [loading, isZK, alreadyVoted, loadedIdentity, router, pollId, isLoadingIdentity])
 
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
 
-    setIsUploading(true)
-    try {
-      const text = await file.text()
-      const json = JSON.parse(text)
-      
-      // Try to find the private key in standard Semaphore export formats
-      const privateKey = json.privateKey || json._privateKey || json.secret
-      
-      if (!privateKey) {
-        throw new Error('Invalid identity file: Missing private key')
-      }
-
-      // Reconstruct Identity
-      const identity = new Identity(privateKey)
-      
-      setLoadedIdentity(identity)
-      toast.success('Identity loaded successfully!')
-    } catch (error) {
-      console.error('Failed to load identity:', error)
-      toast.error('Invalid identity file')
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
-  const { isZK, isRegistered } = usePollRegistry(pollId)
+  /* Removed late declaration */
 
   // Redirect or warn if not registered for ZK polls?
   // For now, we'll just check in handle submit or let the UI handle it.
@@ -134,14 +128,29 @@ export default function VoteOnPoll() {
     }
     
     // Identity only needed for ZK
+    // Identity only needed for ZK
     if (isZK) {
-      if (!isRegistered) {
+      // If NOT registered and NO identity loaded, block
+      // (If identity IS loaded, we assume valid proof can be generated regardless of wallet)
+      if (!isRegistered && !loadedIdentity && !alreadyVoted) {
          toast.error('You are not registered for this poll')
          return
       }
-      if (!loadedIdentity && !alreadyVoted) {
-        toast.error('Please load your identity to vote')
+      
+      if (!loadedIdentity && !alreadyVoted && !isRegistered) {
+        // Redundant with above but specific messaging for clarity
+        toast.error('You are not registered for this poll')
         return
+      }
+
+      if (!loadedIdentity && !alreadyVoted) {
+         // If registered but no identity, they likely need to generate it (if that was supported inline) 
+         // OR they are expected to have it. 
+         // For now, if they are registered, we might want to prompt them to load or generate? 
+         // But the existing logic just said "Please load". 
+         // Let's stick to: if you have identity, you pass. If you are registered, you still need identity to vote in ZK poll.
+         toast.error('Please load your identity to vote')
+         return
       }
     }
 
@@ -223,14 +232,7 @@ export default function VoteOnPoll() {
               <BackButton href="/poll" label="Go Back" variant="bracket" className="text-sm font-bold uppercase tracking-wider" />
             </div>
 
-            {!showBallot && (
-               <IdentityAuthenticator 
-                 onRegenerateIdentity={handleRegenerateIdentity}
-                 onFileUpload={handleFileUpload}
-                 isLoading={isLoadingIdentity}
-                 isUploading={isUploading}
-               />
-            )}
+
 
 
             {showBallot && (
