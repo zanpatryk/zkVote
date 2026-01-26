@@ -42,7 +42,7 @@ contract IntegrationTest is Test {
 
     function setUp() external {
         deployer = new DeployVotingSystem();
-        (vse, pollManager, , , voteStorage, , resultNFT, helperConfig) = deployer.run();
+        (vse, pollManager, , , voteStorage, , resultNFT, helperConfig, ) = deployer.run();
         
         // Deploy Plain Eligibility for these tests
         EligibilityModuleV0 plainEligibility = new EligibilityModuleV0(address(vse));

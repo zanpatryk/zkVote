@@ -39,6 +39,11 @@
         "name": "deployerKey",
         "type": "uint256",
         "internalType": "uint256"
+      },
+      {
+        "name": "semaphoreVerifier",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -57,6 +62,11 @@
             "name": "deployerKey",
             "type": "uint256",
             "internalType": "uint256"
+          },
+          {
+            "name": "semaphoreVerifier",
+            "type": "address",
+            "internalType": "address"
           }
         ]
       }
@@ -77,6 +87,11 @@
             "name": "deployerKey",
             "type": "uint256",
             "internalType": "uint256"
+          },
+          {
+            "name": "semaphoreVerifier",
+            "type": "address",
+            "internalType": "address"
           }
         ]
       }

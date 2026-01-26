@@ -7,7 +7,8 @@ import {VotingSystemEngine} from "../src/core/VotingSystemEngine.sol";
 import {PollManager} from "../src/poll_management/PollManager.sol";
 import {SemaphoreEligibilityModule} from "../src/eligibility/SemaphoreEligibilityModule.sol";
 import {EligibilityModuleV0} from "../src/eligibility/EligibilityModuleV0.sol";
-import {MockSemaphoreVerifier} from "../test/mocks/MockSemaphoreVerifier.sol";
+import {SemaphoreVerifier} from "@semaphore-protocol/contracts/base/SemaphoreVerifier.sol";
+import {ISemaphoreVerifier} from "@semaphore-protocol/contracts/interfaces/ISemaphoreVerifier.sol";
 import {VoteStorageV0} from "../src/vote_storage/VoteStorageV0.sol";
 import {ZKElGamalVoteVector} from "../src/vote_storage/ZKElGamalVoteVector.sol";
 import {ResultNFT} from "../src/result_nft/ResultNFT.sol";
@@ -28,11 +29,12 @@ contract DeployVotingSystem is Script {
             VoteStorageV0 voteStorageV0,
             ZKElGamalVoteVector zkElGamalVoteVector,
             ResultNFT resultNFT,
-            HelperConfig helper
+            HelperConfig helper,
+            ISemaphoreVerifier verifierContract
         )
     {
         helper = new HelperConfig();
-        (uint256 deployerKey) = helper.activeNetworkConfig();
+        (uint256 deployerKey, address semaphoreVerifierAddr) = helper.activeNetworkConfig();
         address deployerAddress = vm.addr(deployerKey);
 
         vm.startBroadcast(deployerKey);
@@ -43,7 +45,12 @@ contract DeployVotingSystem is Script {
         // 2) Deploy core modules
         pollManager = new PollManager(address(vse));
         
-        MockSemaphoreVerifier verifier = new MockSemaphoreVerifier();
+        ISemaphoreVerifier verifier;
+        if (semaphoreVerifierAddr != address(0)) {
+            verifier = ISemaphoreVerifier(semaphoreVerifierAddr);
+        } else {
+            verifier = ISemaphoreVerifier(address(new SemaphoreVerifier()));
+        }
         semaphoreEligibility = new SemaphoreEligibilityModule(verifier, address(vse));
         eligibilityV0 = new EligibilityModuleV0(address(vse));
         
@@ -76,6 +83,7 @@ contract DeployVotingSystem is Script {
             '  "vse": "', vm.toString(address(vse)), '",\n',
             '  "pollManager": "', vm.toString(address(pollManager)), '",\n',
             '  "semaphoreEligibility": "', vm.toString(address(semaphoreEligibility)), '",\n',
+            '  "semaphoreVerifier": "', vm.toString(address(verifier)), '",\n',
             '  "eligibilityV0": "', vm.toString(address(eligibilityV0)), '",\n',
             '  "voteStorageV0": "', vm.toString(address(voteStorageV0)), '",\n',
             '  "zkElGamalVoteVector": "', vm.toString(address(zkElGamalVoteVector)), '",\n',
@@ -85,6 +93,16 @@ contract DeployVotingSystem is Script {
         );
         vm.writeFile("../frontend/src/lib/contracts/address.json", json);
         
-        vm.stopBroadcast();
+        return (
+            vse,
+            pollManager,
+            semaphoreEligibility,
+            eligibilityV0,
+            voteStorageV0,
+            zkElGamalVoteVector,
+            resultNFT,
+            helper,
+            verifier
+        );
     }
 }

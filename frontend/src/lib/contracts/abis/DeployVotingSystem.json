@@ -56,6 +56,11 @@
         "name": "helper",
         "type": "address",
         "internalType": "contract HelperConfig"
+      },
+      {
+        "name": "verifierContract",
+        "type": "address",
+        "internalType": "contract ISemaphoreVerifier"
       }
     ],
     "stateMutability": "nonpayable"
