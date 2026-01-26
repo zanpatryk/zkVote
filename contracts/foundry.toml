@@ -13,7 +13,7 @@ fs_permissions = [
     { access = "read", path = "./script/benchmark/BenchmarkConfig.json" },
 
     { access = "read", path = "../node_modules" },
-    { access = "write", path = "../frontend/src/lib/contracts" }
+    { access = "write", path = "../frontend/src/lib/contracts" },
 ]
 
 remappings = [
@@ -22,7 +22,10 @@ remappings = [
     "@semaphore-protocol/contracts=../node_modules/@semaphore-protocol/contracts",
     "@zk-kit/lean-imt.sol=../node_modules/@zk-kit/lean-imt.sol",
     "zkvote-lib/=../packages/zkvote-lib/contracts/",
+    "@account-abstraction/=lib/account-abstraction/",
 ]
+
+solc_version = "0.8.28"
 
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

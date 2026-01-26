@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import {IEligibilityModule} from "./IEligibilityModule.sol";
 
@@ -34,5 +34,7 @@ interface ISemaphoreEligibilityModule is IEligibilityModule {
      * @param nullifierHash The unique nullifier for this user+poll.
      * @param proof The 8-element ZK proof.
      */
-    function verifyVote(uint256 pollId, uint256 vote, uint256 nullifierHash, uint256[8] calldata proof) external returns (bool);
+    function verifyVote(uint256 pollId, uint256 vote, uint256 nullifierHash, uint256[8] calldata proof)
+        external
+        returns (bool);
 }

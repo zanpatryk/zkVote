@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import {IVoteStorage} from "../interfaces/IVoteStorage.sol";
 
@@ -25,7 +25,7 @@ contract VoteStorageV0 is IVoteStorage {
 
     mapping(uint256 pollId => mapping(address user => bool voted)) private s_hasVoted;
     mapping(uint256 pollId => mapping(uint256 option => uint256 voteCounter)) private s_voteCount;
-    
+
     uint256 private s_totalVotes;
     mapping(uint256 voteId => Vote) private s_votes;
 
@@ -47,7 +47,11 @@ contract VoteStorageV0 is IVoteStorage {
         // No initialization needed for plain voting
     }
 
-    function castVote(uint256 pollId, address voter, bytes calldata voteData) external ownerOnly returns (uint256 voteId) {
+    function castVote(uint256 pollId, address voter, bytes calldata voteData)
+        external
+        ownerOnly
+        returns (uint256 voteId)
+    {
         uint256 optionIdx = abi.decode(voteData, (uint256));
 
         if (s_hasVoted[pollId][voter]) {
@@ -56,16 +60,11 @@ contract VoteStorageV0 is IVoteStorage {
 
         s_hasVoted[pollId][voter] = true;
         s_voteCount[pollId][optionIdx] += 1;
-        
+
         s_totalVotes += 1;
         voteId = s_totalVotes;
-        
-        s_votes[voteId] = Vote({
-            voteId: voteId,
-            pollId: pollId,
-            optionIdx: optionIdx,
-            voter: voter
-        });
+
+        s_votes[voteId] = Vote({voteId: voteId, pollId: pollId, optionIdx: optionIdx, voter: voter});
 
         emit VoteCasted(pollId, voter, voteId);
         return voteId;

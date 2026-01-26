@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
@@ -42,8 +42,15 @@ contract IntegrationTest is Test {
 
     function setUp() external {
         deployer = new DeployVotingSystem();
-        (vse, pollManager, , , voteStorage, , resultNFT, helperConfig) = deployer.run();
-        
+        (
+            vse,
+            pollManager,, // SemaphoreEligibilityModule
+            eligibilityModule,
+            voteStorage,, // ZKElGamalVoteVector
+            resultNFT,,,
+            helperConfig
+        ) = deployer.run();
+
         // Deploy Plain Eligibility for these tests
         EligibilityModuleV0 plainEligibility = new EligibilityModuleV0(address(vse));
         eligibilityModule = plainEligibility;
@@ -54,7 +61,9 @@ contract IntegrationTest is Test {
         options.push("Yes");
         options.push("No");
         vm.prank(creator);
-        uint256 pollId = vse.createPoll("Do you like tests?", "Simple description", options, "", "", address(eligibilityModule), address(0)); 
+        uint256 pollId = vse.createPoll(
+            "Do you like tests?", "Simple description", options, "", "", address(eligibilityModule), address(0)
+        );
         return pollId;
     }
 

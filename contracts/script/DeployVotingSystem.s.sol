@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 
@@ -15,6 +15,10 @@ import {ResultNFT} from "../src/result_nft/ResultNFT.sol";
 import {ElGamalVoteVectorVerifier_N16} from "zkvote-lib/ElGamalVoteVectorVerifier_N16.sol";
 import {ElGamalTallyDecryptVerifier_N16} from "zkvote-lib/ElGamalTallyDecryptVerifier_N16.sol";
 
+import {EntryPoint} from "@account-abstraction/contracts/core/EntryPoint.sol";
+import {IEntryPoint} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
+import {PollSponsorPaymaster} from "../src/account_abstraction/PollSponsorPaymaster.sol";
+
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeployVotingSystem is Script {
@@ -28,6 +32,8 @@ contract DeployVotingSystem is Script {
             VoteStorageV0 voteStorageV0,
             ZKElGamalVoteVector zkElGamalVoteVector,
             ResultNFT resultNFT,
+            EntryPoint entryPoint,
+            PollSponsorPaymaster pollSponsorPaymaster,
             HelperConfig helper
         )
     {
@@ -42,17 +48,17 @@ contract DeployVotingSystem is Script {
 
         // 2) Deploy core modules
         pollManager = new PollManager(address(vse));
-        
+
         MockSemaphoreVerifier verifier = new MockSemaphoreVerifier();
         semaphoreEligibility = new SemaphoreEligibilityModule(verifier, address(vse));
         eligibilityV0 = new EligibilityModuleV0(address(vse));
-        
+
         voteStorageV0 = new VoteStorageV0(address(vse));
-        
+
         // Deploy ElGamal Verifiers
         ElGamalVoteVectorVerifier_N16 elgamalVoteVerifier = new ElGamalVoteVectorVerifier_N16();
         ElGamalTallyDecryptVerifier_N16 elgamalTallyVerifier = new ElGamalTallyDecryptVerifier_N16();
-        
+
         zkElGamalVoteVector = new ZKElGamalVoteVector(address(pollManager));
 
         // 3) Deploy ResultNFT
@@ -63,28 +69,49 @@ contract DeployVotingSystem is Script {
         zkElGamalVoteVector.transferOwnership(address(vse));
 
         // 5) Initialize VSE (Default Modules)
-        vse.initialize(
-            address(pollManager), 
-            address(eligibilityV0), 
-            address(voteStorageV0), 
-            address(resultNFT)
-        );
+        vse.initialize(address(pollManager), address(eligibilityV0), address(voteStorageV0), address(resultNFT));
+
+        // 6) Deploy Paymaster
+        entryPoint = new EntryPoint();
+        pollSponsorPaymaster = new PollSponsorPaymaster(entryPoint, address(pollManager), address(vse));
 
         // Write simplified address.json for frontend
         string memory json = string.concat(
-            '{\n',
-            '  "vse": "', vm.toString(address(vse)), '",\n',
-            '  "pollManager": "', vm.toString(address(pollManager)), '",\n',
-            '  "semaphoreEligibility": "', vm.toString(address(semaphoreEligibility)), '",\n',
-            '  "eligibilityV0": "', vm.toString(address(eligibilityV0)), '",\n',
-            '  "voteStorageV0": "', vm.toString(address(voteStorageV0)), '",\n',
-            '  "zkElGamalVoteVector": "', vm.toString(address(zkElGamalVoteVector)), '",\n',
-            '  "elgamalVoteVerifier": "', vm.toString(address(elgamalVoteVerifier)), '",\n',
-            '  "elgamalTallyVerifier": "', vm.toString(address(elgamalTallyVerifier)), '"\n',
-            '}'
+            "{\n",
+            '  "vse": "',
+            vm.toString(address(vse)),
+            '",\n',
+            '  "pollManager": "',
+            vm.toString(address(pollManager)),
+            '",\n',
+            '  "semaphoreEligibility": "',
+            vm.toString(address(semaphoreEligibility)),
+            '",\n',
+            '  "eligibilityV0": "',
+            vm.toString(address(eligibilityV0)),
+            '",\n',
+            '  "voteStorageV0": "',
+            vm.toString(address(voteStorageV0)),
+            '",\n',
+            '  "zkElGamalVoteVector": "',
+            vm.toString(address(zkElGamalVoteVector)),
+            '",\n',
+            '  "elgamalVoteVerifier": "',
+            vm.toString(address(elgamalVoteVerifier)),
+            '",\n',
+            '  "elgamalTallyVerifier": "',
+            vm.toString(address(elgamalTallyVerifier)),
+            '",\n',
+            '  "entryPoint": "',
+            vm.toString(address(entryPoint)),
+            '",\n',
+            '  "paymaster": "',
+            vm.toString(address(pollSponsorPaymaster)),
+            '"\n',
+            "}"
         );
         vm.writeFile("../frontend/src/lib/contracts/address.json", json);
-        
+
         vm.stopBroadcast();
     }
 }

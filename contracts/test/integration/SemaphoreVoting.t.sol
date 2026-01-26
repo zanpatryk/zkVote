@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
 import {VotingSystemEngine} from "../../src/core/VotingSystemEngine.sol";
@@ -27,51 +27,46 @@ contract SemaphoreVotingTest is Test {
 
         // 1. Deploy Engine first
         engine = new VotingSystemEngine();
-        
+
         // 2. Deploy Dependencies with Engine as owner where required
         pollManager = new PollManager(address(engine));
-        
+
         // VoteStorage uses immutable owner
         voteStorage = new VoteStorageV0(address(engine));
-        
+
         verifier = new MockSemaphoreVerifier();
-        
+
         // SemaphoreModule uses immutable owner
         semaphoreModule = new SemaphoreEligibilityModule(verifier, address(engine));
-        
+
         resultNFT = new ResultNFT("ZK Vote", "ZKV", owner);
-        
+
         // 3. Initialize Engine
-        engine.initialize(
-            address(pollManager),
-            address(semaphoreModule),
-            address(voteStorage),
-            address(resultNFT)
-        );
+        engine.initialize(address(pollManager), address(semaphoreModule), address(voteStorage), address(resultNFT));
 
         // Transfer ownerships to Engine
         // No transfers needed as we passed engine in constructors
-        
+
         vm.stopPrank();
     }
 
     function test_SemaphoreFlow() public {
         vm.startPrank(owner);
-        
+
         // 1. Create Poll
         string[] memory options = new string[](2);
         options[0] = "Yes";
         options[1] = "No";
-        
+
         // This will call initPoll on module with config
         bytes memory config = abi.encode(uint256(20));
         uint256 pollId = engine.createPoll("ZK Poll", "Desc", options, "", config, address(0), address(0));
-        
+
         // 2. Whitelist User1
         engine.whitelistUser(pollId, user1);
-        
+
         vm.stopPrank();
-        
+
         // 3. Register Identity as User1
         vm.startPrank(user1);
         uint256 identityCommitment = 12345;
@@ -87,23 +82,25 @@ contract SemaphoreVotingTest is Test {
         // We mocked verifier to return true.
         // We just need to pass proper shapes.
         uint256[8] memory proof;
-        for(uint i=0; i<8; i++) proof[i] = i; 
-        
+        for (uint256 i = 0; i < 8; i++) {
+            proof[i] = i;
+        }
+
         // Cast Vote
         // Voter address in storage will be address(uint160(nullifierHash))
         // Anyone can submit the proof if they have it (User relayer/anonymous)
         // But typically the user does it.
-        vm.prank(user1); 
+        vm.prank(user1);
         uint256 vote = 1; // Option 1
         uint256 nullifierHash = 99999;
-        
+
         engine.castVoteWithProof(pollId, vote, nullifierHash, proof);
-        
+
         // 6. Verify Results
         // Vote count for option 1 should be 1
         uint256 count = voteStorage.getVoteCount(pollId, 1);
         assertEq(count, 1);
-        
+
         // Verify "voter" has voted
         address nullifierAddr = address(uint160(nullifierHash));
         bool hasVoted = voteStorage.hasVoted(pollId, nullifierAddr);
@@ -114,13 +111,14 @@ contract SemaphoreVotingTest is Test {
         string[] memory options = new string[](2);
         options[0] = "Yes";
         options[1] = "No";
-        uint256 pollId = engine.createPoll("Double Reg", "Desc", options, "", abi.encode(uint256(20)), address(0), address(0));
+        uint256 pollId =
+            engine.createPoll("Double Reg", "Desc", options, "", abi.encode(uint256(20)), address(0), address(0));
         engine.whitelistUser(pollId, user1);
         vm.stopPrank();
 
         vm.startPrank(user1);
         engine.registerVoter(pollId, 11111);
-        
+
         vm.expectRevert(ISemaphoreEligibilityModule.SemaphoreEligibilityModule__UserAlreadyRegistered.selector);
         engine.registerVoter(pollId, 11111);
         vm.stopPrank();
@@ -131,10 +129,11 @@ contract SemaphoreVotingTest is Test {
         string[] memory options = new string[](2);
         options[0] = "A";
         options[1] = "B";
-        
+
         // Depth 1 means capacity is 2^1 = 2 users
-        uint256 pollId = engine.createPoll("Tiny Poll", "Desc", options, "", abi.encode(uint256(1)), address(0), address(0));
-        
+        uint256 pollId =
+            engine.createPoll("Tiny Poll", "Desc", options, "", abi.encode(uint256(1)), address(0), address(0));
+
         // Whitelist 3 users
         address user3 = address(4);
         engine.whitelistUser(pollId, user1);
@@ -153,7 +152,7 @@ contract SemaphoreVotingTest is Test {
         // Register 3 (Should fail)
         vm.prank(user3);
         // Should revert with GroupIsFull
-        vm.expectRevert(ISemaphoreEligibilityModule.SemaphoreEligibilityModule__GroupIsFull.selector); 
+        vm.expectRevert(ISemaphoreEligibilityModule.SemaphoreEligibilityModule__GroupIsFull.selector);
         engine.registerVoter(pollId, 103);
     }
 }

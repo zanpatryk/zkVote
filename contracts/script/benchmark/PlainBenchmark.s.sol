@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import {GasMeter, BenchmarkBase, BenchmarkActor} from "./BenchmarkUtils.sol";
 
@@ -11,13 +11,12 @@ import {EligibilityModuleV0} from "../../src/eligibility/EligibilityModuleV0.sol
 import {ResultNFT} from "../../src/result_nft/ResultNFT.sol";
 
 contract PlainBenchmark is BenchmarkBase {
-
     struct SystemContext {
         EligibilityModuleV0 eligibility;
         ResultNFT resultNFT;
         VoteStorageV0 plainStorage;
     }
-    
+
     SystemContext public localSys;
 
     function loadConfig() internal {
@@ -29,7 +28,7 @@ contract PlainBenchmark is BenchmarkBase {
         loadConfig();
         vm.startBroadcast(baseCfg.deployerKey);
         deploySystem();
-        
+
         uint256 pollId = createPoll();
         whitelistParticipants(pollId);
         startPoll(pollId);
@@ -46,25 +45,26 @@ contract PlainBenchmark is BenchmarkBase {
         writeVoteStats(outPath, baseCfg.participants, results.voteGases);
         writeJSONStepNoComma(outPath, "end_poll", results.gas_end);
         uint256 whitelistTxs = baseCfg.batchUpload ? 1 : baseCfg.participants;
-        uint256 txCount = 3 + whitelistTxs + baseCfg.participants; 
+        uint256 txCount = 3 + whitelistTxs + baseCfg.participants;
         writeJSONFooter(outPath, txCount, results.totalGas, baseCfg.gasCostPerGwei, baseCfg.ethUsdRate);
     }
 
     function deploySystem() internal {
         gasMeter = new GasMeter();
-        
+
         sys.vse = new VotingSystemEngine();
         sys.pollManager = new PollManager(address(sys.vse));
         localSys.eligibility = new EligibilityModuleV0(address(sys.vse));
         localSys.resultNFT = new ResultNFT("Mock", "MCK", baseCfg.deployer);
         localSys.resultNFT.grantRole(localSys.resultNFT.MINTER_ROLE(), address(sys.vse));
-        
+
         localSys.plainStorage = new VoteStorageV0(address(sys.vse));
         sys.voteStorageAddr = address(localSys.plainStorage);
         sys.eligibilityAddr = address(localSys.eligibility);
-        
-        sys.vse.initialize(address(sys.pollManager), sys.eligibilityAddr, sys.voteStorageAddr, address(localSys.resultNFT));
-        
+
+        sys.vse
+            .initialize(address(sys.pollManager), sys.eligibilityAddr, sys.voteStorageAddr, address(localSys.resultNFT));
+
         sys.ownerActor = new BenchmarkActor(address(sys.vse));
         sys.voterActors = createActors(baseCfg.participants, address(sys.vse));
     }
