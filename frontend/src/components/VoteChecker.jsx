@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { parseJsonFile } from '@/lib/utils/file'
 
 export default function VoteChecker({ onVerify }) {

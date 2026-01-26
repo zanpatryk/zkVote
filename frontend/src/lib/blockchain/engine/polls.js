@@ -9,8 +9,6 @@ import {
   CONTRACT_ADDRESSES
 } from '@/lib/contracts'
 import { getModules } from './core'
-import { toast } from 'react-hot-toast'
-import { toastTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 // --- READS ---
 
@@ -114,10 +112,7 @@ export async function createPoll(pollDetails) {
   const { address } = getAccount(config)
   if (!address) throw new Error('Wallet not connected')
 
-  const toastId = 'poll-creation'
   try {
-    toast.loading('Initializing poll creation...', { id: toastId })
-
     const {
       title,
       description,
@@ -173,11 +168,9 @@ export async function createPoll(pollDetails) {
       topics: pollCreatedLog.topics,
     })
 
-    toast.success('Poll created!', { id: toastId })
     return decodedEvent.args.pollId.toString()
   } catch (error) {
     console.error('createPoll failed:', error)
-    toastTransactionError(error, 'Failed to create poll', { id: toastId })
     throw error
   }
 }
@@ -186,9 +179,6 @@ export async function startPoll(pollId) {
   const { address } = getAccount(config)
   if (!address) throw new Error('Wallet not connected')
 
-  const toastId = 'poll-management'
-  toast.loading('Starting poll...', { id: toastId })
-
   try {
     const hash = await writeContract(config, {
       address: votingSystemContract.address,
@@ -196,11 +186,13 @@ export async function startPoll(pollId) {
       functionName: 'startPoll',
       args: [BigInt(pollId)],
     })
-    await waitForTransactionReceipt(config, { hash })
-    toast.success('Poll started successfully!', { id: toastId })
+
+    const receipt = await waitForTransactionReceipt(config, { hash })
+    if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
+    
+    return true
   } catch (error) {
     console.error('startPoll failed:', error)
-    toastTransactionError(error, 'Failed to start poll', { id: toastId })
     throw error
   }
 }
@@ -209,9 +201,6 @@ export async function endPoll(pollId) {
   const { address } = getAccount(config)
   if (!address) throw new Error('Wallet not connected')
 
-  const toastId = 'poll-management'
-  toast.loading('Ending poll...', { id: toastId })
-
   try {
     const hash = await writeContract(config, {
       address: votingSystemContract.address,
@@ -219,11 +208,13 @@ export async function endPoll(pollId) {
       functionName: 'endPoll',
       args: [BigInt(pollId)],
     })
-    await waitForTransactionReceipt(config, { hash })
-    toast.success('Poll ended successfully!', { id: toastId })
+
+    const receipt = await waitForTransactionReceipt(config, { hash })
+    if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
+    
+    return true
   } catch (error) {
     console.error('endPoll failed:', error)
-    toastTransactionError(error, 'Failed to end poll', { id: toastId })
     throw error
   }
 }

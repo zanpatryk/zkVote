@@ -3,6 +3,7 @@
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import ReceiptCard from '@/components/ReceiptCard'
 import { motion } from 'framer-motion'
+import { downloadJsonFile } from '@/lib/utils/file'
 import BackButton from '@/components/BackButton'
 
 export default function VoteReceiptPage() {
@@ -14,24 +15,13 @@ export default function VoteReceiptPage() {
   const proof = searchParams.get('proof')
 
   const handleDownload = () => {
-    const receiptData = {
+    downloadJsonFile({
       pollId,
       voteId,
       txHash,
       nullifier,
       timestamp: Date.now()
-    }
-    
-    const blob = new Blob([JSON.stringify(receiptData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `zkvote-receipt-poll-${pollId}-vote-${voteId}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    }, `zkvote-receipt-poll-${pollId}-vote-${voteId}.json`)
   }
 
   return (
@@ -40,14 +30,11 @@ export default function VoteReceiptPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex flex-col-reverse md:flex-row justify-between items-start md:items-center mb-12 gap-6 md:gap-0"
+        className="flex flex-col-reverse justify-center items-center mb-12 gap-6 text-center"
       >
-         <div className="text-left">
+         <div>
             <h1 className="text-4xl md:text-5xl font-black font-serif mb-2 tracking-tight">Vote Submitted</h1>
             <p className="text-xl text-gray-600 font-medium">Your vote has been successfully cast.</p>
-         </div>
-         <div className="w-full md:w-auto flex justify-end">
-            <BackButton href="/vote" label="Back to Voting" />
          </div>
       </motion.div>
 

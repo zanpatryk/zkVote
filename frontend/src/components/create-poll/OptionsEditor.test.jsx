@@ -1,6 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import OptionsEditor from './OptionsEditor'
-import { toast } from 'react-hot-toast'
 import '@testing-library/jest-dom'
 
 // Mock dependencies

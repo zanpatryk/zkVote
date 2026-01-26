@@ -1,7 +1,7 @@
 'use client'
 
 import { useAccount } from 'wagmi'
-import { useState, useEffect } from 'react'
+import { useIsMounted } from '@/hooks/useIsMounted'
 import PollCard from '@/components/PollCard.jsx'
 import Link from 'next/link'
 import StatusFilter from '@/components/StatusFilter.jsx'
@@ -23,11 +23,7 @@ export default function PollsPage() {
     filteredPolls
   } = usePollFilter(polls)
 
-  /* Hydration Fix: Ensure server and client render match on first pass */
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-
-  // If not mounted (SSR) or loading, show loading state to avoid hydration mismatch
+  const mounted = useIsMounted()
   const showLoading = !mounted || isLoading
 
   return (

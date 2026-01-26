@@ -9,7 +9,7 @@ import { getUserNFTs } from '@/lib/blockchain/engine/read'
  * @returns {{ nfts: Array, isLoading: boolean, error: string|null, refetch: Function }}
  */
 export function useUserNFTs(address, isConnected) {
-  const { data: result = { data: [], error: null }, isLoading, error: queryError, refetch } = useQuery({
+  const { data: result = { data: [], error: null }, isLoading, isFetching, error: queryError, refetch } = useQuery({
     queryKey: ['userNFTs', address],
     queryFn: () => getUserNFTs(address),
     enabled: isConnected && !!address,
@@ -18,6 +18,7 @@ export function useUserNFTs(address, isConnected) {
   return { 
     nfts: result.data || [], 
     isLoading, 
+    isFetching,
     error: queryError || result.error,
     refetch 
   }

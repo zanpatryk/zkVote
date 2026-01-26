@@ -61,7 +61,6 @@ export function useWhitelistedAddresses(pollId) {
   })
 
   // Merge live events with addresses
-  // Merge live events with addresses
   useEffect(() => {
     if (liveWhitelisted.length > 0) {
       let hasNew = false
@@ -78,7 +77,6 @@ export function useWhitelistedAddresses(pollId) {
 
       if (hasNew) {
         setAddresses(next)
-        toast.success('New address whitelisted!')
       }
     }
   }, [liveWhitelisted, addresses])
@@ -130,11 +128,31 @@ export function useWhitelistedAddresses(pollId) {
     }
   }, [pollId, lastInternalBlock, loading])
 
+  // Mutation: Add to Whitelist
+  const addToWhitelist = useCallback(async (addressesToAdd) => {
+    const toastId = toast.loading('Whitelisting users...')
+    try {
+        // Dynamic import to avoid circular dependencies if any, though regular import is fine here
+        const { whitelistUsers } = await import('@/lib/blockchain/engine/members')
+        
+        await whitelistUsers(pollId, addressesToAdd)
+        toast.success('Addresses whitelisted successfully!', { id: toastId })
+        // We don't need to manually update state here because the event listener will catch it
+        // and update the 'addresses' list automatically + show a success toast for the event.
+    } catch (error) {
+        console.error('Failed to whitelist addresses:', error)
+        const { formatTransactionError } = await import('@/lib/blockchain/utils/error-handler')
+        toast.error(formatTransactionError(error, 'Failed to whitelist addresses'), { id: toastId })
+        throw error
+    }
+  }, [pollId])
+
   return {
     addresses,
     loading,
     hasMore,
     loadMore,
     lastScannedBlock: lastInternalBlock,
+    addToWhitelist
   }
 }

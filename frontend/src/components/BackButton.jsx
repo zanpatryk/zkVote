@@ -16,13 +16,14 @@ export default function BackButton({
   href, 
   label = "Go Back", 
   variant = "arrow",
+  direction = "back",
   className = "" 
 }) {
   const router = useRouter()
   
   const formattedLabel = variant === "bracket" 
     ? `[ ${label} ]` 
-    : `← ${label}`
+    : direction === "forward" ? `${label} →` : `← ${label}`
   
   const baseStyles = "text-gray-600 hover:text-black font-medium transition flex items-center gap-2"
   const combinedStyles = `${baseStyles} ${className}`

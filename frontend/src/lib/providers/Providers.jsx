@@ -71,7 +71,6 @@ export default function Providers({ children }) {
     setMounted(true)
   }, [])
 
-  // Prevent SSR issues with WalletConnect localStorage
   if (!mounted) {
     return null
   }

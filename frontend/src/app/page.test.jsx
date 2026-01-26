@@ -87,9 +87,9 @@ describe('LandingPage', () => {
     expect(screen.getByText('zkVote Hero')).toBeInTheDocument()
   })
 
-  it('redirects when connected', () => {
+  it('renders correctly when connected (no longer redirects)', () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true })
     render(<LandingPage />)
-    expect(mockPush).toHaveBeenCalledWith('/nfts')
+    expect(screen.getByText('zkVote Hero')).toBeInTheDocument()
   })
 })

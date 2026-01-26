@@ -1,4 +1,4 @@
-import { formatTransactionError, toastTransactionError, TransactionError } from './error-handler'
+import { formatTransactionError, TransactionError } from './error-handler'
 import { toast } from 'react-hot-toast'
 
 jest.mock('react-hot-toast', () => ({
@@ -30,6 +30,10 @@ describe('blockchain error-handler', () => {
       expect(formatTransactionError({ message: 'execution reverted: 0xaef0604b' })).toBe('You have already cast a vote in this poll!')
     })
 
+    it('handles already voted error (0xaef0604b) in details', () => {
+      expect(formatTransactionError({ message: 'execution reverted', details: '... custom error 0xaef0604b ...' })).toBe('You have already cast a vote in this poll!')
+    })
+
     it('handles insufficient funds', () => {
       expect(formatTransactionError({ name: 'InsufficientFundsError' })).toBe('Insufficient funds to complete transaction')
       expect(formatTransactionError({ message: 'insufficient funds for gas' })).toBe('Insufficient funds to complete transaction')
@@ -49,14 +53,6 @@ describe('blockchain error-handler', () => {
 
     it('handles null/undefined error', () => {
       expect(formatTransactionError(null)).toBe('Transaction failed')
-    })
-  })
-
-  describe('toastTransactionError', () => {
-    it('calls toast.error with formatted message', () => {
-      const msg = toastTransactionError({ name: 'UserRejectedRequestError' })
-      expect(msg).toBe('Transaction cancelled by user')
-      expect(toast.error).toHaveBeenCalledWith('Transaction cancelled by user', {})
     })
   })
 })

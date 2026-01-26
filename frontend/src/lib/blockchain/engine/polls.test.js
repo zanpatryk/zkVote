@@ -109,13 +109,11 @@ describe('polls domain engine', () => {
        
        const pollId = await createPoll({ title: 'T', options: ['A'] })
        expect(pollId).toBe('123')
-       expect(toast.success).toHaveBeenCalled()
     })
 
-    it('throws and toasts on error', async () => {
+    it('throws on error', async () => {
        writeContract.mockRejectedValue(new Error('fail'))
        await expect(createPoll({ title: 'T' })).rejects.toThrow()
-       expect(toast.error).toHaveBeenCalled()
     })
   })
 

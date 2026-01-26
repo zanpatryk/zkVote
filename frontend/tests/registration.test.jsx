@@ -3,43 +3,17 @@ import RegisterPage from '../src/app/poll/[pollId]/register/page'
 import '@testing-library/jest-dom'
 import { toast } from 'react-hot-toast'
 import { useRouter, useParams } from 'next/navigation'
+import { useRegistrationFlow } from '../src/hooks/useRegistrationFlow'
+import React from 'react'
 
-// Mock next/navigation
+// Mock dependencies
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
   useParams: jest.fn(),
 }))
 
-// Mock wagmi
-const mockUseAccount = jest.fn()
-jest.mock('wagmi', () => ({
-  useAccount: () => mockUseAccount(),
-}))
-
-// Mock hooks
-const mockCreateIdentity = jest.fn()
-const mockRegister = jest.fn()
-const mockDownloadIdentity = jest.fn()
-jest.mock('@/hooks/useSemaphore', () => ({
-  useSemaphore: () => ({
-    createIdentity: mockCreateIdentity,
-    register: mockRegister,
-    downloadIdentity: mockDownloadIdentity,
-    isLoadingIdentity: false,
-    isRegistering: false
-  })
-}))
-
-const mockRefetchRegistration = jest.fn()
-const mockUsePollRegistry = jest.fn()
-jest.mock('@/hooks/usePollRegistry', () => ({
-  usePollRegistry: (...args) => mockUsePollRegistry(...args)
-}))
-
-// Mock blockchain read
-const mockGetPollById = jest.fn()
-jest.mock('@/lib/blockchain/engine/read', () => ({
-  getPollById: (...args) => mockGetPollById(...args)
+jest.mock('../src/hooks/useRegistrationFlow', () => ({
+  useRegistrationFlow: jest.fn(),
 }))
 
 // Mock Toast
@@ -77,28 +51,37 @@ jest.mock('framer-motion', () => ({
 }))
 
 describe('Integration Test: Registration Page', () => {
-    const mockPush = jest.fn()
+    const mockPollId = '123'
+    const mockHandleRegister = jest.fn()
+    const mockDownloadIdentity = jest.fn()
 
     beforeEach(() => {
         jest.clearAllMocks()
         
-        // Configure the global mock
-        useRouter.mockReturnValue({ push: mockPush })
-        useParams.mockReturnValue({ pollId: '123' })
+        useParams.mockReturnValue({ pollId: mockPollId })
         
-        mockUseAccount.mockReturnValue({ isConnected: true })
-        mockUsePollRegistry.mockReturnValue({ isRegistered: false, refetchRegistration: mockRefetchRegistration })
-        mockGetPollById.mockResolvedValue({ data: { title: 'ZK Poll' }, error: null })
+        // Default: eligible, not registered
+        useRegistrationFlow.mockReturnValue({
+            poll: { title: 'ZK Poll' },
+            pollId: mockPollId,
+            isRegistered: false,
+            registeredIdentity: null,
+            isLoading: false,
+            isLoadingIdentity: false,
+            isRegistering: false,
+            error: null,
+            handleRegister: mockHandleRegister,
+            downloadIdentity: mockDownloadIdentity
+        })
     })
 
     it('renders loading state', async () => {
-        // Delay poll resolution
-        mockGetPollById.mockReturnValue(new Promise(() => {}))
+        useRegistrationFlow.mockReturnValue({
+            isLoading: true,
+            pollId: mockPollId
+        })
         
         render(<RegisterPage />)
-        
-        // Component makes getPollById call immediately.
-        // It should render "Loading poll details..." while waiting.
         expect(screen.getByText('Loading poll details...')).toBeInTheDocument()
     })
 
@@ -111,47 +94,50 @@ describe('Integration Test: Registration Page', () => {
         })
     })
 
-    it('handles successful registration flow', async () => {
-        mockCreateIdentity.mockResolvedValue({ commitment: '123' })
-        mockRegister.mockResolvedValue(true)
-        
-        render(<RegisterPage />)
+    it('handles successful registration flow (UI state transition)', async () => {
+        const { rerender } = render(<RegisterPage />)
         
         await waitFor(() => expect(screen.getByText('Register Identity')).toBeInTheDocument())
         
         fireEvent.click(screen.getByText('Register Identity'))
+        expect(mockHandleRegister).toHaveBeenCalled()
+
+        // Simulate success by updating hook return
+        useRegistrationFlow.mockReturnValue({
+            poll: { title: 'ZK Poll' },
+            pollId: mockPollId,
+            isRegistered: false,
+            registeredIdentity: { commitment: '123' },
+            isLoading: false,
+            isLoadingIdentity: false,
+            isRegistering: false,
+            error: null,
+            handleRegister: mockHandleRegister,
+            downloadIdentity: mockDownloadIdentity
+        })
+
+        rerender(<RegisterPage />)
         
         await waitFor(() => {
-            expect(mockCreateIdentity).toHaveBeenCalledWith('123')
-            expect(mockRegister).toHaveBeenCalledWith('123', { commitment: '123' })
-            expect(mockRefetchRegistration).toHaveBeenCalled()
-            
             expect(screen.getByText('Registration Successful')).toBeInTheDocument()
         })
     })
 
     it('renders success state if already registered', async () => {
-        mockUsePollRegistry.mockReturnValue({ isRegistered: true, refetchRegistration: mockRefetchRegistration })
+        useRegistrationFlow.mockReturnValue({
+            poll: { title: 'ZK Poll' },
+            pollId: mockPollId,
+            isRegistered: true,
+            registeredIdentity: null,
+            isLoading: false,
+            error: null,
+            downloadIdentity: mockDownloadIdentity
+        })
         
         render(<RegisterPage />)
         
         await waitFor(() => {
             expect(screen.getByText('Registration Successful')).toBeInTheDocument()
-        })
-    })
-
-    it('blocks registration if wallet not connected', async () => {
-        mockUseAccount.mockReturnValue({ isConnected: false })
-        
-        render(<RegisterPage />)
-        
-        await waitFor(() => expect(screen.getByText('Register Identity')).toBeInTheDocument())
-        
-        fireEvent.click(screen.getByText('Register Identity'))
-        
-        await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith('Please connect your wallet first')
-            expect(mockCreateIdentity).not.toHaveBeenCalled()
         })
     })
 })

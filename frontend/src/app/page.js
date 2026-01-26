@@ -1,8 +1,6 @@
 "use client"
 
 import { useAccount } from 'wagmi'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import HeroSection from '@/components/landing/HeroSection'
 import StatsBanner from '@/components/landing/StatsBanner'
 import ExperienceShowcase from '@/components/landing/ExperienceShowcase'
@@ -11,16 +9,7 @@ import CTASection from '@/components/landing/CTASection'
 
 export default function LandingPage() {
   const { isConnected } = useAccount()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (isConnected) {
-      router.push('/nfts')
-    }
-  }, [isConnected, router])
-
-  // While redirecting or if connected, show nothing (or loading)
-  if (isConnected) return null
+  // No longer redirecting here as Navbar handles it to /home
 
   return (
     <div className="flex flex-col items-center pb-16 w-full">

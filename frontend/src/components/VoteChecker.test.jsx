@@ -1,6 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import VoteChecker from './VoteChecker'
-import { useRouter } from 'next/navigation'
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({

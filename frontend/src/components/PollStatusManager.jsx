@@ -1,39 +1,32 @@
-import { useState } from 'react'
-import { startPoll, endPoll } from '@/lib/blockchain/engine/write'
 import { POLL_STATE } from '@/lib/constants'
 import { useRouter } from 'next/navigation'
+import { usePollManagement } from '@/hooks/usePollManagement'
 
 export default function PollStatusManager({ pollId, status, onStatusChange }) {
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const { startPoll: hookStartPoll, endPoll: hookEndPoll, isStarting, isEnding } = usePollManagement()
+  const router = useRouter() // Keep router if it's still used for refresh
 
   const handleStart = async () => {
     if (!confirm('Are you sure you want to start this poll? Users will be able to vote.')) return
-    
-    setLoading(true)
+
     try {
-      await startPoll(pollId)
+      await hookStartPoll(pollId)
       if (onStatusChange) onStatusChange()
       router.refresh()
     } catch (error) {
       console.error('Failed to start poll:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
   const handleEnd = async () => {
     if (!confirm('Are you sure you want to end this poll? No more votes will be accepted.')) return
 
-    setLoading(true)
     try {
-      await endPoll(pollId)
+      await hookEndPoll(pollId)
       if (onStatusChange) onStatusChange()
       router.refresh()
     } catch (error) {
       console.error('Failed to end poll:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -66,20 +59,20 @@ export default function PollStatusManager({ pollId, status, onStatusChange }) {
         {status === POLL_STATE.CREATED && (
           <button
             onClick={handleStart}
-            disabled={loading}
+            disabled={isStarting}
             className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 transition font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px]"
           >
-            {loading ? 'Starting...' : 'Start Poll'}
+            {isStarting ? 'Starting...' : 'Start Poll'}
           </button>
         )}
 
         {status === POLL_STATE.ACTIVE && (
           <button
             onClick={handleEnd}
-            disabled={loading}
+            disabled={isEnding}
             className="px-6 py-3 border-2 border-black bg-white text-black rounded-lg hover:bg-red-50 disabled:opacity-50 transition font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5"
           >
-            {loading ? 'Ending...' : 'End Poll'}
+            {isEnding ? 'Ending...' : 'End Poll'}
           </button>
         )}
       </div>

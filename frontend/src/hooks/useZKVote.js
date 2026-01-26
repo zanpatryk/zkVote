@@ -8,6 +8,8 @@ import { useAccount } from 'wagmi'
 import { castEncryptedVote, castPlainVote, castEncryptedVoteWithProof } from '@/lib/blockchain/engine/write'
 import { getPollPublicKey } from '@/lib/blockchain/engine/read'
 import { ELGAMAL_VECTOR_SIZE, VOTE_CIRCUIT_WASM_PATH, VOTE_CIRCUIT_ZKEY_PATH } from '@/lib/constants'
+import { toast } from 'react-hot-toast'
+import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 
 export function useZKVote(pollId) {
@@ -111,20 +113,27 @@ export function useZKVote(pollId) {
 
         // Step: Submit
         setCurrentStep(newSteps.length - 1)
+        const toastId = toast.loading('Submitting vote...', { id: 'vote' })
         
-        if (isAnonymous && semaphoreData) {
-            // Unified Submit (Secret + Anonymous)
-             result = await castEncryptedVoteWithProof(
-                 pollId, 
-                 semaphoreData.nullifier, 
-                 semaphoreData.proof, 
-                 circuitEncVote, 
-                 formattedProof
-             )
-             // result already has txHash, voteId. Append nullifier for receipt.
-             result.nullifier = semaphoreData.nullifier
-        } else {
-             result = await castEncryptedVote(pollId, circuitEncVote, formattedProof)
+        try {
+            if (isAnonymous && semaphoreData) {
+                // Unified Submit (Secret + Anonymous)
+                 result = await castEncryptedVoteWithProof(
+                     pollId, 
+                     semaphoreData.nullifier, 
+                     semaphoreData.proof, 
+                     circuitEncVote, 
+                     formattedProof
+                 )
+                 result.nullifier = semaphoreData.nullifier
+            } else {
+                 result = await castEncryptedVote(pollId, circuitEncVote, formattedProof)
+            }
+            toast.success('Vote submitted successfully!', { id: toastId })
+        } catch (err) {
+            const msg = formatTransactionError(err)
+            toast.error(msg, { id: toastId })
+            throw err
         }
 
         // Return structured result for receipt compatibility
@@ -135,20 +144,39 @@ export function useZKVote(pollId) {
       } else if (isAnonymous) {
         // --- ANONYMOUS ONLY FLOW (Semaphore) ---
         setCurrentStep(0)
+        // castSemaphoreVote handles its own toasts
         result = await castSemaphoreVote(pollId, optionIndex, identity)
         setCurrentStep(newSteps.length - 1)
       } else {
         // --- PLAIN VOTE FLOW ---
         setCurrentStep(0)
-        result = await castPlainVote(pollId, optionIndex)
-        // No receipt proof for plain vote
-        // But result has voteId and txHash.
+        const toastId = toast.loading('Submitting vote...', { id: 'vote' })
+        try {
+            result = await castPlainVote(pollId, optionIndex)
+            toast.success('Vote submitted successfully!', { id: toastId })
+        } catch (err) {
+            const msg = formatTransactionError(err)
+            toast.error(msg, { id: toastId })
+            throw err
+        }
       }
 
       return result
     } catch (error) {
       console.error('Unified Vote failed:', error)
-      // toast is usually handled by castEncryptedVote / castSemaphoreVote
+      // We rethrow because the component might need to know, but we already handled toast for known paths
+      // For top-level errors (like circuit init failure), we should toast too if not covered.
+      if (!error?.message?.includes('User rejected') && !error?.message?.includes('already cast')) {
+           // Only toast generic if specific toast wasn't triggered (e.g. circuit failure)
+           // But identifying if specific toast fired is hard. 
+           // However, local try/catches above will throw.
+           // So this catch also catches those throws.
+           // To avoid double toast, we can check if it's already handled?
+           // Actually, simplest is to NOT toast here if we toasted above.
+           // But how to know?
+           // We can rely on the fact that we re-threw inside the inner blocks.
+           // Let's just log here.
+      }
       throw error
     } finally {
       setIsSubmitting(false)

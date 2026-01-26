@@ -7,6 +7,7 @@ import { addMember, castVoteWithProof } from '@/lib/blockchain/engine/write'
 import { getGroupMembers, getMerkleTreeDepth, hasVoted } from '@/lib/blockchain/engine/read'
 import { toast } from 'react-hot-toast'
 import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
+import { downloadJsonFile } from '@/lib/utils/file'
 
 export function useSemaphore() {
   const { address } = useAccount()
@@ -65,12 +66,23 @@ export function useSemaphore() {
     }
 
     setIsRegistering(true)
+    const toastId = toast.loading('Registering identity...')
+    
     try {
       const success = await addMember(pollId, activeIdentity.commitment.toString())
-      return success
+      if (success) {
+        toast.success('Identity registered successfully!', { id: toastId })
+        return true
+      } else {
+        // addMember might return false on error if it catches internally, 
+        // but since we are removing internal catch in member.js, it should throw.
+        // We'll assume it throws now or returns false if user rejected.
+        toast.error('Registration failed', { id: toastId })
+        return false
+      }
     } catch (error) {
       console.error('Registration error:', error)
-      // Error toast handled in registerVoter
+      toast.error(formatTransactionError(error, 'Failed to register identity'), { id: toastId })
       return false
     } finally {
       setIsRegistering(false)
@@ -134,13 +146,17 @@ export function useSemaphore() {
 
       // Call contract
       const result = await castVoteWithProof(pollId, { optionIndex }, proof)
+      
+      if (result) {
+        toast.success('Secure ZK Vote submitted!', { id: 'vote' })
+      }
       return result
     } catch (error) {
       // 1. Check if it's a known "Already Voted" error first
       const errorMessage = formatTransactionError(error)
       
       if (errorMessage.includes('already cast')) {
-        toast.error(errorMessage, { id: 'vote' })
+        toast.error('You have already cast a vote in this poll!', { id: 'vote' })
         return { alreadyVoted: true }
       }
 
@@ -190,28 +206,12 @@ export function useSemaphore() {
       const exportObject = {
         pollId: pollId.toString(),
         // Spread the identity internal values (privateKey/secret)
-        // We use the identity's native toJSON (if available) or reconstruct essential parts
         ...identity, 
-        // Explicitly include secret for easy reconstruction if ...identity doesn't catch private fields
+        // Explicitly include secret for easy reconstruction
         secret: identity.privateKey?.toString() || identity.secret?.toString() || identity.secretScalar?.toString()
       }
 
-      // Serialize to JSON string, handling BigInt
-      const identityString = JSON.stringify(exportObject, (key, value) => 
-        typeof value === 'bigint' ? value.toString() : value
-      , 2)
-      
-      const blob = new Blob([identityString], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `zk-identity-poll-${pollId}.json`
-      document.body.appendChild(link)
-      link.click()
-      
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
+      downloadJsonFile(exportObject, `zk-identity-poll-${pollId}.json`)
     } catch (error) {
       console.error('Download failed:', error)
       toast.error('Failed to download identity')

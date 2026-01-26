@@ -21,6 +21,14 @@ jest.mock('@/lib/blockchain/engine/read', () => ({
   getPollById: jest.fn().mockResolvedValue({ state: 0 }),
 }))
 
+jest.mock('@/hooks/usePolls', () => ({
+  usePoll: jest.fn().mockReturnValue({ 
+    poll: { state: 0 }, 
+    isLoading: false, 
+    error: null 
+  }),
+}))
+
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: jest.fn(),

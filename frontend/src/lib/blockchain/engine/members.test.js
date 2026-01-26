@@ -4,6 +4,7 @@ import {
   getMerkleTreeDepth, 
   getGroupMembers, 
   isUserWhitelisted, 
+  isUserRegistered,
   whitelistUser, 
   whitelistUsers, 
   addMember 
@@ -53,9 +54,19 @@ describe('members domain engine', () => {
     })
 
     it('returns array of addresses from logs', async () => {
-       mockPublicClient.getLogs.mockResolvedValue([{ args: { user: '0xV1' } }])
+       mockPublicClient.getLogs
+         .mockResolvedValueOnce([{ args: { user: '0xV1' } }]) // Standard
+         .mockResolvedValueOnce([{ args: { user: '0xV2' } }]) // V0
        const { data } = await getWhitelistedAddresses('1')
-       expect(data).toEqual(['0xV1', '0xV1']) // Standard + V0
+       expect(data).toEqual(['0xV1', '0xV2'])
+    })
+
+    it('handles one log type failing', async () => {
+        mockPublicClient.getLogs
+          .mockRejectedValueOnce(new Error('Standard fail'))
+          .mockResolvedValueOnce([{ args: { user: '0xV2' } }])
+        const { data } = await getWhitelistedAddresses('1')
+        expect(data).toEqual(['0xV2'])
     })
 
     it('returns error on catch', async () => {
@@ -88,6 +99,12 @@ describe('members domain engine', () => {
             eligibilityModule: CONTRACT_ADDRESSES.semaphoreEligibility 
         })
         mockPublicClient.readContract.mockRejectedValue(new Error('fail'))
+        const { data } = await getMerkleTreeDepth('1')
+        expect(data).toBe(0)
+    })
+
+    it('returns 0 if not a semaphore module', async () => {
+        getModules.mockResolvedValueOnce({ eligibilityModule: '0xOther' })
         const { data } = await getMerkleTreeDepth('1')
         expect(data).toBe(0)
     })
@@ -135,6 +152,37 @@ describe('members domain engine', () => {
     })
   })
 
+  describe('isUserRegistered', () => {
+    it('returns true if registered in semaphore module', async () => {
+        getModules.mockResolvedValueOnce({ 
+            eligibilityModule: CONTRACT_ADDRESSES.semaphoreEligibility 
+        })
+        mockPublicClient.readContract.mockResolvedValueOnce(true)
+        const { data } = await isUserRegistered('1', '0xUser')
+        expect(data).toBe(true)
+    })
+
+    it('returns false if not a semaphore module', async () => {
+        getModules.mockResolvedValueOnce({ eligibilityModule: '0xOther' })
+        const { data } = await isUserRegistered('1', '0xUser')
+        expect(data).toBe(false)
+    })
+
+    it('handles contract failure gracefully', async () => {
+        getModules.mockResolvedValueOnce({ 
+            eligibilityModule: CONTRACT_ADDRESSES.semaphoreEligibility 
+        })
+        mockPublicClient.readContract.mockRejectedValue(new Error('fail'))
+        const { data } = await isUserRegistered('1', '0xUser')
+        expect(data).toBe(false)
+    })
+
+    it('returns false if params missing', async () => {
+        expect((await isUserRegistered(null, '0x')).data).toBe(false)
+        expect((await isUserRegistered('1', null)).data).toBe(false)
+    })
+  })
+
   describe('whitelistUser', () => {
     it('successfully whitelists a user', async () => {
         await whitelistUser('1', '0xUser')
@@ -145,15 +193,31 @@ describe('members domain engine', () => {
         await expect(whitelistUser('1', null)).rejects.toThrow('No user to whitelist')
     })
 
-    it('throws and toasts on catch', async () => {
+    it('throws if transaction reverts', async () => {
+        waitForTransactionReceipt.mockResolvedValueOnce({ status: 'reverted' })
+        await expect(whitelistUser('1', '0x')).rejects.toThrow('Transaction REVERTED on chain')
+    })
+
+    it('throws on catch', async () => {
         writeContract.mockRejectedValue(new Error('fail'))
         await expect(whitelistUser('1', '0x')).rejects.toThrow()
     })
   })
 
   describe('whitelistUsers', () => {
+    it('successfully whitelists multiple users', async () => {
+        const res = await whitelistUsers('1', ['0x1', '0x2'])
+        expect(res).toBe(true)
+    })
+
     it('throws if users array missing/empty', async () => {
         await expect(whitelistUsers('1', [])).rejects.toThrow('No users to whitelist')
+        await expect(whitelistUsers('1', null)).rejects.toThrow('No users to whitelist')
+    })
+
+    it('throws if transaction reverts', async () => {
+      waitForTransactionReceipt.mockResolvedValueOnce({ status: 0 })
+      await expect(whitelistUsers('1', ['0x1'])).rejects.toThrow('Transaction REVERTED on chain')
     })
 
     it('throws on catch', async () => {
@@ -168,10 +232,50 @@ describe('members domain engine', () => {
         expect(result).toBe(true)
     })
 
-    it('returns false and toasts on catch', async () => {
+    it('throws if wallet not connected', async () => {
+        getAccount.mockReturnValueOnce({ address: null })
+        await expect(addMember('1', '123')).rejects.toThrow('Wallet not connected')
+    })
+
+    it('throws if transaction reverts', async () => {
+        waitForTransactionReceipt.mockResolvedValueOnce({ status: 0 })
+        await expect(addMember('1', '123')).rejects.toThrow('Transaction REVERTED on chain')
+    })
+
+    it('throws on error', async () => {
         writeContract.mockRejectedValue(new Error('fail'))
-        const result = await addMember('1', '123')
-        expect(result).toBe(false)
+        await expect(addMember('1', '123')).rejects.toThrow()
+    })
+  })
+
+  describe('Helpers & Event Registry', () => {
+    it('returns correct MemberAdded signature', () => {
+        const { getMemberAddedEventSignature } = require('./members')
+        expect(getMemberAddedEventSignature()).toContain('MemberAdded')
+    })
+
+    it('parses MemberAdded log accurately', () => {
+        const { parseMemberAddedLog } = require('./members')
+        const log = {
+            args: { identityCommitment: 999n },
+            transactionHash: '0xTx',
+            blockNumber: 42n
+        }
+        const parsed = parseMemberAddedLog(log)
+        expect(parsed.identityCommitment).toBe('999')
+        expect(parsed.transactionHash).toBe('0xTx')
+        expect(parsed.blockNumber).toBe(42n)
+    })
+    
+    it('parses MemberAdded log with positional args', () => {
+        const { parseMemberAddedLog } = require('./members')
+        const log = {
+            args: [null, null, 777n],
+            transactionHash: '0xTx',
+            blockNumber: 42n
+        }
+        const parsed = parseMemberAddedLog(log)
+        expect(parsed.identityCommitment).toBe('777')
     })
   })
 })

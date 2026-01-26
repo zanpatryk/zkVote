@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAccount } from 'wagmi'
-import { whitelistUser, whitelistUsers } from '@/lib/blockchain/engine/write'
+import { useWhitelistedAddresses } from '@/hooks/useWhitelistedAddresses'
 import { isUserWhitelisted } from '@/lib/blockchain/engine/read'
 import { toast } from 'react-hot-toast'
 import { isAddress } from 'viem'
@@ -11,6 +11,7 @@ import { parseAddressesFromFile } from '@/lib/utils/file'
 
 export default function WhitelistManager({ pollId, pollState, onSuccess, demo = false }) {
   const { isConnected } = useAccount()
+  const { addToWhitelist } = useWhitelistedAddresses(pollId)
 
   const [singleAddress, setSingleAddress] = useState(demo ? '0xdef0...mnop' : '')
   const [batchAddresses, setBatchAddresses] = useState([])
@@ -66,12 +67,11 @@ export default function WhitelistManager({ pollId, pollState, onSuccess, demo = 
         return
       }
 
-      await whitelistUser(pollId, address)
+      await addToWhitelist([address])
       setSingleAddress('')
       if (onSuccess) onSuccess()
     } catch (err) {
       console.error('Failed to whitelist user:', err)
-      toast.error(err.shortMessage || 'An unexpected error occurred.')
     } finally {
       setIsSubmitting(false)
     }
@@ -84,12 +84,11 @@ export default function WhitelistManager({ pollId, pollState, onSuccess, demo = 
     
     setIsSubmitting(true)
     try {
-      await whitelistUsers(pollId, batchAddresses)
+      await addToWhitelist(batchAddresses)
       setBatchAddresses([])
       if (onSuccess) onSuccess()
     } catch (err) {
       console.error('Failed to whitelist users:', err)
-      toast.error(err.shortMessage || 'An unexpected error occurred.')
     } finally {
       setIsSubmitting(false)
     }
@@ -211,9 +210,9 @@ export default function WhitelistManager({ pollId, pollState, onSuccess, demo = 
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="bg-green-50 p-4 rounded-lg border border-green-200"
+                className="bg-gray-50 p-4 rounded-lg border-2 border-black border-dashed"
               >
-                <p className="text-green-800 font-medium">
+                <p className="text-black font-bold font-mono">
                   Ready to whitelist {batchAddresses.length} addresses.
                 </p>
               </motion.div>

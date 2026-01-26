@@ -1,21 +1,29 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
-import { getPollById } from '@/lib/blockchain/engine/read'
 import WhitelistPage from './page'
-import { whitelistUser, whitelistUsers } from '@/lib/blockchain/engine/write'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { toast } from 'react-hot-toast'
 import { isAddress } from 'viem'
+import { useWhitelistedAddresses } from '@/hooks/useWhitelistedAddresses'
 
 // Mock dependencies
+jest.mock('@/hooks/useWhitelistedAddresses', () => ({
+  useWhitelistedAddresses: jest.fn()
+}))
+
 jest.mock('@/lib/blockchain/engine/write', () => ({
-  whitelistUser: jest.fn(),
-  whitelistUsers: jest.fn(),
+  // kept empty
 }))
 
 jest.mock('@/lib/blockchain/engine/read', () => ({
   isUserWhitelisted: jest.fn().mockResolvedValue({ data: false, error: null }),
-  getPollById: jest.fn(),
+}))
+
+jest.mock('@/hooks/usePolls', () => ({
+  usePoll: jest.fn().mockReturnValue({ 
+      poll: { state: 0 }, 
+      isLoading: false 
+  })
 }))
 
 jest.mock('next/navigation', () => ({
@@ -55,11 +63,11 @@ Object.assign(navigator, {
   },
 })
 
-
 describe('WhitelistPage', () => {
   const mockPollId = '123'
   const mockRouter = { push: jest.fn() }
   const mockAddress = '0x123'
+  const addToWhitelistMock = jest.fn()
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -67,7 +75,12 @@ describe('WhitelistPage', () => {
     useRouter.mockReturnValue(mockRouter)
     useAccount.mockReturnValue({ isConnected: true })
     isAddress.mockReturnValue(true)
-    getPollById.mockResolvedValue({ data: { state: 0 }, error: null }) // Mock Poll Created State
+    
+    useWhitelistedAddresses.mockReturnValue({
+        addToWhitelist: addToWhitelistMock,
+        addresses: new Set(),
+        loading: false
+    })
   })
 
   it('renders correctly', async () => {
@@ -79,8 +92,6 @@ describe('WhitelistPage', () => {
     expect(screen.getByText('Single Address')).toBeInTheDocument()
     expect(screen.getByText('Batch Upload')).toBeInTheDocument()
   })
-
-
 
   it('toggles between single and batch mode', async () => {
     await act(async () => {
@@ -114,7 +125,7 @@ describe('WhitelistPage', () => {
       fireEvent.click(submitBtn)
       
       expect(toast.error).toHaveBeenCalledWith('Please enter a valid wallet address.')
-      expect(whitelistUser).not.toHaveBeenCalled()
+      expect(addToWhitelistMock).not.toHaveBeenCalled()
     })
 
     it('requires wallet connection', async () => {
@@ -127,7 +138,7 @@ describe('WhitelistPage', () => {
       fireEvent.click(submitBtn)
       
       expect(toast.error).toHaveBeenCalledWith('Please connect your wallet first')
-      expect(whitelistUser).not.toHaveBeenCalled()
+      expect(addToWhitelistMock).not.toHaveBeenCalled()
     })
 
     it('submits valid address successfully', async () => {
@@ -142,13 +153,13 @@ describe('WhitelistPage', () => {
       fireEvent.click(submitBtn)
       
       await waitFor(() => {
-        expect(whitelistUser).toHaveBeenCalledWith(mockPollId, mockAddress.toLowerCase())
+        expect(addToWhitelistMock).toHaveBeenCalledWith([mockAddress.toLowerCase()])
       })
       expect(input.value).toBe('')
     })
 
     it('handles submission error', async () => {
-      whitelistUser.mockRejectedValue(new Error('Failed'))
+      addToWhitelistMock.mockRejectedValue(new Error('Failed'))
       await act(async () => {
         render(<WhitelistPage />)
       })
@@ -160,7 +171,7 @@ describe('WhitelistPage', () => {
       fireEvent.click(submitBtn)
       
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalled()
+        expect(addToWhitelistMock).toHaveBeenCalled()
       })
     })
   })
@@ -217,7 +228,7 @@ describe('WhitelistPage', () => {
       fireEvent.click(submitBtn)
 
       await waitFor(() => {
-        expect(whitelistUsers).toHaveBeenCalledWith(mockPollId, ['0x123'])
+        expect(addToWhitelistMock).toHaveBeenCalledWith(['0x123'])
       })
     })
   })

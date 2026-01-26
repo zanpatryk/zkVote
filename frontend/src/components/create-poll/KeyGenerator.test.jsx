@@ -8,7 +8,9 @@ import '@testing-library/jest-dom'
 jest.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }) => <button {...props}>{children}</button>,
   },
+  AnimatePresence: ({ children }) => <>{children}</>,
 }))
 
 jest.mock('@zkvote/lib', () => ({

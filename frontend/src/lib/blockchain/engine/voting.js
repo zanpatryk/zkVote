@@ -10,8 +10,6 @@ import {
   voteStorageContract
 } from '@/lib/contracts'
 import { getModules } from './core'
-import { toast } from 'react-hot-toast'
-import { toastTransactionError, formatTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 // --- READS ---
 
@@ -194,8 +192,7 @@ export async function getPollPublicKey(pollId) {
 export async function castVote(pollId, optionIdx) {
   const { address } = getAccount(config)
   if (!address) throw new Error('Wallet not connected')
-  const toastId = 'voting'
-  toast.loading('Casting vote...', { id: toastId })
+
   try {
     const hash = await writeContract(config, {
       address: votingSystemContract.address,
@@ -204,7 +201,10 @@ export async function castVote(pollId, optionIdx) {
       args: [BigInt(pollId), BigInt(optionIdx)],
     })
     const receipt = await waitForTransactionReceipt(config, { hash })
-    toast.success('Vote submitted!', { id: toastId })
+    
+    // Check for revert status explicitly if needed, though writeContract usually throws on simulation fail
+    if (receipt.status === 'reverted') throw new Error('Transaction reverted')
+
     const voteCastedTopic = encodeEventTopics({ abi: voteStorageContract.abi, eventName: 'VoteCasted' })
     const voteCastedLog = receipt.logs.find(log => log.topics[0] === voteCastedTopic[0])
     if (voteCastedLog) {
@@ -219,8 +219,7 @@ export async function castVote(pollId, optionIdx) {
     return { voteId: null, txHash: receipt.transactionHash }
   } catch (error) {
     console.error('castVote failed:', error)
-    toastTransactionError(error, 'Failed to submit vote', { id: toastId })
-    return null
+    throw error // Let the hook handle the error toast
   }
 }
 
@@ -228,7 +227,6 @@ export async function castVoteWithProof(pollId, voteDetails, proofData) {
   const { address } = getAccount(config)
   if (!address) throw new Error('Wallet not connected')
   try {
-    toast.loading('Verifying proof & Casting vote...', { id: 'vote' })
     const { optionIndex } = voteDetails
     const { nullifier, points: proof } = proofData
     const formattedProof = proof.map(p => BigInt(p))
@@ -239,7 +237,9 @@ export async function castVoteWithProof(pollId, voteDetails, proofData) {
       args: [BigInt(pollId), BigInt(optionIndex), BigInt(nullifier), formattedProof],
     })
     const receipt = await waitForTransactionReceipt(config, { hash })
-    toast.success('Secure ZK Vote submitted!', { id: 'vote' })
+    
+    if (receipt.status === 'reverted') throw new Error('Transaction reverted')
+
     const voteCastedTopic = encodeEventTopics({ abi: voteStorageContract.abi, eventName: 'VoteCasted' })
     const voteCastedLog = receipt.logs.find(log => log.topics[0] === voteCastedTopic[0])
     if (voteCastedLog) {
@@ -253,14 +253,8 @@ export async function castVoteWithProof(pollId, voteDetails, proofData) {
     }
     return { voteId: null, txHash: receipt.transactionHash, nullifier, proof: formattedProof.map(p => p.toString()) }
   } catch (error) {
-    const errorMessage = formatTransactionError(error)
-    if (errorMessage.includes('already cast')) {
-      toast.error('You have already cast a vote in this poll!', { id: 'vote' })
-      return { alreadyVoted: true }
-    }
     console.error('castVoteWithProof failed:', error)
-    toastTransactionError(error, 'Failed to submit vote', { id: 'vote' })
-    return null
+    throw error // Rely on hook
   }
 }
 
@@ -268,9 +262,7 @@ export async function castEncryptedVote(pollId, encryptedData, proofData) {
   const { address } = getAccount(config)
   if (!address) throw new Error('Wallet not connected')
 
-  const toastId = 'voting'
   try {
-    toast.loading('Submitting encrypted vote...', { id: toastId })
     const args = [
       BigInt(pollId),
       encryptedData.map(v => BigInt(v)),
@@ -289,7 +281,7 @@ export async function castEncryptedVote(pollId, encryptedData, proofData) {
     })
 
     const receipt = await waitForTransactionReceipt(config, { hash })
-    toast.success('Secret ZK Vote submitted!', { id: toastId })
+    if (receipt.status === 'reverted') throw new Error('Transaction reverted')
 
     const voteCastedTopic = encodeEventTopics({ abi: votingSystemContract.abi, eventName: 'EncryptedVoteCast' })
     const log = receipt.logs.find(l => l.topics[0] === voteCastedTopic[0])
@@ -306,7 +298,6 @@ export async function castEncryptedVote(pollId, encryptedData, proofData) {
     return { voteId: null, txHash: receipt.transactionHash }
   } catch (error) {
     console.error('castEncryptedVote failed:', error)
-    toastTransactionError(error, 'Failed to submit encrypted vote', { id: toastId })
     throw error
   }
 }
@@ -316,7 +307,6 @@ export async function castEncryptedVoteWithProof(pollId, nullifierHash, semaphor
   if (!address) throw new Error('Wallet not connected')
 
   try {
-    toast.loading('Submitting secret+anonymous vote...', { id: 'vote' })
     const args = [
       BigInt(pollId), BigInt(nullifierHash),
       semaphoreProof.map(v => BigInt(v)),
@@ -336,7 +326,7 @@ export async function castEncryptedVoteWithProof(pollId, nullifierHash, semaphor
     })
 
     const receipt = await waitForTransactionReceipt(config, { hash })
-    toast.success('Vote submitted successfully!', { id: 'vote' })
+    if (receipt.status === 'reverted') throw new Error('Transaction reverted')
 
     const voteCastedTopic = encodeEventTopics({ abi: votingSystemContract.abi, eventName: 'EncryptedVoteCast' })
     const log = receipt.logs.find(l => l.topics[0] === voteCastedTopic[0])
@@ -354,8 +344,7 @@ export async function castEncryptedVoteWithProof(pollId, nullifierHash, semaphor
     return result
   } catch (error) {
     console.error('castEncryptedVoteWithProof failed:', error)
-    toastTransactionError(error, 'Failed to submit vote', { id: 'vote' })
-    throw error
+    throw error // Rely on hook
   }
 }
 
@@ -364,8 +353,6 @@ export async function castPlainVote(pollId, optionIdx) {
   if (!address) throw new Error('Wallet not connected')
 
   try {
-    toast.loading('Submitting vote...', { id: 'vote' })
-
     const hash = await writeContract(config, {
       address: votingSystemContract.address,
       abi: votingSystemContract.abi,
@@ -374,7 +361,7 @@ export async function castPlainVote(pollId, optionIdx) {
     })
 
     const receipt = await waitForTransactionReceipt(config, { hash })
-    toast.success('Vote submitted successfully!', { id: 'vote' })
+    if (receipt.status === 'reverted') throw new Error('Transaction reverted')
 
     const voteCastedAbiItem = {
       type: 'event',
@@ -413,7 +400,6 @@ export async function castPlainVote(pollId, optionIdx) {
 
   } catch (error) {
     console.error('castPlainVote failed:', error)
-    toastTransactionError(error, 'Failed to submit vote', { id: 'vote' })
     throw error
   }
 }

@@ -7,8 +7,6 @@ import {
   CONTRACT_ADDRESSES
 } from '@/lib/contracts'
 import { getModules } from './core'
-import { toast } from 'react-hot-toast'
-import { toastTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 // --- READS ---
 
@@ -150,8 +148,7 @@ export async function isUserRegistered(pollId, userAddress) {
 
 export async function whitelistUser(pollId, userAddress) {
   if (!userAddress) throw new Error('No user to whitelist.')
-  const toastId = 'whitelist'
-  toast.loading('Whitelisting user...', { id: toastId })
+  
   try {
     const hash = await writeContract(config, {
       address: votingSystemContract.address,
@@ -159,19 +156,19 @@ export async function whitelistUser(pollId, userAddress) {
       functionName: 'whitelistUser',
       args: [BigInt(pollId), userAddress],
     })
-    await waitForTransactionReceipt(config, { hash })
-    toast.success(`User whitelisted successfully!`, { id: toastId })
+    const receipt = await waitForTransactionReceipt(config, { hash })
+    if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
+    
+    return true
   } catch (error) {
     console.error('whitelistUser failed:', error)
-    toastTransactionError(error, 'Failed to whitelist user', { id: toastId })
     throw error
   }
 }
 
 export async function whitelistUsers(pollId, users) {
   if (!users || users.length === 0) throw new Error('No users to whitelist.')
-  const toastId = 'whitelist'
-  toast.loading(`Whitelisting ${users.length} users...`, { id: toastId })
+  
   try {
     const hash = await writeContract(config, {
       address: votingSystemContract.address,
@@ -179,11 +176,12 @@ export async function whitelistUsers(pollId, users) {
       functionName: 'whitelistUsers',
       args: [BigInt(pollId), users],
     })
-    await waitForTransactionReceipt(config, { hash })
-    toast.success(`Users whitelisted successfully!`, { id: toastId })
+    const receipt = await waitForTransactionReceipt(config, { hash })
+    if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
+    
+    return true
   } catch (error) {
     console.error('whitelistUsers failed:', error)
-    toastTransactionError(error, 'Failed to whitelist users', { id: toastId })
     throw error
   }
 }
@@ -191,8 +189,7 @@ export async function whitelistUsers(pollId, users) {
 export async function addMember(pollId, identityCommitment) {
   const { address } = getAccount(config)
   if (!address) throw new Error('Wallet not connected')
-  const toastId = 'registration'
-  toast.loading('Registering identity...', { id: toastId })
+
   try {
     const hash = await writeContract(config, {
       address: votingSystemContract.address,
@@ -200,13 +197,14 @@ export async function addMember(pollId, identityCommitment) {
       functionName: 'registerVoter',
       args: [BigInt(pollId), BigInt(identityCommitment)],
     })
-    await waitForTransactionReceipt(config, { hash })
-    toast.success('Identity registered successfully!', { id: toastId })
+    
+    const receipt = await waitForTransactionReceipt(config, { hash })
+    if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
+    
     return true
   } catch (error) {
     console.error('registerVoter failed:', error)
-    toastTransactionError(error, 'Failed to register identity', { id: toastId })
-    return false
+    throw error
   }
 }
 

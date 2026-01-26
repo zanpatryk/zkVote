@@ -155,11 +155,9 @@ describe('voting domain engine', () => {
   })
 
   describe('castVote', () => {
-    it('returns null and toasts on error', async () => {
+    it('returns null on error', async () => {
        writeContract.mockRejectedValue(new Error('fail'))
-       const result = await castVote('1', 0)
-       expect(result).toBeNull()
-       expect(toast.error).toBeDefined()
+       await expect(castVote('1', 0)).rejects.toThrow()
     })
   })
 
@@ -176,17 +174,15 @@ describe('voting domain engine', () => {
         expect(result.voteId).toBeNull()
     })
 
-    it('returns alreadyVoted status on custom error', async () => {
+    it('throws on custom error', async () => {
         const error = new Error('execution reverted: 0xaef0604b')
         writeContract.mockRejectedValue(error)
-        const result = await castVoteWithProof('1', { optionIndex: 0 }, { nullifier: '1', points: Array(8).fill('0') })
-        expect(result.alreadyVoted).toBe(true)
+        await expect(castVoteWithProof('1', { optionIndex: 0 }, { nullifier: '1', points: Array(8).fill('0') })).rejects.toThrow()
     })
 
-    it('returns null on generic error', async () => {
+    it('throws on generic error', async () => {
         writeContract.mockRejectedValue(new Error('fail'))
-        const result = await castVoteWithProof('1', { optionIndex: 0 }, { nullifier: '1', points: Array(8).fill('0') })
-        expect(result).toBeNull()
+        await expect(castVoteWithProof('1', { optionIndex: 0 }, { nullifier: '1', points: Array(8).fill('0') })).rejects.toThrow()
     })
   })
 

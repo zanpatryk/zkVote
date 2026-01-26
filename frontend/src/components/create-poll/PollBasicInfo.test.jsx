@@ -31,7 +31,7 @@ describe('PollBasicInfo', () => {
 
   it('calls setTitle on title change', () => {
     render(<PollBasicInfo {...defaultProps} />)
-    const titleInput = screen.getByPlaceholderText(/e.g., What is your favorite color?/i)
+    const titleInput = screen.getByPlaceholderText(/e.g., Should we adopt the new governance proposal?/i)
     fireEvent.change(titleInput, { target: { value: 'New Title' } })
     expect(mockSetTitle).toHaveBeenCalledWith('New Title')
   })

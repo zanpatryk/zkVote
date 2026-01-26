@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function VoterCapacity({ depth, setDepth }) {
   return (
@@ -44,10 +44,28 @@ export default function VoterCapacity({ depth, setDepth }) {
             </button>
           </div>
 
-          <div className="text-center md:text-right w-full md:w-auto">
-            <p className="text-3xl font-black font-serif tabular-nums break-all">
-              {(Math.pow(2, depth)).toLocaleString()} 
-            </p>
+          <div className="text-center md:text-right w-full md:w-auto overflow-hidden">
+            <div className="h-10 flex items-center justify-center md:justify-end font-serif text-3xl font-black tabular-nums">
+              {(Math.pow(2, depth)).toLocaleString().split('').map((char, i) => (
+                <span key={i} className="inline-block relative w-[0.6em] h-10" style={{ perspective: '300px' }}>
+                  <AnimatePresence mode="popLayout">
+                    <motion.span
+                      key={char}
+                      initial={{ opacity: 0, rotateX: -90, y: 15 }}
+                      animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                      exit={{ opacity: 0, rotateX: 90, y: -15 }}
+                      transition={{ 
+                        duration: 0.35,
+                        ease: [0.23, 1, 0.32, 1] 
+                      }}
+                      className="absolute inset-0 flex items-center justify-center"
+                    >
+                      {char}
+                    </motion.span>
+                  </AnimatePresence>
+                </span>
+              ))}
+            </div>
             <p className="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Max Participants</p>
           </div>
         </div>
