@@ -6,7 +6,10 @@ import '@testing-library/jest-dom'
 jest.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }) => <div {...props}>{children}</div>,
+    p: ({ children, ...props }) => <p {...props}>{children}</p>,
+    span: ({ children, ...props }) => <span {...props}>{children}</span>,
   },
+  AnimatePresence: ({ children }) => <>{children}</>,
 }))
 
 describe('VoterCapacity', () => {
@@ -23,7 +26,10 @@ describe('VoterCapacity', () => {
   it('renders depth slider and capacity', () => {
     render(<VoterCapacity {...defaultProps} />)
     expect(screen.getByRole('slider')).toBeInTheDocument()
-    expect(screen.getByText('1,048,576')).toBeInTheDocument() // 2^20
+    expect(screen.getByText('Max Participants')).toBeInTheDocument()
+    // Since numbers are split into spans, we check if the container has the text
+    const container = screen.getByText('Max Participants').parentElement
+    expect(container).toHaveTextContent('1,048,576')
   })
 
   it('calls setDepth on slider change', () => {

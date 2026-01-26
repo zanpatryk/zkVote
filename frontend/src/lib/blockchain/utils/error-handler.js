@@ -27,7 +27,10 @@ export function formatTransactionError(error, fallbackMsg = 'Transaction failed'
   }
 
   // 2. Custom Error: Already Voted (0xaef0604b)
-  if (errorMessage.includes('0xaef0604b')) {
+  // Check details and shortMessage as Viem puts revert reasons there often
+  const fullErrorText = (errorMessage + (error?.details || '') + (error?.shortMessage || '')).toLowerCase()
+  
+  if (fullErrorText.includes('0xaef0604b') || fullErrorText.includes('already voted')) {
     return 'You have already cast a vote in this poll!'
   }
 
@@ -51,17 +54,4 @@ export function formatTransactionError(error, fallbackMsg = 'Transaction failed'
 
   // 6. Fallback to generic message
   return fallbackMsg
-}
-
-/**
- * Centralized helper for toast error notifications.
- * @param {Error} error 
- * @param {string} fallbackMsg 
- * @param {object} toastOptions 
- */
-export function toastTransactionError(error, fallbackMsg, toastOptions = {}) {
-  const { toast } = require('react-hot-toast')
-  const message = formatTransactionError(error, fallbackMsg)
-  toast.error(message, toastOptions)
-  return message
 }

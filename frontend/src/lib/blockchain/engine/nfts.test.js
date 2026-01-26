@@ -1,6 +1,5 @@
 import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
 import { getUserNFTs, mintResultNFT } from './nfts'
-import { toast } from 'react-hot-toast'
 
 jest.mock('@wagmi/core', () => ({
   getPublicClient: jest.fn(),
@@ -16,8 +15,6 @@ jest.mock('viem', () => {
         parseAbiItem: jest.fn(i => i),
     }
 })
-
-jest.mock('react-hot-toast')
 
 describe('nfts domain engine', () => {
   let mockPublicClient

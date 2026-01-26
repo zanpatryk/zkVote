@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { useSemaphore } from '@/hooks/useSemaphore'
 import { usePollRegistry } from '@/hooks/usePollRegistry'
-import { Identity } from '@semaphore-protocol/identity'
 import { toast } from 'react-hot-toast'
 
 // Mock IdentityTransferContext
@@ -53,18 +52,26 @@ jest.mock('framer-motion', () => ({
 jest.mock('@/components/IdentityFileUploader', () => {
     return function MockUploader({ onIdentityParsed }) {
       return (
-        <button 
-          onClick={() => onIdentityParsed({ identity: { commitment: '123' }, pollId: '123' })}
-          data-testid="mock-uploader"
-        >
-          Mock Upload
-        </button>
+        <div>
+            <button 
+              onClick={() => onIdentityParsed({ identity: { commitment: '123' }, pollId: '123' })}
+              data-testid="mock-uploader"
+            >
+              Mock Upload Success
+            </button>
+            <button 
+              onClick={() => onIdentityParsed({ identity: { commitment: '123' }, pollId: '999' })}
+              data-testid="mock-uploader-fail"
+            >
+              Mock Upload Fail
+            </button>
+        </div>
       )
     }
 })
 
 describe('PollAuthPage', () => {
-  const mockRouter = { push: jest.fn() }
+  const mockRouter = { push: jest.fn(), replace: jest.fn() }
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -77,7 +84,7 @@ describe('PollAuthPage', () => {
         isLoadingIdentity: false,
     })
 
-    usePollRegistry.mockReturnValue({ isRegistered: true })
+    usePollRegistry.mockReturnValue({ isZK: true, isLoading: false })
   })
 
   it('renders authentication options', () => {
@@ -117,11 +124,24 @@ describe('PollAuthPage', () => {
   })
 
   it('shows error if upload has wrong pollId', async () => {
-    // Override mock to return wrong pollId
-    const IdentityFileUploader = require('@/components/IdentityFileUploader')
-    // We can't easily re-mock inside a test cleanly without jest.doMock. 
-    // Instead, let's just assume the Component does its job and we are testing the handler.
-    // Given we mocked the component to call prop, we verified the positive case. 
-    // To verify negative case, we'd need to emit event with wrong pollId.
+    render(<PollAuthPage />)
+    
+    // Click the failure button which sends pollId: '999' (mismatch with '123')
+    fireEvent.click(screen.getByTestId('mock-uploader-fail'))
+    
+    await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Poll #999'))
+        expect(mockSetIdentity).not.toHaveBeenCalled()
+    })
+  })
+
+  it('redirects to vote page if poll is not anonymous (not isZK)', async () => {
+    usePollRegistry.mockReturnValue({ isZK: false, isLoading: false })
+    
+    render(<PollAuthPage />)
+    
+    await waitFor(() => {
+        expect(mockRouter.replace).toHaveBeenCalledWith('/poll/123/vote')
+    })
   })
 })

@@ -16,7 +16,7 @@ export default function PollBasicInfo({ title, setTitle, description, setDescrip
           value={title}
           onChange={e => setTitle(e.target.value)}
           className="w-full px-5 py-4 border-2 border-black rounded-lg text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] outline-none transition-all placeholder-gray-400 font-medium"
-          placeholder="e.g., What is your favorite color?"
+          placeholder="e.g., Should we adopt the new governance proposal?"
         />
       </motion.div>
 

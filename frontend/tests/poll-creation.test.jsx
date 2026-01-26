@@ -30,6 +30,7 @@ jest.mock('react-hot-toast', () => ({
   toast: {
     error: jest.fn(),
     success: jest.fn(),
+    loading: jest.fn(),
     promise: jest.fn((promise) => promise),
   },
 }))
@@ -53,7 +54,7 @@ describe('Integration Test: Poll Creation', () => {
   })
 
   const fillBasicForm = (title = 'Frameworks', description = 'Which one?', options = ['React', 'Vue']) => {
-    fireEvent.change(screen.getByPlaceholderText('e.g., What is your favorite color?'), { target: { value: title } })
+    fireEvent.change(screen.getByPlaceholderText('e.g., Should we adopt the new governance proposal?'), { target: { value: title } })
     fireEvent.change(screen.getByPlaceholderText('Provide context for voters...'), { target: { value: description } })
     
     const optionInputs = screen.getAllByPlaceholderText(/Option \d/)
@@ -114,7 +115,7 @@ describe('Integration Test: Poll Creation', () => {
     // Check validation: requires keys
     fireEvent.submit(screen.getByRole('button', { name: /launch poll/i }))
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Please generate and save your encryption keys')
+      expect(toast.error).toHaveBeenCalledWith('Please generate and save your encryption keys', expect.anything())
     })
 
     // Generate Keys

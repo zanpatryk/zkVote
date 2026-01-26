@@ -5,24 +5,20 @@ import { usePathname, useRouter } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount } from 'wagmi'
 import { useEffect, useState } from 'react'
+import { useIsMounted } from '@/hooks/useIsMounted'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Navbar() {
   const { isConnected: wagmiConnected, address } = useAccount()
   const pathname = usePathname()
   const router = useRouter()
+  const mounted = useIsMounted()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   const isConnected = mounted && wagmiConnected
 
   // Redirect logic (connect → /home, disconnect → /)
   useEffect(() => {
-    const protectedRoutes = ['/home', '/poll', '/vote']
+    const protectedRoutes = ['/home', '/poll', '/vote', '/nfts']
     const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
 
     if (!mounted) return
@@ -40,10 +36,10 @@ export default function Navbar() {
   }, [pathname])
 
   const navLinks = [
-    { href: '/poll', label: 'Poll', isActive: (p) => p.startsWith('/poll') },
-    { href: '/vote', label: 'Vote', isActive: (p) => p.startsWith('/vote') },
-    { href: '/verify', label: 'Verify', isActive: (p) => p.startsWith('/verify') },
-    { href: '/nfts', label: 'NFTs', isActive: (p) => p.startsWith('/nfts') },
+    { href: '/poll', label: 'Poll', isActive: (p) => p === '/poll' },
+    { href: '/vote', label: 'Vote', isActive: (p) => p === '/vote' },
+    { href: '/verify', label: 'Verify', isActive: (p) => p === '/verify' },
+    { href: '/nfts', label: 'NFTs', isActive: (p) => p === '/nfts' },
   ]
 
   return (

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { useAccount } from 'wagmi'
+import { useEffect } from 'react'
 import BackButton from '@/components/BackButton'
 
 import { useIdentityTransfer } from '@/lib/providers/IdentityTransferContext'
@@ -20,22 +20,24 @@ export default function PollAuthPage() {
   
   // Reuse existing hooks
   const { createIdentity, isLoadingIdentity } = useSemaphore()
-  const { isRegistered } = usePollRegistry(pollId)
+  const { isZK, isLoading: isRegistryLoading } = usePollRegistry(pollId)
 
+  // Auto-redirect if poll is not anonymous (ZK)
+  useEffect(() => {
+    if (!isRegistryLoading && !isZK) {
+        router.replace(`/poll/${pollId}/vote`)
+    }
+  }, [isZK, isRegistryLoading, router, pollId])
 
-  // OPTION 1: Sign with Wallet
+  if (isRegistryLoading || !isZK) {
+      return null
+  }
+
   const handleSign = async () => {
     if (!isConnected) {
         toast.error('Connect wallet first')
         return
     }
-    
-    // Note: We don't strictly enforce isRegistered here because they might have registered 
-    // with this wallet but the graph hasn't indexed it yet, OR they just want to generate 
-    // the identity for this wallet/poll combo. 
-    // The Vote Page does the strict check "You must be registered OR have identity".
-    // So if they generate identity here but are NOT registered, they will be blocked on next page anyway.
-    // Which is correct behavior.
     
     const identity = await createIdentity(pollId)
     if (identity) {

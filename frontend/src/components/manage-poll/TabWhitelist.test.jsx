@@ -10,7 +10,7 @@ describe('TabWhitelist', () => {
     render(<TabWhitelist pollId="123" pollState={1} />)
     
     expect(screen.getByText('Whitelist Management')).toBeInTheDocument()
-    expect(screen.getByText('Control who is allowed to register their ZK identity and participate.')).toBeInTheDocument()
+    expect(screen.getByText('Control who is allowed to participate in this poll.')).toBeInTheDocument()
     expect(screen.getByTestId('whitelist-manager')).toBeInTheDocument()
     expect(screen.getByTestId('whitelist-list')).toBeInTheDocument()
   })

@@ -3,18 +3,12 @@ import { usePollRegistrations } from './usePollRegistrations'
 import { getGroupMembers, getModules, getMemberAddedEventSignature, parseMemberAddedLog } from '@/lib/blockchain/engine/read'
 import { useContractEvents } from '@/hooks/useContractEvents'
 
-// MOCKS
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getGroupMembers: jest.fn(),
   getModules: jest.fn(),
   getMemberAddedEventSignature: jest.fn(() => 'MemberAddedMock'),
   parseMemberAddedLog: jest.fn(l => l.parsed),
 }))
-
-// MOCKS corrected below
-
-// Note: Jest mock lifting might cause syntax error above if not clean
-// Re-mocking properly below
 
 jest.mock('@/hooks/useContractEvents', () => ({
   useContractEvents: jest.fn(),

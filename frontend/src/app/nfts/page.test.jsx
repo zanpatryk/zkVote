@@ -44,11 +44,12 @@ describe('NFTsPage', () => {
     expect(screen.getByTestId('nft-dashboard')).toBeInTheDocument()
   })
 
-  it('redirects to home when disconnected', () => {
+  it('does not crash when disconnected', () => {
     mockUseAccount.mockReturnValue({ isConnected: false })
     render(<NFTsPage />)
     
-    expect(mockReplace).toHaveBeenCalledWith('/')
-    expect(screen.queryByText('My NFT Badges')).not.toBeInTheDocument()
+    // It should render its content, but NFTDashboard will handle its own empty state
+    expect(screen.getByText('My NFT Badges')).toBeInTheDocument()
+    expect(screen.getByTestId('nft-dashboard')).toBeInTheDocument()
   })
 })

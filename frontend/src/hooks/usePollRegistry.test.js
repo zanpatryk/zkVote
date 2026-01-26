@@ -31,9 +31,6 @@ describe('usePollRegistry', () => {
     isUserRegistered.mockResolvedValue({ data: false })
     getZKPollState.mockResolvedValue({ data: { resultsPublished: false } })
 
-    // Mock useQuery Implementation
-    // We simulate useQuery behavior by mapping queryKey to expected return checks
-    // Or simpler: just return data based on which call it is (sequential) or use logic inside mock
     useQuery.mockImplementation(({ queryKey }) => {
         const key = queryKey[0]
         if (key === 'pollModules') return { data: { eligibilityModule: '0xEli', voteStorage: '0xVote' }, isLoading: false }
@@ -149,13 +146,10 @@ describe('usePollRegistry', () => {
     }
     
     // 4. Poll State
-    // Force isZK to be true for this check by mocking the depth query response explicitly in the calls analysis? 
-    // Actually, we can just trigger it by mocking useQuery to return depth 20 first.
-    // BUT we are viewing the calls made during render. 
-    // The hook calls useQuery multiple times.
-    // If the 2nd useQuery (depth) returns 0 (which it does by default mock), then `isZK` is false.
-    // Then 4th useQuery (state) has `enabled: false`.
-    // So we should re-render with a mock that returns depth > 0 to check the 4th call.
+    // 4. Poll State
+    // To verify getZKPollState is called, we must ensure isZK is true.
+    // The hook relies on 'merkleDepth' > 0 to set isZK=true and enable the zkPollState query.
+    // We re-render the hook with a mocked depth of 20 to trigger this flow.
 
     // New render with ZK enabled
     useQuery.mockImplementation(({ queryKey }) => {

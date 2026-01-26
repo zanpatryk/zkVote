@@ -2,9 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
-import { getPollById } from '@/lib/blockchain/engine/read'
-import { toast } from 'react-hot-toast'
+import { usePoll } from '@/hooks/usePolls'
 import WhitelistManager from '@/components/WhitelistManager'
 import WhitelistedAddressesList from '@/components/WhitelistedAddressesList'
 import BackButton from '@/components/BackButton'
@@ -12,29 +10,10 @@ import BackButton from '@/components/BackButton'
 export default function WhitelistPage() {
   const { pollId } = useParams()
   const router = useRouter()
-  const [pollState, setPollState] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { poll, isLoading } = usePoll(pollId)
+  const pollState = poll?.state
 
-  useEffect(() => {
-    const fetchPoll = async () => {
-        if (!pollId) return
-        try {
-            const { data, error } = await getPollById(pollId)
-            if (error) throw new Error(error)
-            if (data) {
-                setPollState(data.state)
-            }
-        } catch (error) {
-            console.error('Failed to fetch poll:', error)
-            toast.error('Failed to load poll data')
-        } finally {
-            setLoading(false)
-        }
-    }
-    fetchPoll()
-  }, [pollId])
-
-  if (loading) {
+  if (isLoading) {
       return (
           <div className="pt-32 max-w-3xl mx-auto px-6 text-center">
               <p className="text-gray-500">Loading...</p>
@@ -54,7 +33,7 @@ export default function WhitelistPage() {
            <p className="text-xl text-gray-600 font-medium">Add addresses allowed to participate in the poll.</p>
         </div>
         <div className="w-full md:w-auto flex justify-end">
-            <BackButton href={`/poll/${pollId}/manage`} label="Manage Poll" />
+            <BackButton href={`/poll/${pollId}/manage`} label="Manage Poll" direction="forward" />
         </div>
       </motion.div>
       <motion.div

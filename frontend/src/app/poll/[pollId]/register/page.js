@@ -1,69 +1,28 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
-import { useAccount } from 'wagmi'
-import { useSemaphore } from '@/hooks/useSemaphore'
-import { usePollRegistry } from '@/hooks/usePollRegistry'
+import { useParams } from 'next/navigation'
+import { useRegistrationFlow } from '@/hooks/useRegistrationFlow'
 import BackButton from '@/components/BackButton'
-import { getPollById } from '@/lib/blockchain/engine/read'
-import { toast } from 'react-hot-toast'
 import { motion } from 'framer-motion'
 import RegistrationInstructions from '@/components/register-poll/RegistrationInstructions'
 import RegistrationSuccess from '@/components/register-poll/RegistrationSuccess'
 
 export default function RegisterPage() {
-  const router = useRouter()
   const { pollId } = useParams()
-  const { isConnected } = useAccount()
-  const { createIdentity, register, downloadIdentity, isLoadingIdentity, isRegistering } = useSemaphore()
   
-  const [poll, setPoll] = useState(null)
-  const [loadingPoll, setLoadingPoll] = useState(true)
-  const [registeredIdentity, setRegisteredIdentity] = useState(null) // New state for just-registered users
+  const {
+    poll,
+    isRegistered,
+    registeredIdentity,
+    isLoading,
+    isLoadingIdentity,
+    isRegistering,
+    error,
+    handleRegister,
+    downloadIdentity
+  } = useRegistrationFlow(pollId)
 
-  // 1. Get Poll Registry Info
-  const { isRegistered, refetchRegistration } = usePollRegistry(pollId)
-
-  useEffect(() => {
-    if (!pollId) return
-    
-    getPollById(pollId).then(({ data, error }) => {
-      if (error) {
-        console.error('Failed to load poll:', error)
-        toast.error('Failed to load poll details')
-      }
-      setPoll(data)
-      setLoadingPoll(false)
-    })
-  }, [pollId])
-
-  const handleRegister = async () => {
-    if (!isConnected) {
-      toast.error('Please connect your wallet first')
-      return
-    }
-
-    try {
-      // Create deterministic identity for this poll (can be regenerated anytime)
-      const identity = await createIdentity(pollId)
-      if (identity) {
-        const success = await register(pollId, identity)
-        
-        if (success) {
-          refetchRegistration()
-          setRegisteredIdentity(identity)
-          toast.success('Successfully registered! You can regenerate your identity anytime by signing.')
-        }
-      }
-    } catch (err) {
-      console.error('Registration failed:', err)
-      const msg = err?.message || err?.shortMessage || 'Registration failed'
-      toast.error(msg.length > 50 ? msg.slice(0, 50) + '...' : msg)
-    }
-  }
-
-  if (loadingPoll) {
+  if (isLoading) {
     return (
       <div className="pt-32 text-center">
         <div className="animate-pulse text-xl font-serif text-gray-500">Loading poll details...</div>
@@ -71,10 +30,10 @@ export default function RegisterPage() {
     )
   }
 
-  if (!poll) {
+  if (error || !poll) {
     return (
       <div className="pt-32 text-center text-red-500">
-        Poll not found
+        {error || 'Poll not found'}
       </div>
     )
   }

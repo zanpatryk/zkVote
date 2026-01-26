@@ -4,7 +4,6 @@ import { useState } from 'react'
 import VoteChecker from '@/components/VoteChecker'
 import VerificationResult from '@/components/VerificationResult'
 import { motion, AnimatePresence } from 'framer-motion'
-import BackButton from '@/components/BackButton'
 
 export default function VerifyPage() {
   const [verificationData, setVerificationData] = useState(null)
@@ -14,12 +13,8 @@ export default function VerifyPage() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="pt-32 max-w-3xl mx-auto px-6 pb-32 text-center"
+      className="pt-32 max-w-2xl mx-auto px-6 pb-32 text-center"
     >
-      <div className="flex justify-between items-start mb-6">
-         <div></div> 
-         <BackButton href="/" label="Back to Home" />
-      </div>
 
       <motion.h1 
         initial={{ opacity: 0, scale: 0.9 }}

@@ -47,10 +47,6 @@ describe('IdentityFileUploader', () => {
     const file = new File([''], 'identity.json', { type: 'application/json' })
     file._content = JSON.stringify({ pollId: '123', secret: 'my-secret' })
     
-    // Find input by ID since it's hidden
-    // We can use container query or get by label if label existed, but here we have onClick div.
-    // The input is hidden inside the div.
-    // We can query selector.
     const input = document.getElementById('common-identity-upload')
     
     await act(async () => {
@@ -83,5 +79,73 @@ describe('IdentityFileUploader', () => {
         expect(toast.error).toHaveBeenCalledWith('Invalid identity file: Missing private key')
         expect(mockOnIdentityParsed).not.toHaveBeenCalled()
     })
+  })
+
+  it('shows error for invalid file extension', async () => {
+    render(<IdentityFileUploader onIdentityParsed={mockOnIdentityParsed} />)
+    
+    const file = new File([''], 'identity.txt', { type: 'text/plain' })
+    const input = document.getElementById('common-identity-upload')
+    
+    await act(async () => {
+        fireEvent.change(input, { target: { files: [file] } })
+    })
+
+    expect(toast.error).toHaveBeenCalledWith('Please upload a valid JSON identity file')
+  })
+
+  it('handles drag over and leave events', () => {
+    const { container } = render(<IdentityFileUploader onIdentityParsed={mockOnIdentityParsed} />)
+    const dropzone = container.firstChild
+
+    fireEvent.dragOver(dropzone)
+    expect(dropzone).toHaveClass('border-black')
+
+    fireEvent.dragLeave(dropzone)
+    expect(dropzone).not.toHaveClass('border-black')
+  })
+
+  it('handles file drop', async () => {
+    Identity.mockImplementation(() => ({ commitment: '123' }))
+    render(<IdentityFileUploader onIdentityParsed={mockOnIdentityParsed} />)
+    
+    const file = new File([''], 'identity.json', { type: 'application/json' })
+    file._content = JSON.stringify({ pollId: '123', secret: 'my-secret' })
+    
+    const dropzone = screen.getByText('Upload Identity JSON').closest('div')
+    
+    await act(async () => {
+      fireEvent.drop(dropzone, {
+        dataTransfer: {
+          files: [file]
+        }
+      })
+    })
+
+    await waitFor(() => {
+      expect(Identity).toHaveBeenCalledWith('my-secret')
+      expect(mockOnIdentityParsed).toHaveBeenCalled()
+    })
+  })
+
+  it('triggers file input click when area is clicked', () => {
+    render(<IdentityFileUploader onIdentityParsed={mockOnIdentityParsed} />)
+    const input = document.getElementById('common-identity-upload')
+    const spy = jest.spyOn(input, 'click')
+    
+    // Target the main container div
+    const dropzone = screen.getByText('Upload Identity JSON').closest('div')
+    fireEvent.click(dropzone)
+    
+    expect(spy).toHaveBeenCalled()
+  })
+
+  it('shows loading state when isVerifying is true', () => {
+    render(<IdentityFileUploader onIdentityParsed={mockOnIdentityParsed} isVerifying={true} />)
+    expect(screen.getByText('Verifying Identity...')).toBeInTheDocument()
+    
+    const dropzone = screen.getByText('Verifying Identity...').closest('div')
+    expect(dropzone).toHaveClass('opacity-50')
+    expect(dropzone).toHaveClass('pointer-events-none')
   })
 })

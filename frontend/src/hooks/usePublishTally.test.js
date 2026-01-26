@@ -1,11 +1,11 @@
-import { renderHook, waitFor, act } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { usePublishTally } from './usePublishTally'
 import { useReadContract } from 'wagmi'
 import { usePollRegistry } from '@/hooks/usePollRegistry'
 import { publishEncryptedResults } from '@/lib/blockchain/engine/write'
 import { decryptTally, generateTallyProof } from '@/lib/crypto/tally'
 import { toast } from 'react-hot-toast'
-import { toastTransactionError } from '@/lib/blockchain/utils/error-handler'
+import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 // Mock dependencies
 jest.mock('wagmi', () => ({
@@ -21,7 +21,7 @@ jest.mock('@/lib/blockchain/engine/write', () => ({
 }))
 
 jest.mock('@/lib/blockchain/utils/error-handler', () => ({
-  toastTransactionError: jest.fn(),
+  formatTransactionError: jest.fn((err, fallback) => fallback),
 }))
 
 jest.mock('@/lib/crypto/tally', () => ({
@@ -115,7 +115,8 @@ describe('usePublishTally', () => {
         })
     }).rejects.toThrow('Decryption failed')
 
-    expect(toastTransactionError).toHaveBeenCalledWith(expect.any(Error), 'Decryption or publishing failed', expect.any(Object))
+    expect(toast.error).toHaveBeenCalledWith('Decryption or publishing failed', expect.any(Object))
+    expect(formatTransactionError).toHaveBeenCalledWith(expect.any(Error), 'Decryption or publishing failed')
     expect(result.current.isProcessing).toBe(false)
   })
 
@@ -130,7 +131,8 @@ describe('usePublishTally', () => {
         })
     }).rejects.toThrow('Tx failed')
 
-    expect(toastTransactionError).toHaveBeenCalledWith(expect.any(Error), 'Decryption or publishing failed', expect.any(Object))
+    expect(toast.error).toHaveBeenCalledWith('Decryption or publishing failed', expect.any(Object))
+    expect(formatTransactionError).toHaveBeenCalledWith(expect.any(Error), 'Decryption or publishing failed')
     expect(result.current.isProcessing).toBe(false)
   })
 

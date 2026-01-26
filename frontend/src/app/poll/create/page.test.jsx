@@ -5,6 +5,7 @@ import { createPoll } from '@/lib/blockchain/engine/write'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { elgamal } from '@zkvote/lib'
+import { toast } from 'react-hot-toast'
 import '@testing-library/jest-dom'
 
 jest.mock('@/lib/contracts', () => ({
@@ -33,6 +34,7 @@ jest.mock('react-hot-toast', () => ({
   toast: {
     error: jest.fn(),
     success: jest.fn(),
+    loading: jest.fn(),
   }
 }))
 
@@ -41,6 +43,8 @@ jest.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }) => <div {...props}>{children}</div>,
     button: ({ children, ...props }) => <button {...props}>{children}</button>,
+    p: ({ children, ...props }) => <p {...props}>{children}</p>,
+    span: ({ children, ...props }) => <span {...props}>{children}</span>,
   },
   AnimatePresence: ({ children }) => <>{children}</>,
 }))
@@ -64,18 +68,24 @@ describe('CreatePollPage', () => {
   it('renders creation form', () => {
     render(<CreatePollPage />)
     expect(screen.getByText('Create New Poll')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('e.g., What is your favorite color?')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('e.g., Should we adopt the new governance proposal?')).toBeInTheDocument()
   })
 
   it('validates form before submission', async () => {
     render(<CreatePollPage />)
     
-    // Trigger submit directly on form to avoid button click issues
     const form = screen.getByText('Launch Poll').closest('form')
+    
+    // 1. Submit with empty title
     fireEvent.submit(form)
-
     await waitFor(() => {
-        const { toast } = require('react-hot-toast')
+        expect(toast.error).toHaveBeenCalledWith('Poll title is required')
+    })
+
+    // 2. Fill title but leave options empty
+    fireEvent.change(screen.getByPlaceholderText('e.g., Should we adopt the new governance proposal?'), { target: { value: 'My Poll' } })
+    fireEvent.submit(form)
+    await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('Need at least 2 options')
     })
   })
@@ -84,7 +94,7 @@ describe('CreatePollPage', () => {
     createPoll.mockResolvedValue(123n)
     render(<CreatePollPage />)
 
-    fireEvent.change(screen.getByPlaceholderText('e.g., What is your favorite color?'), { target: { value: 'My Poll' } })
+    fireEvent.change(screen.getByPlaceholderText('e.g., Should we adopt the new governance proposal?'), { target: { value: 'My Poll' } })
     fireEvent.change(screen.getByPlaceholderText('Option 1'), { target: { value: 'Yes' } })
     fireEvent.change(screen.getByPlaceholderText('Option 2'), { target: { value: 'No' } })
 
@@ -115,7 +125,6 @@ describe('CreatePollPage', () => {
     fireEvent.submit(form)
 
     await waitFor(() => {
-        const { toast } = require('react-hot-toast')
         expect(toast.error).toHaveBeenCalledWith('Please connect your wallet first')
     })
   })

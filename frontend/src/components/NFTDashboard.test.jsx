@@ -21,8 +21,6 @@ describe('NFTDashboard', () => {
     useAccount.mockReturnValue({ isConnected: false, address: null })
     render(<NFTDashboard />)
 
-    // Title removed from component
-    // Default empty state message
     expect(screen.getByText('No Badges Yet')).toBeInTheDocument()
   })
 

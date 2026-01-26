@@ -122,7 +122,7 @@ export default function ManagePollPage() {
            <p className="text-gray-500 text-lg">Admin control panel.</p>
         </div>
         <div className="w-full md:w-auto flex justify-end">
-          <BackButton href="/poll" label="Back to Dashboard" />
+          <BackButton href="/poll" label="Back to Polls" />
         </div>
       </motion.div>
 

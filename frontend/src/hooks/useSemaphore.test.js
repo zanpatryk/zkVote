@@ -1,8 +1,7 @@
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { useSemaphore } from './useSemaphore'
 import { useSignMessage, useAccount } from 'wagmi'
 import { addMember, castVoteWithProof } from '@/lib/blockchain/engine/write'
-import { getGroupMembers, getMerkleTreeDepth, hasVoted } from '@/lib/blockchain/engine/read'
 import toast from 'react-hot-toast'
 import { Identity } from '@semaphore-protocol/identity'
 
@@ -27,7 +26,7 @@ jest.mock('react-hot-toast', () => {
   const mockToast = {
     success: jest.fn(),
     error: jest.fn(),
-    loading: jest.fn(),
+    loading: jest.fn(() => 'loading-id'),
   }
   return {
     __esModule: true,
@@ -192,6 +191,7 @@ describe('useSemaphore', () => {
       })
 
       expect(addMember).toHaveBeenCalled()
+      expect(toast.error).toHaveBeenCalledWith('Contract error', { id: expect.any(String) })
       expect(result.current.isRegistering).toBe(false)
     })
   })

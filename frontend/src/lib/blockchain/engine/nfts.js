@@ -5,8 +5,6 @@ import {
   votingSystemContract, 
   ResultNFTABI
 } from '@/lib/contracts'
-import { toast } from 'react-hot-toast'
-import { toastTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 // --- READS ---
 
@@ -57,8 +55,7 @@ export async function getUserNFTs(userAddress) {
 export async function mintResultNFT(pollId) {
   const { address } = getAccount(config)
   if (!address) throw new Error('Wallet not connected')
-  const toastId = 'nft'
-  toast.loading('Minting Result NFT...', { id: toastId })
+
   try {
     const hash = await writeContract(config, {
       address: votingSystemContract.address,
@@ -67,10 +64,8 @@ export async function mintResultNFT(pollId) {
       args: [BigInt(pollId)],
     })
     await waitForTransactionReceipt(config, { hash })
-    toast.success('NFT minted successfully!', { id: toastId })
   } catch (error) {
     console.error('mintResultNFT failed:', error)
-    toastTransactionError(error, 'Failed to mint NFT', { id: toastId })
     throw error
   }
 }

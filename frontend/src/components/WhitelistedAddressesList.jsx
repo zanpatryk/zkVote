@@ -1,6 +1,7 @@
 'use client'
 
 import { useWhitelistedAddresses } from '@/hooks/useWhitelistedAddresses'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function WhitelistedAddressesList({ pollId }) {
   const { 
@@ -29,12 +30,21 @@ export default function WhitelistedAddressesList({ pollId }) {
             </div>
         ) : (
             <div className="divide-y-2 divide-black max-h-[400px] overflow-y-auto">
-                {addressList.map((addr) => (
-                    <div key={addr} className="p-4 font-mono text-sm hover:bg-gray-50 transition-colors flex items-center gap-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        {addr}
-                    </div>
-                ))}
+                <AnimatePresence initial={false}>
+                    {addressList.map((addr, index) => (
+                        <motion.div 
+                            key={addr} 
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                            className="p-4 font-mono text-sm hover:bg-gray-50 transition-colors flex items-center gap-3"
+                        >
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            {addr}
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
             </div>
         )}
         

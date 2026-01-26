@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getWhitelistedPolls, getOwnedPolls } from '@/lib/blockchain/engine/read'
+import { getWhitelistedPolls, getOwnedPolls, getPollById } from '@/lib/blockchain/engine/read'
 import { isUserWhitelisted } from '@/lib/blockchain/engine/read'
 
 export function useWhitelistedPolls(address, isConnected) {
@@ -30,4 +30,14 @@ export function useOwnedPolls(address, isConnected) {
   })
 
   return { polls: result.data || [], isLoading, error: queryError || result.error }
+}
+
+export function usePoll(pollId) {
+  const { data: result = { data: null, error: null }, isLoading, error: queryError } = useQuery({
+    queryKey: ['poll', pollId],
+    queryFn: () => getPollById(pollId),
+    enabled: !!pollId,
+  })
+
+  return { poll: result.data, isLoading, error: queryError || result.error }
 }

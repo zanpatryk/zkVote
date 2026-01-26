@@ -12,7 +12,7 @@ describe('RegistrationSuccess', () => {
   it('renders standard success message when NOT just registered', () => {
     (render(<RegistrationSuccess {...defaultProps} />))
     expect(screen.getByText('You are registered!')).toBeInTheDocument()
-    expect(screen.queryByText('Download Backup (Optional)')).not.toBeInTheDocument()
+    expect(screen.queryByText('Download Identity')).not.toBeInTheDocument()
   })
 
   it('renders fresh registration message when isJustRegistered is true', () => {
@@ -24,7 +24,7 @@ describe('RegistrationSuccess', () => {
       />
     )
     expect(screen.getByText('Registration Successful!')).toBeInTheDocument()
-    expect(screen.getByText('Download Backup (Optional)')).toBeInTheDocument()
+    expect(screen.getByText('Download Identity')).toBeInTheDocument()
   })
 
 
@@ -37,7 +37,7 @@ describe('RegistrationSuccess', () => {
         registeredIdentity={mockIdentity}
       />
     )
-    fireEvent.click(screen.getByText('Download Backup (Optional)'))
+    fireEvent.click(screen.getByText('Download Identity'))
     expect(defaultProps.onDownload).toHaveBeenCalledWith(mockIdentity, '123')
   })
 })

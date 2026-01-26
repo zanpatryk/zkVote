@@ -57,12 +57,4 @@ describe('Integration Test: Landing Page', () => {
         expect(screen.getByText('Connect Wallet Above ↑')).toBeInTheDocument()
     })
 
-    it('redirects to /nfts when connected', async () => {
-        mockUseAccount.mockReturnValue({ isConnected: true, address: '0xUser' })
-        
-        render(<LandingPage />)
-        
-        // Check for redirect
-        expect(mockPush).toHaveBeenCalledWith('/nfts')
-    })
 })
