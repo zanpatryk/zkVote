@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import {IVoteStorage} from "./IVoteStorage.sol";
 import {IZKElGamalVoteVectorVerifier} from "./IZKElGamalVoteVectorVerifier.sol";
@@ -23,23 +23,14 @@ interface IZKElGamalVoteVector is IVoteStorage {
     error ZKElGamalVoteVector__InvalidTallyProof();
 
     /* Events */
-    event EncryptedVoteCasted(
-        uint256 indexed pollId,
-        address indexed voter,
-        uint256 voteId
-    );
-    
+    event EncryptedVoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId);
+
     event TallyPublished(uint256 indexed pollId, uint256[16] tally);
-    
-    event PollInitialized(
-        uint256 indexed pollId,
-        uint256[2] publicKey,
-        address voteVerifier,
-        address tallyVerifier
-    );
+
+    event PollInitialized(uint256 indexed pollId, uint256[2] publicKey, address voteVerifier, address tallyVerifier);
 
     /* Functions */
-    
+
     /**
      * @notice Cast an encrypted vote with ZK proof
      */
@@ -53,18 +44,14 @@ interface IZKElGamalVoteVector is IVoteStorage {
     /**
      * @notice Publish verified tally results
      */
-    function publishResults(
-        uint256 pollId,
-        uint256[16] calldata tally,
-        ZKVoteLib.Proof calldata tallyProof
-    ) external;
+    function publishResults(uint256 pollId, uint256[16] calldata tally, ZKVoteLib.Proof calldata tallyProof) external;
 
-    function getAggregatedCiphertexts(uint256 pollId) external view returns (
-        uint256[2][16] memory c1,
-        uint256[2][16] memory c2
-    );
+    function getAggregatedCiphertexts(uint256 pollId)
+        external
+        view
+        returns (uint256[2][16] memory c1, uint256[2][16] memory c2);
 
     function getPollPublicKey(uint256 pollId) external view returns (uint256[2] memory);
-    
+
     function getTotalVotes() external view returns (uint256);
 }

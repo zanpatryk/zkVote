@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import {ISemaphoreEligibilityModule} from "../interfaces/ISemaphoreEligibilityModule.sol";
 import {Semaphore} from "@semaphore-protocol/contracts/Semaphore.sol";
@@ -9,7 +9,7 @@ import {ISemaphore} from "@semaphore-protocol/contracts/interfaces/ISemaphore.so
 contract SemaphoreEligibilityModule is ISemaphoreEligibilityModule, Semaphore {
     address public immutable i_moduleOwner;
     mapping(uint256 => bool) public s_groups;
-    
+
     // Whitelist storage: pollId -> user -> whitelisted
     mapping(uint256 => mapping(address => bool)) private s_whitelist;
     // Track if a user has already registered an identity to prevent duplicates
@@ -29,11 +29,11 @@ contract SemaphoreEligibilityModule is ISemaphoreEligibilityModule, Semaphore {
     }
 
     /* IEligibilityModule (Whitelist) Implementation */
-    
+
     function isWhitelisted(uint256 pollId, address user) external view override returns (bool) {
         return s_whitelist[pollId][user];
     }
-    
+
     function addWhitelisted(uint256 pollId, address user) external override ownerOnly returns (bool) {
         if (s_whitelist[pollId][user]) return false;
         s_whitelist[pollId][user] = true;
@@ -67,9 +67,9 @@ contract SemaphoreEligibilityModule is ISemaphoreEligibilityModule, Semaphore {
 
     function initPoll(uint256 pollId, bytes calldata config) external override returns (bool) {
         if (s_groups[pollId]) {
-             revert SemaphoreEligibilityModule__GroupAlreadyExists();
+            revert SemaphoreEligibilityModule__GroupAlreadyExists();
         }
-        
+
         uint256 depth = 20;
         if (config.length > 0) {
             depth = abi.decode(config, (uint256));
@@ -82,8 +82,13 @@ contract SemaphoreEligibilityModule is ISemaphoreEligibilityModule, Semaphore {
     }
 
     /* ZK Functions */
-    
-    function registerIdentity(uint256 pollId, uint256 identityCommitment, address user) external override ownerOnly returns (bool) {
+
+    function registerIdentity(uint256 pollId, uint256 identityCommitment, address user)
+        external
+        override
+        ownerOnly
+        returns (bool)
+    {
         if (!s_groups[pollId]) {
             revert SemaphoreEligibilityModule__GroupDoesNotExist();
         }
@@ -91,20 +96,20 @@ contract SemaphoreEligibilityModule is ISemaphoreEligibilityModule, Semaphore {
         if (!s_whitelist[pollId][user]) {
             revert SemaphoreEligibilityModule__UserNotWhitelisted();
         }
-        
+
         if (s_hasRegistered[pollId][user]) {
             revert SemaphoreEligibilityModule__UserAlreadyRegistered();
         }
 
         uint256 depth = s_pollDepths[pollId];
         // Enforce capacity based on depth (ZK verifier constraint)
-        if (getMerkleTreeSize(pollId) >= 2**depth) {
+        if (getMerkleTreeSize(pollId) >= 2 ** depth) {
             revert SemaphoreEligibilityModule__GroupIsFull();
         }
-        
+
         _addMember(pollId, identityCommitment);
         s_hasRegistered[pollId][user] = true;
-        
+
         return true;
     }
 
@@ -112,10 +117,15 @@ contract SemaphoreEligibilityModule is ISemaphoreEligibilityModule, Semaphore {
         return s_hasRegistered[pollId][user];
     }
 
-    function verifyVote(uint256 pollId, uint256 vote, uint256 nullifierHash, uint256[8] calldata proof) external view override returns (bool) {
+    function verifyVote(uint256 pollId, uint256 vote, uint256 nullifierHash, uint256[8] calldata proof)
+        external
+        view
+        override
+        returns (bool)
+    {
         uint256 merkleTreeRoot = getMerkleTreeRoot(pollId);
         uint256 merkleTreeDepth = s_pollDepths[pollId];
-        
+
         ISemaphore.SemaphoreProof memory semaphoreProof = ISemaphore.SemaphoreProof({
             merkleTreeDepth: merkleTreeDepth,
             merkleTreeRoot: merkleTreeRoot,

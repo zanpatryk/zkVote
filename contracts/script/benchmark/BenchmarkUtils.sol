@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
@@ -9,7 +9,10 @@ import {PollManager} from "../../src/poll_management/PollManager.sol";
 import "zkvote-lib/ZKVoteLib.sol";
 
 contract GasMeter {
-    function measureCall(address target, bytes calldata data) external returns (uint256 gasUsed, bytes memory returnData) {
+    function measureCall(address target, bytes calldata data)
+        external
+        returns (uint256 gasUsed, bytes memory returnData)
+    {
         uint256 g0 = gasleft();
         (bool ok, bytes memory ret) = target.call(data);
         uint256 g1 = gasleft();
@@ -63,7 +66,8 @@ abstract contract BenchmarkBase is Script {
         if (value == 0) return "0";
         uint256 temp = value;
         uint256 digits;
-        while (temp != 0) { digits++; temp /= 10; }
+        while (temp != 0) digits++;
+        temp /= 10;
         bytes memory buffer = new bytes(digits);
         while (value != 0) {
             digits -= 1;
@@ -76,13 +80,13 @@ abstract contract BenchmarkBase is Script {
     function loadBaseConfig() internal returns (BaseConfig memory _c) {
         string memory configRaw = vm.readFile("script/benchmark/BenchmarkConfig.json");
         _c.participants = vm.parseJsonUint(configRaw, ".participants");
-        
+
         string memory gasCostStr = abi.decode(vm.parseJson(configRaw, ".gasCostPerGwei"), (string));
-        _c.gasCostPerGwei = parseDecimalStringToUint(gasCostStr, PRECISION); 
+        _c.gasCostPerGwei = parseDecimalStringToUint(gasCostStr, PRECISION);
 
         string memory ethUsdStr = abi.decode(vm.parseJson(configRaw, ".ethUsdRate"), (string));
-        _c.ethUsdRate = parseDecimalStringToUint(ethUsdStr, PRECISION); 
-        
+        _c.ethUsdRate = parseDecimalStringToUint(ethUsdStr, PRECISION);
+
         _c.deployerKey = vm.envUint("PRIVATE_KEY");
         _c.deployer = vm.addr(_c.deployerKey);
         _c.batchUpload = abi.decode(vm.parseJson(configRaw, ".batchUpload"), (bool));
@@ -111,15 +115,18 @@ abstract contract BenchmarkBase is Script {
         string[] memory options = new string[](2);
         options[0] = "Yes";
         options[1] = "No";
-        
-        bytes memory createData = abi.encodeCall(BenchmarkActor.createPlainPoll, ("Benchmark Poll", "Benchmark description", options, sys.eligibilityAddr, sys.voteStorageAddr));
-        
+
+        bytes memory createData = abi.encodeCall(
+            BenchmarkActor.createPlainPoll,
+            ("Benchmark Poll", "Benchmark description", options, sys.eligibilityAddr, sys.voteStorageAddr)
+        );
+
         (uint256 g, bytes memory ret) = gasMeter.measureCall(address(sys.ownerActor), createData);
         results.gas_create = g;
         results.totalGas += g;
         return abi.decode(ret, (uint256));
     }
-    
+
     function whitelistParticipants(uint256 pollId) internal virtual returns (uint256[] memory whitelistGases) {
         if (baseCfg.batchUpload) {
             address[] memory voterAddrs = new address[](baseCfg.participants);
@@ -135,7 +142,8 @@ abstract contract BenchmarkBase is Script {
             whitelistGases = new uint256[](baseCfg.participants);
             uint256 gasUsed = 0;
             for (uint256 i = 0; i < baseCfg.participants; ++i) {
-                bytes memory singleData = abi.encodeCall(BenchmarkActor.whitelistUser, (pollId, address(sys.voterActors[i])));
+                bytes memory singleData =
+                    abi.encodeCall(BenchmarkActor.whitelistUser, (pollId, address(sys.voterActors[i])));
                 (uint256 g,) = gasMeter.measureCall(address(sys.ownerActor), singleData);
                 whitelistGases[i] = g;
                 gasUsed += g;
@@ -144,14 +152,14 @@ abstract contract BenchmarkBase is Script {
             results.totalGas += gasUsed;
         }
     }
-    
+
     function startPoll(uint256 pollId) internal virtual {
         bytes memory startData = abi.encodeCall(BenchmarkActor.startPoll, (pollId));
         (uint256 g,) = gasMeter.measureCall(address(sys.ownerActor), startData);
         results.gas_start = g;
         results.totalGas += g;
     }
-    
+
     function endPoll(uint256 pollId) internal virtual {
         bytes memory endData = abi.encodeCall(BenchmarkActor.endPoll, (pollId));
         (uint256 g,) = gasMeter.measureCall(address(sys.ownerActor), endData);
@@ -160,11 +168,13 @@ abstract contract BenchmarkBase is Script {
     }
 
     function computeStats(uint256[] memory arr)
-        internal pure returns (uint256 minVal, uint256 maxVal, uint256 sum, uint256 median, uint256 p90)
+        internal
+        pure
+        returns (uint256 minVal, uint256 maxVal, uint256 sum, uint256 median, uint256 p90)
     {
         uint256 n = arr.length;
         if (n == 0) return (0, 0, 0, 0, 0);
-        
+
         minVal = arr[0];
         maxVal = arr[0];
         sum = 0;
@@ -174,10 +184,12 @@ abstract contract BenchmarkBase is Script {
             if (v < minVal) minVal = v;
             if (v > maxVal) maxVal = v;
         }
-        
+
         uint256[] memory copy = new uint256[](n);
-        for (uint256 i = 0; i < n; ++i) copy[i] = arr[i];
-        
+        for (uint256 i = 0; i < n; ++i) {
+            copy[i] = arr[i];
+        }
+
         // Simple insertion sort
         for (uint256 i = 1; i < n; ++i) {
             uint256 key = copy[i];
@@ -188,9 +200,9 @@ abstract contract BenchmarkBase is Script {
             }
             copy[j] = key;
         }
-        
+
         median = n % 2 == 1 ? copy[n / 2] : (copy[n / 2 - 1] + copy[n / 2]) / 2;
-        
+
         uint256 idx = (9 * n + 9) / 10;
         if (idx == 0) idx = 1;
         if (idx > n) idx = n;
@@ -252,79 +264,132 @@ abstract contract BenchmarkBase is Script {
     }
 
     function writeJSONHeader(string memory outPath, string memory testSuffix, uint256 participants) internal {
-        string memory jsonHeader = string(abi.encodePacked(
-            "{\n",
-            '  "run": "', testSuffix, '",\n',
-            '  "timestamp": ', toString(block.timestamp), ',\n',
-            '  "config": {\n',
-            '    "participants": ', toString(participants), '\n',
-            "  },\n",
-            '  "steps": [\n'
-        ));
+        string memory jsonHeader = string(
+            abi.encodePacked(
+                "{\n",
+                '  "run": "',
+                testSuffix,
+                '",\n',
+                '  "timestamp": ',
+                toString(block.timestamp),
+                ",\n",
+                '  "config": {\n',
+                '    "participants": ',
+                toString(participants),
+                "\n",
+                "  },\n",
+                '  "steps": [\n'
+            )
+        );
         vm.writeFile(outPath, jsonHeader);
     }
 
-    function writeJSONHeaderExtended(string memory outPath, string memory testSuffix, uint256 participants, string memory extraConfig) internal {
-         string memory jsonHeader = string(abi.encodePacked(
-            "{\n",
-            '  "run": "', testSuffix, '",\n',
-            '  "timestamp": ', toString(block.timestamp), ',\n',
-            '  "config": {\n',
-            '    "participants": ', toString(participants), ',\n',
-            extraConfig,
-            "\n  },\n",
-            '  "steps": [\n'
-        ));
+    function writeJSONHeaderExtended(
+        string memory outPath,
+        string memory testSuffix,
+        uint256 participants,
+        string memory extraConfig
+    ) internal {
+        string memory jsonHeader = string(
+            abi.encodePacked(
+                "{\n",
+                '  "run": "',
+                testSuffix,
+                '",\n',
+                '  "timestamp": ',
+                toString(block.timestamp),
+                ",\n",
+                '  "config": {\n',
+                '    "participants": ',
+                toString(participants),
+                ",\n",
+                extraConfig,
+                "\n  },\n",
+                '  "steps": [\n'
+            )
+        );
         vm.writeFile(outPath, jsonHeader);
     }
 
     function writeJSONStep(string memory outPath, string memory name, uint256 gas) internal {
-        vm.writeLine(outPath, string(abi.encodePacked(
-            '    { "name": "', name, '", "gas": ', toString(gas), " },\n"
-        )));
+        vm.writeLine(outPath, string(abi.encodePacked('    { "name": "', name, '", "gas": ', toString(gas), " },\n")));
     }
-    
+
     function writeWhitelistStats(string memory outPath) internal {
-        vm.writeLine(outPath, string(abi.encodePacked(
-            '    { "name": "whitelist", "batchUpload": ', (baseCfg.batchUpload ? "true" : "false"),
-            ', "gas_total": ', toString(results.gas_whitelist), " },\n"
-        )));
+        vm.writeLine(
+            outPath,
+            string(
+                abi.encodePacked(
+                    '    { "name": "whitelist", "batchUpload": ',
+                    (baseCfg.batchUpload ? "true" : "false"),
+                    ', "gas_total": ',
+                    toString(results.gas_whitelist),
+                    " },\n"
+                )
+            )
+        );
     }
-    
+
     function writeJSONStepNoComma(string memory outPath, string memory name, uint256 gas) internal {
-        vm.writeLine(outPath, string(abi.encodePacked(
-            '    { "name": "', name, '", "gas": ', toString(gas), " }\n"
-        )));
+        vm.writeLine(outPath, string(abi.encodePacked('    { "name": "', name, '", "gas": ', toString(gas), " }\n")));
     }
-    
-    function writeJSONStepWithStats(string memory outPath, string memory name, uint256 count, uint256[] memory gases) internal {
-        (uint256 minVal, uint256 maxVal, uint256 sum, , ) = computeStats(gases);
-         uint256 avg = count > 0 ? sum / count : 0;
-         
-         vm.writeLine(outPath, string(abi.encodePacked(
-            '    { "name": "', name, '", "count": ', toString(count), 
-            ', "total_gas": ', toString(sum),
-            ', "avg_gas": ', toString(avg),
-            ', "min_gas": ', toString(minVal),
-            ', "max_gas": ', toString(maxVal),
-            " },\n"
-        )));
+
+    function writeJSONStepWithStats(string memory outPath, string memory name, uint256 count, uint256[] memory gases)
+        internal
+    {
+        (uint256 minVal, uint256 maxVal, uint256 sum,,) = computeStats(gases);
+        uint256 avg = count > 0 ? sum / count : 0;
+
+        vm.writeLine(
+            outPath,
+            string(
+                abi.encodePacked(
+                    '    { "name": "',
+                    name,
+                    '", "count": ',
+                    toString(count),
+                    ', "total_gas": ',
+                    toString(sum),
+                    ', "avg_gas": ',
+                    toString(avg),
+                    ', "min_gas": ',
+                    toString(minVal),
+                    ', "max_gas": ',
+                    toString(maxVal),
+                    " },\n"
+                )
+            )
+        );
     }
 
     function writeVoteStats(string memory outPath, uint256 count, uint256[] memory voteGases) internal {
-         (uint256 minVote, uint256 maxVote, uint256 sumVotes, uint256 medianVote, uint256 p90Vote) = computeStats(voteGases);
+        (uint256 minVote, uint256 maxVote, uint256 sumVotes, uint256 medianVote, uint256 p90Vote) =
+            computeStats(voteGases);
         uint256 avgVote = count > 0 ? (sumVotes / count) : 0;
-        
-        vm.writeLine(outPath, string(abi.encodePacked(
-            '    { "name": "cast_votes", "count": ', toString(count),
-            ', "total_gas": ', toString(sumVotes),
-            ', "avg_gas_per_vote": ', toString(avgVote),
-            ', "min_gas": ', toString(minVote),
-            ', "max_gas": ', toString(maxVote),
-            ', "median_gas": ', toString(medianVote),
-            ', "p90_gas": ', toString(p90Vote), " },\n"
-        )));
-        
+
+        vm.writeLine(
+            outPath,
+            string(
+                abi.encodePacked(
+                    '    { "name": "cast_votes", "count": ',
+                    toString(count),
+                    ', "total_gas": ',
+                    toString(sumVotes),
+                    ', "avg_gas_per_vote": ',
+                    toString(avgVote),
+                    ', "min_gas": ',
+                    toString(minVote),
+                    ', "max_gas": ',
+                    toString(maxVote),
+                    ', "median_gas": ',
+                    toString(medianVote),
+                    ', "p90_gas": ',
+                    toString(p90Vote),
+                    " },\n"
+                )
+            )
+        );
+
         vm.writeLine(outPath, '    { "name": "cast_votes_per_call", "gases": [');
         for (uint256 i = 0; i < count; ++i) {
             string memory comma = i + 1 < count ? "," : "";
@@ -333,21 +398,34 @@ abstract contract BenchmarkBase is Script {
         vm.writeLine(outPath, "    ] },\n");
     }
 
-    function writeJSONFooter(string memory outPath, uint256 txCount, uint256 totalGas, uint256 gasCostPerGwei, uint256 ethUsdRate) internal {
+    function writeJSONFooter(
+        string memory outPath,
+        uint256 txCount,
+        uint256 totalGas,
+        uint256 gasCostPerGwei,
+        uint256 ethUsdRate
+    ) internal {
         uint256 costInWei = (totalGas * gasCostPerGwei * 1_000_000_000) / PRECISION;
         uint256 totalValueUSD_scaled = (costInWei * ethUsdRate) / 1e18;
         string memory totalValueUSD_str = scaledUintToDecimalString(totalValueUSD_scaled, PRECISION);
-        
-        string memory footer = string(abi.encodePacked(
-            "  ],\n",
-            '  "totals": { "tx_count": ', toString(txCount), 
-            ', "total_gas": ', toString(totalGas),
-            ', "total_value_usd": "', totalValueUSD_str, '"',
-            ', "total_value_usd_scaled": ', toString(totalValueUSD_scaled),
-            " }\n",
-            "}\n"
-        ));
-        
+
+        string memory footer = string(
+            abi.encodePacked(
+                "  ],\n",
+                '  "totals": { "tx_count": ',
+                toString(txCount),
+                ', "total_gas": ',
+                toString(totalGas),
+                ', "total_value_usd": "',
+                totalValueUSD_str,
+                '"',
+                ', "total_value_usd_scaled": ',
+                toString(totalValueUSD_scaled),
+                " }\n",
+                "}\n"
+            )
+        );
+
         vm.writeLine(outPath, footer);
     }
 }
@@ -356,7 +434,7 @@ abstract contract BenchmarkBase is Script {
 ///      Used to simulate distinct msg.sender for benchmarking.
 contract BenchmarkActor {
     VotingSystemEngine public immutable vse;
-    
+
     constructor(address vse_) {
         vse = VotingSystemEngine(vse_);
     }
@@ -364,25 +442,27 @@ contract BenchmarkActor {
     // --- Owner Actions ---
 
     function createPlainPoll(
-        string calldata title, 
-        string calldata description, 
-        string[] calldata options, 
-        address eligibilityModule, 
+        string calldata title,
+        string calldata description,
+        string[] calldata options,
+        address eligibilityModule,
         address voteStorage
     ) external returns (uint256) {
         return vse.createPoll(title, description, options, "", "", eligibilityModule, voteStorage);
     }
-    
+
     function createPoll(
-        string calldata title, 
-        string calldata description, 
-        string[] calldata options, 
+        string calldata title,
+        string calldata description,
+        string[] calldata options,
         bytes calldata voteStorageConfig,
         bytes calldata eligibilityConfig,
-        address eligibilityModule, 
+        address eligibilityModule,
         address voteStorage
     ) external returns (uint256) {
-        return vse.createPoll(title, description, options, voteStorageConfig, eligibilityConfig, eligibilityModule, voteStorage);
+        return vse.createPoll(
+            title, description, options, voteStorageConfig, eligibilityConfig, eligibilityModule, voteStorage
+        );
     }
 
     function startPoll(uint256 pollId) external {
@@ -401,7 +481,9 @@ contract BenchmarkActor {
         vse.whitelistUsers(pollId, users);
     }
 
-    function publishEncryptedResults(uint256 pollId, uint256[16] calldata tally, ZKVoteLib.Proof calldata proof) external {
+    function publishEncryptedResults(uint256 pollId, uint256[16] calldata tally, ZKVoteLib.Proof calldata proof)
+        external
+    {
         vse.publishEncryptedResults(pollId, tally, proof);
     }
 
@@ -426,13 +508,16 @@ contract BenchmarkActor {
     }
 
     // Semaphore Plain Vote
-    function castVoteWithProof(uint256 pollId, uint256 optionIdx, uint256 nullifierHash, uint256[8] calldata proof) external returns (uint256 gasUsed) {
+    function castVoteWithProof(uint256 pollId, uint256 optionIdx, uint256 nullifierHash, uint256[8] calldata proof)
+        external
+        returns (uint256 gasUsed)
+    {
         uint256 g0 = gasleft();
         vse.castVoteWithProof(pollId, optionIdx, nullifierHash, proof);
         uint256 g1 = gasleft();
         return g0 - g1;
     }
-    
+
     // Semaphore ZK Vote
     function castEncryptedVoteWithProof(
         uint256 pollId,
