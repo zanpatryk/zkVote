@@ -6,6 +6,7 @@ import {Script} from "forge-std/Script.sol";
 contract HelperConfig is Script {
     struct NetworkConfig {
         uint256 deployerKey;
+        address semaphoreVerifier;
     }
 
     uint256 public constant DEFAULT_ANVIL_PRIVATE_KEY =
@@ -23,7 +24,10 @@ contract HelperConfig is Script {
 
     function getSepoliaConfig() public view returns (NetworkConfig memory) {
         // read PRIVATE_KEY from env when deploying to sepolia / public nets
-        return NetworkConfig({deployerKey: vm.envUint("PRIVATE_KEY")});
+        return NetworkConfig({
+            deployerKey: vm.envUint("PRIVATE_KEY"),
+            semaphoreVerifier: 0x4DeC9E3784EcC1eE002001BfE91deEf4A48931f8
+        });
     }
 
     function getOrCreateAnvilConfig() public returns (NetworkConfig memory) {
@@ -33,7 +37,10 @@ contract HelperConfig is Script {
         }
 
         // Default local / anvil key
-        activeNetworkConfig = NetworkConfig({deployerKey: DEFAULT_ANVIL_PRIVATE_KEY});
+        activeNetworkConfig = NetworkConfig({
+            deployerKey: DEFAULT_ANVIL_PRIVATE_KEY,
+            semaphoreVerifier: address(0)
+        });
         return activeNetworkConfig;
     }
 }
