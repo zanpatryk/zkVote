@@ -48,7 +48,7 @@ contract IntegrationTest is Test {
             eligibilityModule,
             voteStorage,, // ZKElGamalVoteVector
             resultNFT,,,
-            helperConfig
+            helperConfig,
         ) = deployer.run();
 
         // Deploy Plain Eligibility for these tests

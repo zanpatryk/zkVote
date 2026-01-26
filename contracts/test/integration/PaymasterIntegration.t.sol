@@ -107,7 +107,7 @@ contract PaymasterIntegrationTest is Test {
             resultNFT,
             entryPoint,
             paymaster,
-            helperConfig
+            helperConfig,
         ) = deployer.run();
 
         ownerAddress = vm.addr(ownerKey);
