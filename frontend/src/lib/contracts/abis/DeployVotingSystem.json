@@ -53,6 +53,16 @@
         "internalType": "contract ResultNFT"
       },
       {
+        "name": "entryPoint",
+        "type": "address",
+        "internalType": "contract EntryPoint"
+      },
+      {
+        "name": "pollSponsorPaymaster",
+        "type": "address",
+        "internalType": "contract PollSponsorPaymaster"
+      },
+      {
         "name": "helper",
         "type": "address",
         "internalType": "contract HelperConfig"
