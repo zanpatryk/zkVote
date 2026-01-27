@@ -38,9 +38,12 @@ contract PollSponsorPaymaster is BasePaymaster {
 
     // selector for VotingSystemEngine.castVote
     bytes4 private constant CAST_VOTE_SELECTOR = bytes4(keccak256("castVote(uint256,uint256)"));
+    
+    // selector for VotingSystemEngine.castSponsoredVote
+    bytes4 private constant CAST_SPONSORED_VOTE_SELECTOR = bytes4(keccak256("castSponsoredVote(uint256,uint256,address)"));
 
     constructor(IEntryPoint _entryPoint, address _pollManager, address _votingSystemEngine)
-        BasePaymaster(_entryPoint, msg.sender)
+        BasePaymaster(_entryPoint, address(this))
     {
         i_pollManager = IPollManager(_pollManager);
         i_votingSystemEngine = VotingSystemEngine(_votingSystemEngine);
@@ -53,7 +56,6 @@ contract PollSponsorPaymaster is BasePaymaster {
             revert PollSponsorPaymaster__PollDoesNotExist(pollId);
         }
         if (msg.sender != pollOwner) {
-            // only the poll owner can fund the poll
             revert PollSponsorPaymaster__Unauthorized();
         }
         if (msg.value == 0) {
@@ -75,7 +77,6 @@ contract PollSponsorPaymaster is BasePaymaster {
             revert PollSponsorPaymaster__PollDoesNotExist(pollId);
         }
         if (msg.sender != pollOwner) {
-            // only the poll owner can withdraw from the poll
             revert PollSponsorPaymaster__Unauthorized();
         }
 
@@ -84,7 +85,14 @@ contract PollSponsorPaymaster is BasePaymaster {
             revert PollSponsorPaymaster__NotEnoughBudget();
         }
 
-        uint256 withdrawAmount = amount == 0 ? availableBudget : amount;
+        // Check actual EntryPoint deposit (may be less than budget due to gas costs)
+        uint256 entryPointDeposit = getDeposit();
+        uint256 maxWithdrawable = availableBudget < entryPointDeposit ? availableBudget : entryPointDeposit;
+
+        uint256 withdrawAmount = amount == 0 ? maxWithdrawable : amount;
+        if (withdrawAmount > maxWithdrawable) {
+            withdrawAmount = maxWithdrawable;
+        }
         if (withdrawAmount > availableBudget) {
             withdrawAmount = availableBudget;
         }
@@ -101,7 +109,6 @@ contract PollSponsorPaymaster is BasePaymaster {
             revert PollSponsorPaymaster__PollDoesNotExist(pollId);
         }
         if (msg.sender != pollOwner) {
-            // only the poll owner can withdraw from the poll
             revert PollSponsorPaymaster__Unauthorized();
         }
         s_perVoterWeiLimit[pollId] = weiLimit;
@@ -111,14 +118,13 @@ contract PollSponsorPaymaster is BasePaymaster {
     // Paymaster hooks ( BasePaymaster overrides )
     /**
      * @dev Validate that:
-     *  - paymasterAndData encodes a pollId
-     *  - Poll exists
-     *  - userOp.callData is SimpleAccount.execute(target,value,data) and target == votingEngine
-     *  - the inner call is castVote(...) (plain vote)
-     *  - sender is whitelisted for this poll (via votingEngine.isWhitelisted)
-     *  - pollBudget >= maxCost (conservative pre-check)
-     *  - per-voter limit (if set) is not exceeded
-     *
+     * - paymasterAndData encodes a pollId
+     * - Poll exists
+     * - userOp.callData is SimpleAccount.execute(target,value,data) and target == votingEngine
+     * - the inner call is castVote(...) (plain vote)
+     * - sender is whitelisted for this poll (via votingEngine.isWhitelisted)
+     * - pollBudget >= maxCost (conservative pre-check)
+     * - per-voter limit (if set) is not exceeded
      * Returns `context = abi.encode(pollId, sender)` for use in _postOp
      */
 
@@ -157,7 +163,7 @@ contract PollSponsorPaymaster is BasePaymaster {
         if (userOp.callData.length < 136) revert PollSponsorPaymaster__PaymasterInnerCallDataMalformed();
 
         bytes4 innerSelector = bytes4(userOp.callData[132:136]);
-        if (innerSelector != CAST_VOTE_SELECTOR) {
+        if (innerSelector != CAST_VOTE_SELECTOR && innerSelector != CAST_SPONSORED_VOTE_SELECTOR) {
             revert PollSponsorPaymaster__OnlyCastVoteSelector();
         }
 
@@ -208,5 +214,9 @@ contract PollSponsorPaymaster is BasePaymaster {
         emit PollDebited(pollId, sender, toCharge);
     }
 
+    function getPollBudget(uint256 pollId) external view returns (uint256) {
+        return s_pollBudgets[pollId];
+    }
+    
     receive() external payable {}
 }

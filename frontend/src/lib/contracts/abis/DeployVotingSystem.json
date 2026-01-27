@@ -63,6 +63,11 @@
         "internalType": "contract PollSponsorPaymaster"
       },
       {
+        "name": "simpleAccount",
+        "type": "address",
+        "internalType": "contract zkVoteSimpleAccount"
+      },
+      {
         "name": "helper",
         "type": "address",
         "internalType": "contract HelperConfig"

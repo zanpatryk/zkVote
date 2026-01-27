@@ -10,6 +10,7 @@ import { getPollPublicKey } from '@/lib/blockchain/engine/read'
 import { ELGAMAL_VECTOR_SIZE, VOTE_CIRCUIT_WASM_PATH, VOTE_CIRCUIT_ZKEY_PATH } from '@/lib/constants'
 import { toast } from 'react-hot-toast'
 import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
+import { buildSponsoredVoteUserOp, sendSponsoredPlainVote } from '@/lib/accountAbstraction/userOp'
 
 
 export function useZKVote(pollId) {
@@ -152,12 +153,29 @@ export function useZKVote(pollId) {
         setCurrentStep(0)
         const toastId = toast.loading('Submitting vote...', { id: 'vote' })
         try {
-            result = await castPlainVote(pollId, optionIndex)
-            toast.success('Vote submitted successfully!', { id: toastId })
+          if (!address) {
+            throw new Error('Wallet account not connected')
+          }
+
+          // Build unsigned UserOperation for this poll + option, preserving EOA voter identity
+          const { userOp, entryPoint } = await buildSponsoredVoteUserOp({
+            pollId,
+            optionIdx: optionIndex,
+            voterAddress: address,
+          })
+
+          // Submit unsigned UserOperation to the backend bundler
+          const { txHash, voteId } = await sendSponsoredPlainVote({
+            userOp,
+            entryPoint,
+          })
+          result = { voteId: voteId ?? null, txHash }
+
+          toast.success('Vote submitted successfully!', { id: toastId })
         } catch (err) {
-            const msg = formatTransactionError(err)
-            toast.error(msg, { id: toastId })
-            throw err
+          const msg = formatTransactionError(err)
+          toast.error(msg, { id: toastId })
+          throw err
         }
       }
 

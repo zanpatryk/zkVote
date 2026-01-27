@@ -19,6 +19,7 @@ import {ElGamalTallyDecryptVerifier_N16} from "zkvote-lib/ElGamalTallyDecryptVer
 import {EntryPoint} from "@account-abstraction/contracts/core/EntryPoint.sol";
 import {IEntryPoint} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 import {PollSponsorPaymaster} from "../src/account_abstraction/PollSponsorPaymaster.sol";
+import {zkVoteSimpleAccount} from "../src/account_abstraction/zkVoteSimpleAccount.sol";
 
 import {HelperConfig} from "./HelperConfig.s.sol";
 
@@ -35,6 +36,7 @@ contract DeployVotingSystem is Script {
             ResultNFT resultNFT,
             EntryPoint entryPoint,
             PollSponsorPaymaster pollSponsorPaymaster,
+            zkVoteSimpleAccount simpleAccount,
             HelperConfig helper,
             ISemaphoreVerifier verifierContract
         )
@@ -78,9 +80,10 @@ contract DeployVotingSystem is Script {
         // 5) Initialize VSE (Default Modules)
         vse.initialize(address(pollManager), address(eligibilityV0), address(voteStorageV0), address(resultNFT));
 
-        // 6) Deploy Paymaster
+        // 6) Deploy Paymaster and SimpleAccount
         entryPoint = new EntryPoint();
         pollSponsorPaymaster = new PollSponsorPaymaster(entryPoint, address(pollManager), address(vse));
+        simpleAccount = new zkVoteSimpleAccount(deployerAddress, IEntryPoint(address(entryPoint)));
 
         // Write simplified address.json for frontend
         string memory json = string.concat(
@@ -115,6 +118,9 @@ contract DeployVotingSystem is Script {
             '",\n',
             '  "paymaster": "',
             vm.toString(address(pollSponsorPaymaster)),
+            '",\n',
+            '  "simpleAccount": "',
+            vm.toString(address(simpleAccount)),
             '"\n',
             "}"
         );

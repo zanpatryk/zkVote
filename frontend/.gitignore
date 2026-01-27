@@ -21,3 +21,5 @@ next-env.d.ts
 *.zkey
 /public/semaphore/
 /public/circuits/
+
+.env.local

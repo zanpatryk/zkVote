@@ -44,9 +44,9 @@ contract IntegrationTest is Test {
         deployer = new DeployVotingSystem();
         (
             vse,
-            pollManager,, // SemaphoreEligibilityModule
+            pollManager,, 
             eligibilityModule,
-            voteStorage,, // ZKElGamalVoteVector
+            voteStorage,,
             resultNFT,,,
             helperConfig,
         ) = deployer.run();

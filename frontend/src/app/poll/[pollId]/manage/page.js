@@ -146,6 +146,8 @@ export default function ManagePollPage() {
                 pollState={pollState} 
                 maxParticipants={maxParticipants}
                 onStatusChange={fetchPollData} 
+                isZK={isZK}
+                isSecret={isSecret}
               />
             )}
 
