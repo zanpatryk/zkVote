@@ -13,6 +13,16 @@ import { toast } from 'react-hot-toast'
 import { getModules } from './core'
 import { CONTRACT_ADDRESSES } from '@/lib/contracts'
 
+jest.mock('@/lib/contracts', () => ({
+  CONTRACT_ADDRESSES: { semaphoreEligibility: '0xSemEli' },
+  votingSystemContract: { abi: [], address: '0xVSE' },
+  SemaphoreEligibilityModuleABI: [],
+  getAddresses: jest.fn(() => ({
+    vse: '0xVSE',
+    semaphoreEligibility: '0xSemEli'
+  }))
+}))
+
 jest.mock('@wagmi/core', () => ({
   getPublicClient: jest.fn(),
   writeContract: jest.fn(),
@@ -40,6 +50,7 @@ describe('members domain engine', () => {
     mockPublicClient = {
       readContract: jest.fn(),
       getLogs: jest.fn(),
+      chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
     getAccount.mockReturnValue({ address: '0xUser' })

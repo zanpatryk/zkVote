@@ -3,7 +3,8 @@ import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { parseAbiItem } from 'viem'
 import { 
   votingSystemContract, 
-  ResultNFTABI
+  ResultNFTABI,
+  getAddresses
 } from '@/lib/contracts'
 
 // --- READS ---
@@ -12,8 +13,9 @@ export async function getUserNFTs(userAddress) {
   if (!userAddress) return { data: [], error: null }
   try {
     const publicClient = getPublicClient(config)
+    const addresses = getAddresses(publicClient.chain.id)
     const resultNFTAddress = await publicClient.readContract({
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 's_resultNFT',
     })
@@ -57,8 +59,11 @@ export async function mintResultNFT(pollId) {
   if (!address) throw new Error('Wallet not connected')
 
   try {
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'mintResultNFT',
       args: [BigInt(pollId)],

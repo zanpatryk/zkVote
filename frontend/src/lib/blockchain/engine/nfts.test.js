@@ -1,6 +1,13 @@
 import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
 import { getUserNFTs, mintResultNFT } from './nfts'
 
+jest.mock('@/lib/contracts', () => ({
+  votingSystemContract: { abi: [], address: '0xVSE' },
+  ResultNFTABI: [],
+  getAddresses: jest.fn(() => ({
+    vse: '0xVSE'
+  }))
+}))
 jest.mock('@wagmi/core', () => ({
   getPublicClient: jest.fn(),
   writeContract: jest.fn(),
@@ -24,6 +31,7 @@ describe('nfts domain engine', () => {
     mockPublicClient = {
       readContract: jest.fn(),
       getLogs: jest.fn(),
+      chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
     getAccount.mockReturnValue({ address: '0xUser' })

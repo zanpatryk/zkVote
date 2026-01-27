@@ -9,6 +9,21 @@ import {
 } from './polls'
 import { toast } from 'react-hot-toast'
 
+jest.mock('@/lib/contracts', () => ({
+  votingSystemContract: { abi: [], address: '0xVSE' },
+  PollManagerABI: [],
+  pollManagerContract: { abi: [] },
+  CONTRACT_ADDRESSES: { zkElGamalVoteVector: '0xZK' },
+  getAddresses: jest.fn(() => ({
+    vse: '0xVSE',
+    vse: '0xVSE',
+    zkElGamalVoteVector: '0xZK',
+    elgamalVoteVerifier: '0xEVV',
+    elgamalTallyVerifier: '0xETV',
+    eligibilityV0: '0xEliV0',
+    semaphoreEligibility: '0xSemEli'
+  }))
+}))
 jest.mock('react-hot-toast', () => ({
   toast: {
     loading: jest.fn(),
@@ -48,6 +63,7 @@ describe('polls domain engine', () => {
     mockPublicClient = {
       readContract: jest.fn(),
       getLogs: jest.fn(),
+      chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
     getAccount.mockReturnValue({ address: '0xUser' })

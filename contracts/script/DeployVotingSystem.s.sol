@@ -118,7 +118,9 @@ contract DeployVotingSystem is Script {
             '"\n',
             "}"
         );
-        vm.writeFile("../frontend/src/lib/contracts/address.json", json);
+        string memory chainId = vm.toString(block.chainid);
+        string memory path = string.concat("../frontend/src/lib/deployments/", chainId, ".json");
+        vm.writeFile(path, json);
 
         vm.stopBroadcast();
     }

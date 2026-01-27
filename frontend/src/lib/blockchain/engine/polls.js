@@ -4,10 +4,9 @@ import { parseAbiItem, encodeAbiParameters, parseAbiParameters, encodeEventTopic
 import { 
   votingSystemContract, 
   PollManagerABI, 
-  pollManagerContract,
-  MODULE_ADDRESSES,
-  CONTRACT_ADDRESSES
+  pollManagerContract
 } from '@/lib/contracts'
+import { getAddresses, CONTRACT_ADDRESSES } from '@/lib/contracts'
 import { getModules } from './core'
 
 // --- READS ---
@@ -73,9 +72,12 @@ export async function getWhitelistedPolls(address) {
   try {
     const publicClient = getPublicClient(config)
     
+    const chainId = publicClient.chain.id
+    const addresses = getAddresses(chainId)
+    
     const modulesToQuery = [
-      CONTRACT_ADDRESSES.eligibilityV0,
-      CONTRACT_ADDRESSES.semaphoreEligibility
+      addresses.eligibilityV0,
+      addresses.semaphoreEligibility
     ].filter(Boolean)
 
     const allLogs = await Promise.all(
@@ -123,23 +125,26 @@ export async function createPoll(pollDetails) {
       voteStorageParams
     } = pollDetails
 
+    const { chainId } = getAccount(config)
+    const activeAddresses = getAddresses(chainId)
+
     const depth = merkleTreeDepth ? BigInt(merkleTreeDepth) : BigInt(20)
     const eligibilityConfig = encodeAbiParameters(parseAbiParameters('uint256'), [depth])
 
     let voteStorageConfig = '0x'
-    if (voteStorage === MODULE_ADDRESSES.zkElGamalVoteVector && voteStorageParams?.publicKey) {
+    if (voteStorage === activeAddresses.zkElGamalVoteVector && voteStorageParams?.publicKey) {
       voteStorageConfig = encodeAbiParameters(
         parseAbiParameters('uint256[2], address, address'),
         [
           voteStorageParams.publicKey.map(v => BigInt(v)),
-          MODULE_ADDRESSES.elgamalVoteVerifier,
-          MODULE_ADDRESSES.elgamalTallyVerifier
+          activeAddresses.elgamalVoteVerifier,
+          activeAddresses.elgamalTallyVerifier
         ]
       )
     }
 
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: activeAddresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'createPoll',
       args: [
@@ -180,8 +185,11 @@ export async function startPoll(pollId) {
   if (!address) throw new Error('Wallet not connected')
 
   try {
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'startPoll',
       args: [BigInt(pollId)],
@@ -202,8 +210,11 @@ export async function endPoll(pollId) {
   if (!address) throw new Error('Wallet not connected')
 
   try {
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'endPoll',
       args: [BigInt(pollId)],

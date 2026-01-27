@@ -17,6 +17,20 @@ import {
 import { toast } from 'react-hot-toast'
 import { CONTRACT_ADDRESSES } from '@/lib/contracts'
 
+jest.mock('@/lib/contracts', () => ({
+  CONTRACT_ADDRESSES: { zkElGamalVoteVector: '0xZKStorage' },
+  votingSystemContract: { abi: [], address: '0xVSE' },
+  voteStorageContract: { abi: [] },
+  IVoteStorageABI: [],
+  VoteStorageV0ABI: [],
+  ZKElGamalVoteVectorABI: [],
+  getAddresses: jest.fn(() => ({
+    vse: '0xVSE',
+    zkElGamalVoteVector: '0xZKStorage',
+    semaphoreEligibility: '0xSemEli'
+  }))
+}))
+
 jest.mock('@wagmi/core', () => ({
   getPublicClient: jest.fn(),
   writeContract: jest.fn(),
@@ -52,6 +66,7 @@ describe('voting domain engine', () => {
     mockPublicClient = {
       readContract: jest.fn(),
       getLogs: jest.fn(),
+      chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
     getAccount.mockReturnValue({ address: '0xUser' })

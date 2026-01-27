@@ -1,6 +1,6 @@
 import { getPublicClient } from '@wagmi/core'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
-import { votingSystemContract } from '@/lib/contracts'
+import { votingSystemContract, getAddresses } from '@/lib/contracts'
 
 /**
  * Fetches the addresses of the core modules (PollManager, Eligibility, VoteStorage) 
@@ -12,24 +12,26 @@ import { votingSystemContract } from '@/lib/contracts'
 export async function getModules(pollId) {
   try {
     const publicClient = getPublicClient(config)
-    
+    const chainId = publicClient.chain.id
+    const addresses = getAddresses(chainId)
+
     // pollManager is global
     const pollManager = await publicClient.readContract({
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 's_pollManager',
     })
 
     // Prepare read calls
     const readBase = [
-        publicClient.readContract({ address: votingSystemContract.address, abi: votingSystemContract.abi, functionName: 's_defaultEligibility' }),
-        publicClient.readContract({ address: votingSystemContract.address, abi: votingSystemContract.abi, functionName: 's_defaultVoteStorage' })
+        publicClient.readContract({ address: addresses.vse, abi: votingSystemContract.abi, functionName: 's_defaultEligibility' }),
+        publicClient.readContract({ address: addresses.vse, abi: votingSystemContract.abi, functionName: 's_defaultVoteStorage' })
     ]
 
     if (pollId) {
         readBase.push(
-            publicClient.readContract({ address: votingSystemContract.address, abi: votingSystemContract.abi, functionName: 's_pollEligibility', args: [BigInt(pollId)] }),
-            publicClient.readContract({ address: votingSystemContract.address, abi: votingSystemContract.abi, functionName: 's_pollVoteStorage', args: [BigInt(pollId)] })
+            publicClient.readContract({ address: addresses.vse, abi: votingSystemContract.abi, functionName: 's_pollEligibility', args: [BigInt(pollId)] }),
+            publicClient.readContract({ address: addresses.vse, abi: votingSystemContract.abi, functionName: 's_pollVoteStorage', args: [BigInt(pollId)] })
         )
     }
 

@@ -9,6 +9,16 @@ jest.mock('@/lib/wagmi/config', () => ({
   wagmiConfig: {},
 }))
 
+jest.mock('@/lib/contracts', () => ({
+  votingSystemContract: { abi: [] },
+  PollManagerABI: [],
+  getAddresses: jest.fn(() => ({
+    vse: '0xVotingSystem',
+    eligibilityV0: '0xDefaultEli',
+    semaphoreEligibility: '0xSemEli'
+  }))
+}))
+
 describe('core blockchain engine', () => {
   let mockPublicClient
 
@@ -17,6 +27,7 @@ describe('core blockchain engine', () => {
     mockPublicClient = {
       readContract: jest.fn(),
       multicall: jest.fn(),
+      chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
   })

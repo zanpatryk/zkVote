@@ -4,7 +4,8 @@ import { parseAbiItem } from 'viem'
 import { 
   votingSystemContract, 
   SemaphoreEligibilityModuleABI,
-  CONTRACT_ADDRESSES
+  CONTRACT_ADDRESSES,
+  getAddresses
 } from '@/lib/contracts'
 import { getModules } from './core'
 
@@ -50,7 +51,8 @@ export async function getMerkleTreeDepth(pollId) {
     const { eligibilityModule } = await getModules(pollId)
 
     // Only call if it's the Semaphore eligibility module
-    const isSemaphore = eligibilityModule?.toLowerCase() === CONTRACT_ADDRESSES.semaphoreEligibility?.toLowerCase()
+    const addresses = getAddresses(publicClient.chain.id)
+    const isSemaphore = eligibilityModule?.toLowerCase() === addresses.semaphoreEligibility?.toLowerCase()
     
     if (!isSemaphore) {
       return { data: 0, error: null }
@@ -127,7 +129,8 @@ export async function isUserRegistered(pollId, userAddress) {
     const { eligibilityModule } = await getModules(pollId)
 
     // Only SemaphoreEligibilityModule supports isRegistered
-    if (eligibilityModule?.toLowerCase() !== CONTRACT_ADDRESSES.semaphoreEligibility?.toLowerCase()) {
+    const addresses = getAddresses(publicClient.chain.id)
+    if (eligibilityModule?.toLowerCase() !== addresses.semaphoreEligibility?.toLowerCase()) {
       return { data: false, error: null }
     }
 
@@ -150,8 +153,11 @@ export async function whitelistUser(pollId, userAddress) {
   if (!userAddress) throw new Error('No user to whitelist.')
   
   try {
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'whitelistUser',
       args: [BigInt(pollId), userAddress],
@@ -170,8 +176,11 @@ export async function whitelistUsers(pollId, users) {
   if (!users || users.length === 0) throw new Error('No users to whitelist.')
   
   try {
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'whitelistUsers',
       args: [BigInt(pollId), users],
@@ -191,8 +200,11 @@ export async function addMember(pollId, identityCommitment) {
   if (!address) throw new Error('Wallet not connected')
 
   try {
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'registerVoter',
       args: [BigInt(pollId), BigInt(identityCommitment)],

@@ -7,7 +7,8 @@ import {
   VoteStorageV0ABI, 
   ZKElGamalVoteVectorABI,
   CONTRACT_ADDRESSES,
-  voteStorageContract
+  voteStorageContract,
+  getAddresses
 } from '@/lib/contracts'
 import { getModules } from './core'
 
@@ -146,7 +147,8 @@ export async function getZKPollState(pollId) {
   try {
     const publicClient = getPublicClient(config)
     const { voteStorage } = await getModules(pollId)
-    if (voteStorage.toLowerCase() !== CONTRACT_ADDRESSES.zkElGamalVoteVector.toLowerCase()) return { data: null, error: null }
+    const addresses = getAddresses(publicClient.chain.id)
+    if (voteStorage.toLowerCase() !== addresses.zkElGamalVoteVector.toLowerCase()) return { data: null, error: null }
     const [initialized, voteCount, resultsPublished, voteVerifier, tallyVerifier, pollOwner] = await publicClient.readContract({
       address: voteStorage,
       abi: ZKElGamalVoteVectorABI,
@@ -194,8 +196,11 @@ export async function castVote(pollId, optionIdx) {
   if (!address) throw new Error('Wallet not connected')
 
   try {
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'castVote',
       args: [BigInt(pollId), BigInt(optionIdx)],
@@ -230,8 +235,11 @@ export async function castVoteWithProof(pollId, voteDetails, proofData) {
     const { optionIndex } = voteDetails
     const { nullifier, points: proof } = proofData
     const formattedProof = proof.map(p => BigInt(p))
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'castVoteWithProof',
       args: [BigInt(pollId), BigInt(optionIndex), BigInt(nullifier), formattedProof],
@@ -273,8 +281,13 @@ export async function castEncryptedVote(pollId, encryptedData, proofData) {
       }
     ]
 
+
+
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'castEncryptedVote',
       args: args,
@@ -318,8 +331,13 @@ export async function castEncryptedVoteWithProof(pollId, nullifierHash, semaphor
       }
     ]
 
+
+
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'castEncryptedVoteWithProof',
       args: args,
@@ -353,8 +371,11 @@ export async function castPlainVote(pollId, optionIdx) {
   if (!address) throw new Error('Wallet not connected')
 
   try {
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+
     const hash = await writeContract(config, {
-      address: votingSystemContract.address,
+      address: addresses.vse,
       abi: votingSystemContract.abi,
       functionName: 'castVote',
       args: [BigInt(pollId), BigInt(optionIdx)],
@@ -411,7 +432,9 @@ export async function publishEncryptedResults(pollId, tally, proofData) {
     { a: proofData.a.map(v => BigInt(v)), b: proofData.b.map(row => row.map(v => BigInt(v))), c: proofData.c.map(v => BigInt(v)) }
   ]
   try {
-    const hash = await writeContract(config, { address: votingSystemContract.address, abi: votingSystemContract.abi, functionName: 'publishEncryptedResults', args: args })
+    const { chainId } = getAccount(config)
+    const addresses = getAddresses(chainId)
+    const hash = await writeContract(config, { address: addresses.vse, abi: votingSystemContract.abi, functionName: 'publishEncryptedResults', args: args })
     await waitForTransactionReceipt(config, { hash })
     return { success: true, transactionHash: hash }
   } catch (error) {
