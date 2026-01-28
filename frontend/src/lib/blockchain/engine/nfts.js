@@ -1,4 +1,5 @@
-import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
+import { getPublicClient, writeContract, getAccount } from '@wagmi/core'
+import { waitForTransactionResilient } from '@/lib/blockchain/utils/transaction'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { parseAbiItem } from 'viem'
 import { 
@@ -6,6 +7,8 @@ import {
   ResultNFTABI,
   getAddresses
 } from '@/lib/contracts'
+
+import { getLogsChunked } from '@/lib/blockchain/utils/logs'
 
 // --- READS ---
 
@@ -22,7 +25,7 @@ export async function getUserNFTs(userAddress) {
       functionName: 's_resultNFT',
     })
     const transferEventAbi = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)')
-    const logs = await publicClient.getLogs({
+    const logs = await getLogsChunked(publicClient, {
       address: resultNFTAddress,
       event: transferEventAbi,
       args: { to: userAddress },
@@ -70,7 +73,7 @@ export async function mintResultNFT(pollId) {
       functionName: 'mintResultNFT',
       args: [BigInt(pollId)],
     })
-    await waitForTransactionReceipt(config, { hash })
+    await waitForTransactionResilient(config, { hash })
   } catch (error) {
     console.error('mintResultNFT failed:', error)
     throw error

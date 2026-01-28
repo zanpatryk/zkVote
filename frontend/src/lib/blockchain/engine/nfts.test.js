@@ -32,6 +32,7 @@ describe('nfts domain engine', () => {
     mockPublicClient = {
       readContract: jest.fn(),
       getLogs: jest.fn(),
+      getBlockNumber: jest.fn().mockResolvedValue(100n),
       chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)

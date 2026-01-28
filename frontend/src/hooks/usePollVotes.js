@@ -5,7 +5,7 @@ import { POLL_STATE } from '@/lib/constants'
 
 // Parser for VoteCasted events
 const parseVoteLog = (log) => ({
-  voter: log.args.voter,
+  voter: log.args.voter, // internal ID
   voteId: log.args.voteId.toString(),
   transactionHash: log.transactionHash,
   blockNumber: log.blockNumber,
@@ -67,14 +67,36 @@ export function usePollVotes(pollId, pollState) {
 
   // Merge live votes with initial data
   useEffect(() => {
-    if (liveVotes.length > 0) {
-      setVotes(prev => {
-        const existingTxHashes = new Set(prev.map(v => v.transactionHash))
-        const uniqueNewVotes = liveVotes.filter(v => !existingTxHashes.has(v.transactionHash))
-        if (uniqueNewVotes.length === 0) return prev
-        return [...uniqueNewVotes, ...prev].sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
-      })
+    const processLiveVotes = async () => {
+      if (liveVotes.length === 0) return
+
+      try {
+        const { getPublicClient } = await import('@wagmi/core')
+        const { wagmiConfig } = await import('@/lib/wagmi/config')
+        const publicClient = getPublicClient(wagmiConfig)
+
+        const processed = await Promise.all(liveVotes.map(async v => {
+          try {
+            const tx = await publicClient.getTransaction({ hash: v.transactionHash })
+            return { ...v, voter: tx.from } // Override with real sender
+          } catch (e) {
+            console.error('Failed to resolve live vote sender:', e)
+            return v
+          }
+        }))
+
+        setVotes(prev => {
+          const existingTxHashes = new Set(prev.map(v => v.transactionHash))
+          const uniqueNewVotes = processed.filter(v => !existingTxHashes.has(v.transactionHash))
+          if (uniqueNewVotes.length === 0) return prev
+          return [...uniqueNewVotes, ...prev].sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
+        })
+      } catch (err) {
+        console.error('Error processing live votes:', err)
+      }
     }
+
+    processLiveVotes()
   }, [liveVotes])
 
   return { votes, loading }

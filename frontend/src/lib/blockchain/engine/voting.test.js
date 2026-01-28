@@ -67,6 +67,8 @@ describe('voting domain engine', () => {
     mockPublicClient = {
       readContract: jest.fn(),
       getLogs: jest.fn(),
+      getTransaction: jest.fn().mockResolvedValue({ from: '0xRealSender' }),
+      getBlockNumber: jest.fn().mockResolvedValue(100n),
       chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
@@ -139,6 +141,7 @@ describe('voting domain engine', () => {
       }])
       const { data } = await getPollVotes('1')
       expect(data[0].voteId).toBe('100')
+      expect(data[0].voter).toBe('0xRealSender') // Should be resolved from transaction
     })
 
     it('returns empty array on error', async () => {

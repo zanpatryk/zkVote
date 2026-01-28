@@ -8,13 +8,22 @@ import { elgamal } from '@zkvote/lib'
 import { toast } from 'react-hot-toast'
 import '@testing-library/jest-dom'
 
-jest.mock('@/lib/contracts', () => ({
-  MODULE_ADDRESSES: {
+jest.mock('@/lib/contracts', () => {
+  const addresses = {
     semaphoreEligibility: '0xSemaphoreEligibility',
     eligibilityV0: '0xEligibilityV0',
     zkElGamalVoteVector: '0xZkElGamalVoteVector',
     voteStorageV0: '0xVoteStorageV0'
-  }
+  };
+  return {
+    MODULE_ADDRESSES: addresses,
+    CONTRACT_ADDRESSES: addresses,
+    getAddresses: jest.fn(() => addresses)
+  };
+})
+
+jest.mock('@wagmi/core', () => ({
+  getAccount: jest.fn(() => ({ chainId: 31337 })),
 }))
 
 // Mock dependencies
@@ -36,6 +45,10 @@ jest.mock('react-hot-toast', () => ({
     success: jest.fn(),
     loading: jest.fn(),
   }
+}))
+
+jest.mock('@/lib/wagmi/config', () => ({
+  wagmiConfig: {},
 }))
 
 // Mock Framer Motion to avoid animation issues in tests

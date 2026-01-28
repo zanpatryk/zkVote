@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { getPollById, getMerkleTreeDepth, getModules } from '@/lib/blockchain/engine/read'
-import { CONTRACT_ADDRESSES } from '@/lib/contracts'
+import { getAddresses } from '@/lib/contracts'
+import { wagmiConfig as config } from '@/lib/wagmi/config'
+import { getAccount } from '@wagmi/core'
 import { toast } from 'react-hot-toast'
 import { motion } from 'framer-motion'
 import PollManageTabs from '@/components/manage-poll/PollManageTabs'
@@ -44,9 +46,11 @@ export default function ManagePollPage() {
 
         // Check Modules
         const { eligibilityModule, voteStorage } = await getModules(pollId)
+        const account = getAccount(config)
+        const addresses = getAddresses(account?.chainId)
 
         // Check Anonymity (ZK)
-        if (eligibilityModule && eligibilityModule.toLowerCase() === CONTRACT_ADDRESSES.semaphoreEligibility.toLowerCase()) {
+        if (eligibilityModule && eligibilityModule.toLowerCase() === addresses.semaphoreEligibility.toLowerCase()) {
             setIsZK(true)
             const { data: depth } = await getMerkleTreeDepth(pollId)
             setMerkleDepth(depth)
@@ -58,7 +62,7 @@ export default function ManagePollPage() {
         }
 
         // Check Secrecy
-        if (voteStorage && voteStorage.toLowerCase() === CONTRACT_ADDRESSES.zkElGamalVoteVector.toLowerCase()) {
+        if (voteStorage && voteStorage.toLowerCase() === addresses.zkElGamalVoteVector.toLowerCase()) {
             setIsSecret(true)
         } else {
             setIsSecret(false)

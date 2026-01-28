@@ -2,6 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react'
 import { useCreatePollForm } from './useCreatePollForm'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
+import { getAccount } from '@wagmi/core'
 import { createPoll } from '@/lib/blockchain/engine/write'
 import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
 import { toast } from 'react-hot-toast'
@@ -16,8 +17,25 @@ jest.mock('wagmi', () => ({
   useAccount: jest.fn(),
 }))
 
+jest.mock('@wagmi/core', () => ({
+  getAccount: jest.fn(),
+}))
+
+jest.mock('@/lib/wagmi/config', () => ({
+  wagmiConfig: {},
+}))
+
 jest.mock('@/lib/blockchain/engine/write', () => ({
   createPoll: jest.fn(),
+}))
+
+jest.mock('@/lib/contracts', () => ({
+  getAddresses: jest.fn(() => ({
+    semaphoreEligibility: '0xSEMAPHORE',
+    eligibilityV0: '0xV0',
+    zkElGamalVoteVector: '0xZK',
+    voteStorageV0: '0xSTORAGE_V0',
+  })),
 }))
 
 jest.mock('@/lib/blockchain/utils/error-handler', () => ({
@@ -39,6 +57,7 @@ describe('useCreatePollForm', () => {
     jest.clearAllMocks()
     useRouter.mockReturnValue(mockRouter)
     useAccount.mockReturnValue({ isConnected: true })
+    getAccount.mockReturnValue({ chainId: 31337 })
   })
 
   it('initializes with default values', () => {

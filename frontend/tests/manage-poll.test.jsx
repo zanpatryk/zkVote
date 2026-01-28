@@ -2,6 +2,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import ManagePollPage from '../src/app/poll/[pollId]/manage/page'
 import '@testing-library/jest-dom'
 import { toast } from 'react-hot-toast'
+import { getAccount } from '@wagmi/core'
+import { wagmiConfig as config } from '../src/lib/wagmi/config'
 
 // Mock dependencies
 const mockPush = jest.fn()
@@ -17,6 +19,14 @@ jest.mock('wagmi', () => ({
   http: jest.fn(),
 }))
 
+jest.mock('@wagmi/core', () => ({
+  getAccount: jest.fn(() => ({ chainId: 31337 })),
+}))
+
+jest.mock('../src/lib/wagmi/config', () => ({
+  wagmiConfig: {},
+}))
+
 // Mock getModules
 const mockGetPollById = jest.fn()
 const mockGetMerkleTreeDepth = jest.fn()
@@ -30,6 +40,11 @@ jest.mock('../src/lib/blockchain/engine/read', () => ({
 
 // Mock CONTRACTS
 jest.mock('../src/lib/contracts', () => ({
+    getAddresses: jest.fn((chainId) => ({
+        zkElGamalVoteVector: '0xZKStorage',
+        voteStorageV0: '0xStandardStorage',
+        semaphoreEligibility: '0xSemaphoreEligibility'
+    })),
     CONTRACT_ADDRESSES: {
         zkElGamalVoteVector: '0xZKStorage',
         voteStorageV0: '0xStandardStorage',

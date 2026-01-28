@@ -1,16 +1,17 @@
-import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
+import { getPublicClient, writeContract, getAccount } from '@wagmi/core'
+import { waitForTransactionResilient } from '@/lib/blockchain/utils/transaction'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { parseAbiItem, encodeEventTopics, decodeEventLog } from 'viem'
-import { 
-  votingSystemContract, 
-  IVoteStorageABI, 
-  VoteStorageV0ABI, 
+import {
+  votingSystemContract,
+  IVoteStorageABI,
+  VoteStorageV0ABI,
   ZKElGamalVoteVectorABI,
-  CONTRACT_ADDRESSES,
   voteStorageContract,
-  getAddresses
 } from '@/lib/contracts'
+import { getAddresses } from '@/lib/contracts'
 import { getModules } from './core'
+import { getLogsChunked } from '@/lib/blockchain/utils/logs'
 
 // --- READS ---
 
@@ -109,7 +110,7 @@ export async function getVoteTransaction(pollId, userAddress) {
     const { voteStorage } = await getModules(pollId)
     const addresses = getAddresses(publicClient.chain.id)
     const eventAbi = parseAbiItem('event VoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId)')
-    const logs = await publicClient.getLogs({
+    const logs = await getLogsChunked(publicClient, {
       address: voteStorage,
       event: eventAbi,
       args: { pollId: BigInt(pollId), voter: userAddress },
@@ -126,6 +127,8 @@ export async function getVoteTransaction(pollId, userAddress) {
   }
 }
 
+const txCache = new Map()
+
 export async function getPollVotes(pollId, fromBlock, toBlock) {
   if (!pollId) return { data: [], error: null }
   try {
@@ -134,19 +137,39 @@ export async function getPollVotes(pollId, fromBlock, toBlock) {
     const publicClient = getPublicClient(config, { chainId })
     const { voteStorage } = await getModules(pollId)
     const addresses = getAddresses(publicClient.chain.id)
-    const logs = await publicClient.getLogs({
+    
+    const logs = await getLogsChunked(publicClient, {
       address: voteStorage,
       event: parseAbiItem('event VoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId)'),
       args: { pollId: BigInt(pollId) },
       fromBlock: fromBlock || BigInt(addresses.startBlock || 0),
       toBlock: toBlock || 'latest'
     })
-    const votes = logs.map(log => ({
-      voter: log.args.voter,
-      voteId: log.args.voteId.toString(),
-      transactionHash: log.transactionHash,
-      blockNumber: log.blockNumber
+
+    // Fetch transaction senders to match Etherscan (as requested by user)
+    const votes = await Promise.all(logs.map(async log => {
+      let from = txCache.get(log.transactionHash)
+      
+      if (!from) {
+        try {
+          const tx = await publicClient.getTransaction({ hash: log.transactionHash })
+          from = tx.from
+          txCache.set(log.transactionHash, from)
+        } catch (e) {
+          console.error(`Failed to fetch tx sender for ${log.transactionHash}:`, e)
+          from = log.args.voter // fallback to event voter if lookup fails
+        }
+      }
+
+      return {
+        voter: from,
+        internalId: log.args.voter, // keep the original internal ID just in case
+        voteId: log.args.voteId.toString(),
+        transactionHash: log.transactionHash,
+        blockNumber: log.blockNumber
+      }
     }))
+
     return { data: votes, error: null }
   } catch (err) {
     console.error('getPollVotes failed:', err)
@@ -221,7 +244,7 @@ export async function castVote(pollId, optionIdx) {
       functionName: 'castVote',
       args: [BigInt(pollId), BigInt(optionIdx)],
     })
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     
     // Check for revert status explicitly if needed, though writeContract usually throws on simulation fail
     if (receipt.status === 'reverted') throw new Error('Transaction reverted')
@@ -260,7 +283,7 @@ export async function castVoteWithProof(pollId, voteDetails, proofData) {
       functionName: 'castVoteWithProof',
       args: [BigInt(pollId), BigInt(optionIndex), BigInt(nullifier), formattedProof],
     })
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     
     if (receipt.status === 'reverted') throw new Error('Transaction reverted')
 
@@ -309,7 +332,7 @@ export async function castEncryptedVote(pollId, encryptedData, proofData) {
       args: args,
     })
 
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     if (receipt.status === 'reverted') throw new Error('Transaction reverted')
 
     const voteCastedTopic = encodeEventTopics({ abi: votingSystemContract.abi, eventName: 'EncryptedVoteCast' })
@@ -359,7 +382,7 @@ export async function castEncryptedVoteWithProof(pollId, nullifierHash, semaphor
       args: args,
     })
 
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     if (receipt.status === 'reverted') throw new Error('Transaction reverted')
 
     const voteCastedTopic = encodeEventTopics({ abi: votingSystemContract.abi, eventName: 'EncryptedVoteCast' })
@@ -397,7 +420,7 @@ export async function castPlainVote(pollId, optionIdx) {
       args: [BigInt(pollId), BigInt(optionIdx)],
     })
 
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     if (receipt.status === 'reverted') throw new Error('Transaction reverted')
 
     const voteCastedAbiItem = {
@@ -451,7 +474,7 @@ export async function publishEncryptedResults(pollId, tally, proofData) {
     const { chainId } = getAccount(config)
     const addresses = getAddresses(chainId)
     const hash = await writeContract(config, { address: addresses.vse, abi: votingSystemContract.abi, functionName: 'publishEncryptedResults', args: args })
-    await waitForTransactionReceipt(config, { hash })
+    await waitForTransactionResilient(config, { hash })
     return { success: true, transactionHash: hash }
   } catch (error) {
      console.error('publishEncryptedResults failed:', error)

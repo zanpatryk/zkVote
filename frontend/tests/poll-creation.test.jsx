@@ -19,10 +19,35 @@ jest.mock('wagmi', () => ({
   useAccount: () => mockUseAccount(),
 }))
 
+jest.mock('@wagmi/core', () => ({
+  getAccount: jest.fn(() => ({ chainId: 31337 })),
+}))
+
+jest.mock('../src/lib/wagmi/config', () => ({
+  wagmiConfig: {},
+}))
+
+jest.mock('../src/lib/contracts', () => {
+  const addresses = {
+    semaphoreEligibility: '0xSemaphoreEligibility',
+    eligibilityV0: '0xEligibilityV0',
+    zkElGamalVoteVector: '0xZkElGamalVoteVector',
+    voteStorageV0: '0xVoteStorageV0'
+  };
+  return {
+    MODULE_ADDRESSES: addresses,
+    getAddresses: jest.fn(() => addresses)
+  };
+})
+
 // Mock blockchain write function
 const mockCreatePoll = jest.fn()
 jest.mock('../src/lib/blockchain/engine/write', () => ({
   createPoll: (...args) => mockCreatePoll(...args),
+}))
+
+jest.mock('../src/lib/wagmi/config', () => ({
+  wagmiConfig: {},
 }))
 
 // Mock toast

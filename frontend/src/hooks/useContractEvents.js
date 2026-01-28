@@ -103,17 +103,25 @@ export function useMultiContractEvents({
     })
   }, [parseLog])
 
-  // Create watchers for each event config
-  eventConfigs.forEach((config, index) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useWatchContractEvent({
-      address,
-      abi: [parseAbiItem(config.eventSignature)],
-      eventName: config.eventName,
-      args: config.args || {},
-      onLogs: handleLogs,
-      enabled: !!address && enabled,
-    })
+  // Unrolled watchers to follow Rules of Hooks (max 2 for now as needed by zkVote)
+  const config0 = eventConfigs[0]
+  useWatchContractEvent({
+    address,
+    abi: config0 ? [parseAbiItem(config0.eventSignature)] : [],
+    eventName: config0?.eventName,
+    args: config0?.args || {},
+    onLogs: handleLogs,
+    enabled: !!address && !!config0 && enabled,
+  })
+
+  const config1 = eventConfigs[1]
+  useWatchContractEvent({
+    address,
+    abi: config1 ? [parseAbiItem(config1.eventSignature)] : [],
+    eventName: config1?.eventName,
+    args: config1?.args || {},
+    onLogs: handleLogs,
+    enabled: !!address && !!config1 && enabled,
   })
 
   return { events, setEvents }

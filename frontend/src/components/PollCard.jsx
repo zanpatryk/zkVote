@@ -7,7 +7,7 @@ import { useSemaphore } from '@/hooks/useSemaphore'
 import { useUserNFTs } from '@/hooks/useUserNFTs'
 import { usePollRegistry } from '@/hooks/usePollRegistry'
 import { POLL_STATE } from '@/lib/constants'
-import CONTRACT_ADDRESSES from '@/lib/contracts/addresses'
+import { getAddresses } from '@/lib/contracts'
 
 export default function PollCard({ pollId, title, state, isOwner = false, showVoteButton = false, interactive = true }) {
   const { address, isConnected } = useAccount()
@@ -17,8 +17,12 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
   
   const hasMinted = nfts?.some(nft => nft.name === `Poll #${pollId} Results`)
 
-  const isAnonymous = eligibilityModuleAddress?.toLowerCase() === CONTRACT_ADDRESSES.semaphoreEligibility?.toLowerCase()
-  const isSecret = voteStorageAddress?.toLowerCase() === CONTRACT_ADDRESSES.zkElGamalVoteVector?.toLowerCase()
+  // Dynamic address resolution
+  const { chainId } = useAccount()
+  const addresses = getAddresses(chainId)
+
+  const isAnonymous = eligibilityModuleAddress?.toLowerCase() === addresses.semaphoreEligibility?.toLowerCase()
+  const isSecret = voteStorageAddress?.toLowerCase() === addresses.zkElGamalVoteVector?.toLowerCase()
 
   const canRegister = isZK && !isRegistered && state === POLL_STATE.CREATED
 

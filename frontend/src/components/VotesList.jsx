@@ -2,9 +2,18 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { POLL_STATE } from '@/lib/constants'
 import { getExplorerTxUrl } from '@/lib/utils/explorer'
 import { usePollVotes } from '@/hooks/usePollVotes'
+import { getAddress } from 'viem'
 
 export default function VotesList({ pollId, pollState }) {
   const { votes, loading } = usePollVotes(pollId, pollState)
+
+  const formatAddress = (addr) => {
+    try {
+      return getAddress(addr)
+    } catch {
+      return addr
+    }
+  }
 
   if (loading) {
     return (
@@ -57,7 +66,7 @@ export default function VotesList({ pollId, pollState }) {
                     className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
                   >
                     <td className="py-3 px-2 font-mono text-sm">
-                      {vote.voter}
+                      {formatAddress(vote.voter)}
                     </td>
                     <td className="py-3 px-2 text-right">
                       <a 

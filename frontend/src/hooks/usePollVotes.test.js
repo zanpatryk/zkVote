@@ -14,6 +14,16 @@ jest.mock('@/hooks/useContractEvents', () => ({
   useContractEvents: jest.fn(),
 }))
 
+jest.mock('@wagmi/core', () => ({
+  getPublicClient: jest.fn(() => ({
+    getTransaction: jest.fn().mockResolvedValue({ from: '0xResolvedSender' }),
+  })),
+}))
+
+jest.mock('@/lib/wagmi/config', () => ({
+  wagmiConfig: {},
+}))
+
 describe('usePollVotes', () => {
   const mockPollId = '1'
   
