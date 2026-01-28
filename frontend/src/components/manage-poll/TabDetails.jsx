@@ -4,7 +4,7 @@ import PollDetails from '@/components/PollDetails'
 import PollFundingManager from '@/components/PollFundingManager.jsx'
 import PollStatusManager from '@/components/PollStatusManager.jsx'
 
-export default function TabDetails({ pollId, pollState, maxParticipants, onStatusChange, isZk, isSecret }) {
+export default function TabDetails({ pollId, pollState, maxParticipants, onStatusChange, isZK, isSecret }) {
   return (
     <>
       <section className="mb-12">
@@ -19,7 +19,7 @@ export default function TabDetails({ pollId, pollState, maxParticipants, onStatu
         <PollDetails pollId={pollId} showResults={Number(pollState) === 2} />
       </section>
 
-      {(!isZk && !isSecret) && (
+      {(!isZK && !isSecret) && (
       <section className="mb-12">
         <div className="mb-6 border-b-2 border-black pb-2">
           <h2 className="text-3xl font-serif font-bold text-gray-900">Poll Funding</h2>

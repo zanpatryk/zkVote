@@ -15,6 +15,12 @@ jest.mock('@/components/PollStatusManager.jsx', () => {
   }
 })
 
+jest.mock('@/components/PollFundingManager.jsx', () => {
+  return function MockPollFundingManager() {
+    return <div data-testid="poll-funding-manager">PollFundingManager</div>
+  }
+})
+
 describe('TabDetails', () => {
   const defaultProps = {
     pollId: '123',
@@ -45,5 +51,23 @@ describe('TabDetails', () => {
   it('passes false to showResults when poll is active', () => {
     render(<TabDetails {...defaultProps} pollState={1} />)
     expect(screen.getByTestId('poll-details')).toHaveTextContent('Results: No')
+  })
+
+  it('renders poll funding section when poll is public and non-anonymous', () => {
+    render(<TabDetails {...defaultProps} isZK={false} isSecret={false} />)
+    expect(screen.getByText('Poll Funding')).toBeInTheDocument()
+    expect(screen.getByTestId('poll-funding-manager')).toBeInTheDocument()
+  })
+
+  it('does not render poll funding section when poll is anonymous (ZK)', () => {
+    render(<TabDetails {...defaultProps} isZK={true} isSecret={false} />)
+    expect(screen.queryByText('Poll Funding')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('poll-funding-manager')).not.toBeInTheDocument()
+  })
+
+  it('does not render poll funding section when poll is secret', () => {
+    render(<TabDetails {...defaultProps} isZK={false} isSecret={true} />)
+    expect(screen.queryByText('Poll Funding')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('poll-funding-manager')).not.toBeInTheDocument()
   })
 })
