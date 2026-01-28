@@ -19,20 +19,21 @@ export async function getWhitelistedAddresses(pollId, fromBlock, toBlock) {
     const chainId = account?.chainId
     const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
+    const addresses = getAddresses(publicClient.chain.id)
   
     const [logsStandard, logsV0] = await Promise.all([
       publicClient.getLogs({
         address: eligibilityModule,
         event: parseAbiItem('event Whitelisted(address indexed user, uint256 indexed pollId)'),
         args: { pollId: BigInt(pollId) },
-        fromBlock: fromBlock || 'earliest',
+        fromBlock: fromBlock || BigInt(addresses.startBlock || 0),
         toBlock: toBlock || 'latest'
       }).catch(() => []),
       publicClient.getLogs({
         address: eligibilityModule,
         event: parseAbiItem('event EligibilityModuleV0__AddressWhitelisted(address indexed user, uint256 indexed pollId)'),
         args: { pollId: BigInt(pollId) },
-        fromBlock: fromBlock || 'earliest',
+        fromBlock: fromBlock || BigInt(addresses.startBlock || 0),
         toBlock: toBlock || 'latest'
       }).catch(() => [])
     ])
@@ -83,12 +84,13 @@ export async function getGroupMembers(pollId) {
     const chainId = account?.chainId
     const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
+    const addresses = getAddresses(publicClient.chain.id)
     
     const logs = await publicClient.getLogs({
       address: eligibilityModule,
       event: parseAbiItem('event MemberAdded(uint256 indexed groupId, uint256 index, uint256 identityCommitment, uint256 merkleTreeRoot)'),
       args: { groupId: BigInt(pollId) },
-      fromBlock: 'earliest'
+      fromBlock: BigInt(addresses.startBlock || 0)
     })
 
     const members = logs.map(log => {

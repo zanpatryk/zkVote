@@ -5,7 +5,8 @@ jest.mock('@/lib/contracts', () => ({
   votingSystemContract: { abi: [], address: '0xVSE' },
   ResultNFTABI: [],
   getAddresses: jest.fn(() => ({
-    vse: '0xVSE'
+    vse: '0xVSE',
+    startBlock: 0
   }))
 }))
 jest.mock('@wagmi/core', () => ({

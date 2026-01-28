@@ -27,7 +27,8 @@ jest.mock('@/lib/contracts', () => ({
   getAddresses: jest.fn(() => ({
     vse: '0xVSE',
     zkElGamalVoteVector: '0xZKStorage',
-    semaphoreEligibility: '0xSemEli'
+    semaphoreEligibility: '0xSemEli',
+    startBlock: 0
   }))
 }))
 

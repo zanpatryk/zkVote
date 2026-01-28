@@ -26,7 +26,7 @@ export async function getUserNFTs(userAddress) {
       address: resultNFTAddress,
       event: transferEventAbi,
       args: { to: userAddress },
-      fromBlock: 'earliest'
+      fromBlock: BigInt(addresses.startBlock || 0)
     })
     const tokenIds = [...new Set(logs.map(log => log.args.tokenId))]
     const nfts = await Promise.all(

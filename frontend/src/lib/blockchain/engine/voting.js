@@ -107,12 +107,13 @@ export async function getVoteTransaction(pollId, userAddress) {
     const chainId = account?.chainId
     const publicClient = getPublicClient(config, { chainId })
     const { voteStorage } = await getModules(pollId)
+    const addresses = getAddresses(publicClient.chain.id)
     const eventAbi = parseAbiItem('event VoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId)')
     const logs = await publicClient.getLogs({
       address: voteStorage,
       event: eventAbi,
       args: { pollId: BigInt(pollId), voter: userAddress },
-      fromBlock: 'earliest'
+      fromBlock: BigInt(addresses.startBlock || 0)
     })
     if (logs.length > 0) {
       const log = logs[logs.length - 1]
@@ -132,11 +133,12 @@ export async function getPollVotes(pollId, fromBlock, toBlock) {
     const chainId = account?.chainId
     const publicClient = getPublicClient(config, { chainId })
     const { voteStorage } = await getModules(pollId)
+    const addresses = getAddresses(publicClient.chain.id)
     const logs = await publicClient.getLogs({
       address: voteStorage,
       event: parseAbiItem('event VoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId)'),
       args: { pollId: BigInt(pollId) },
-      fromBlock: fromBlock || 'earliest',
+      fromBlock: fromBlock || BigInt(addresses.startBlock || 0),
       toBlock: toBlock || 'latest'
     })
     const votes = logs.map(log => ({

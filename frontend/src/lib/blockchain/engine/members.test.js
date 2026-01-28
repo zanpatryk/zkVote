@@ -19,7 +19,8 @@ jest.mock('@/lib/contracts', () => ({
   SemaphoreEligibilityModuleABI: [],
   getAddresses: jest.fn(() => ({
     vse: '0xVSE',
-    semaphoreEligibility: '0xSemEli'
+    semaphoreEligibility: '0xSemEli',
+    startBlock: 0
   }))
 }))
 

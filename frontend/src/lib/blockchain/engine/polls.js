@@ -53,11 +53,12 @@ export async function getOwnedPolls(address) {
     const publicClient = getPublicClient(config, { chainId })
     const { pollManager } = await getModules()
 
+    const addresses = getAddresses(publicClient.chain.id)
     const logs = await publicClient.getLogs({
       address: pollManager,
       event: parseAbiItem('event PollCreated(uint256 indexed pollId, address indexed creator)'),
       args: { creator: address },
-      fromBlock: 'earliest'
+      fromBlock: BigInt(addresses.startBlock || 0)
     })
 
     const pollIds = logs.map(log => log.args.pollId)
@@ -92,13 +93,13 @@ export async function getWhitelistedPolls(address) {
           address: moduleAddr,
           event: parseAbiItem('event Whitelisted(address indexed user, uint256 indexed pollId)'),
           args: { user: address },
-          fromBlock: 'earliest'
+          fromBlock: BigInt(addresses.startBlock || 0)
         }),
         publicClient.getLogs({
           address: moduleAddr,
           event: parseAbiItem('event EligibilityModuleV0__AddressWhitelisted(address indexed user, uint256 indexed pollId)'),
           args: { user: address },
-          fromBlock: 'earliest'
+          fromBlock: BigInt(addresses.startBlock || 0)
         })
       ])
     )
