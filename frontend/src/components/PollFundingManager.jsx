@@ -44,6 +44,9 @@ export default function PollFundingManager({ pollId, status }) {
           <p className="mt-2 text-sm text-gray-600 max-w-md">
             Funds here are used by the account abstraction paymaster to sponsor voters&apos; gas fees for this poll.
           </p>
+          <p className="mt-1 text-sm text-red-600 max-w-md font-semibold">
+            This poll must be funded before voters can submit their votes.
+          </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">

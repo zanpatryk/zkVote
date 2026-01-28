@@ -19,7 +19,7 @@ export default function TabDetails({ pollId, pollState, maxParticipants, onStatu
         <PollDetails pollId={pollId} showResults={Number(pollState) === 2} />
       </section>
 
-      {!isZk && !isSecret && (
+      {(!isZk && !isSecret) && (
       <section className="mb-12">
         <div className="mb-6 border-b-2 border-black pb-2">
           <h2 className="text-3xl font-serif font-bold text-gray-900">Poll Funding</h2>
