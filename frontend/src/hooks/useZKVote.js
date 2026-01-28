@@ -134,6 +134,7 @@ export function useZKVote(pollId) {
         } catch (err) {
             const msg = formatTransactionError(err)
             toast.error(msg, { id: toastId })
+            err.isHandled = true
             throw err
         }
 
@@ -175,27 +176,22 @@ export function useZKVote(pollId) {
         } catch (err) {
           const msg = formatTransactionError(err)
           toast.error(msg, { id: toastId })
+          err.isHandled = true
           throw err
         }
       }
 
       return result
     } catch (error) {
-      console.error('Unified Vote failed:', error)
-      // We rethrow because the component might need to know, but we already handled toast for known paths
-      // For top-level errors (like circuit init failure), we should toast too if not covered.
-      if (!error?.message?.includes('User rejected') && !error?.message?.includes('already cast')) {
-           // Only toast generic if specific toast wasn't triggered (e.g. circuit failure)
-           // But identifying if specific toast fired is hard. 
-           // However, local try/catches above will throw.
-           // So this catch also catches those throws.
-           // To avoid double toast, we can check if it's already handled?
-           // Actually, simplest is to NOT toast here if we toasted above.
-           // But how to know?
-           // We can rely on the fact that we re-threw inside the inner blocks.
-           // Let's just log here.
+      console.warn('Unified Vote failed:', error)
+      
+      // If error hasn't been handled (toasted) yet, do it now
+      if (!error.isHandled && !error?.message?.includes('User rejected')) {
+            const msg = formatTransactionError(error)
+            toast.error(msg)
       }
-      throw error
+      
+      return null
     } finally {
       setIsSubmitting(false)
     }

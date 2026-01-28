@@ -42,6 +42,15 @@ export function formatTransactionError(error, fallbackMsg = 'Transaction failed'
     return 'Insufficient funds to complete transaction'
   }
 
+  // 4. Paymaster Deposit Too Low (AA31)
+  if (
+    fullErrorText.includes('aa31') || 
+    fullErrorText.includes('paymaster deposit too low')
+  ) {
+    return 'Voting failed: The poll has run out of sponsored gas funds. If you are the owner, please check the "Poll Funding" section in the Manage Poll page.'
+  }
+
+
   // 4. Contract Logic Reverts (Generic)
   if (error?.shortMessage) {
     return error.shortMessage
