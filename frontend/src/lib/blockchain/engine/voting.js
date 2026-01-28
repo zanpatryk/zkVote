@@ -17,7 +17,9 @@ import { getModules } from './core'
 export async function hasVoted(pollId, userAddress) {
   if (!pollId || !userAddress) return { data: false, error: null }
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { voteStorage } = await getModules(pollId)
     const voted = await publicClient.readContract({
       address: voteStorage,
@@ -35,7 +37,9 @@ export async function hasVoted(pollId, userAddress) {
 export async function getVote(voteId, pollId) {
   if (!voteId) return { data: null, error: null }
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const [{ voteStorage }, { voteStorage: defaultVoteStorage }] = await Promise.all([
       getModules(pollId),
       getModules()
@@ -79,7 +83,9 @@ export async function getVote(voteId, pollId) {
 export async function getPollResults(pollId, optionCount) {
   if (!pollId) return { data: [], error: null }
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { voteStorage } = await getModules(pollId)
     const results = await publicClient.readContract({
       address: voteStorage,
@@ -97,7 +103,9 @@ export async function getPollResults(pollId, optionCount) {
 export async function getVoteTransaction(pollId, userAddress) {
   if (!pollId || !userAddress) return { data: null, error: null }
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { voteStorage } = await getModules(pollId)
     const eventAbi = parseAbiItem('event VoteCasted(uint256 indexed pollId, address indexed voter, uint256 voteId)')
     const logs = await publicClient.getLogs({
@@ -120,7 +128,9 @@ export async function getVoteTransaction(pollId, userAddress) {
 export async function getPollVotes(pollId, fromBlock, toBlock) {
   if (!pollId) return { data: [], error: null }
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { voteStorage } = await getModules(pollId)
     const logs = await publicClient.getLogs({
       address: voteStorage,
@@ -145,7 +155,9 @@ export async function getPollVotes(pollId, fromBlock, toBlock) {
 export async function getZKPollState(pollId) {
   if (!pollId) return { data: null, error: null }
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { voteStorage } = await getModules(pollId)
     const addresses = getAddresses(publicClient.chain.id)
     if (voteStorage.toLowerCase() !== addresses.zkElGamalVoteVector.toLowerCase()) return { data: null, error: null }
@@ -168,7 +180,9 @@ export async function getZKPollState(pollId) {
 export async function getPollPublicKey(pollId) {
   if (!pollId) return { data: null, error: null }
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { voteStorage } = await getModules(pollId)
     
     // Quick check if it's likely a ZK poll (or let the call fail gracefully)

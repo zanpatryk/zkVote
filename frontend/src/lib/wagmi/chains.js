@@ -12,7 +12,7 @@ export const anvil = defineChain({
   testnet: true,
 })
 
-export const supportedChains = [anvil, sepolia]
+export const supportedChains = [sepolia, anvil]
 
 export const transports = {
   [anvil.id]: http(),

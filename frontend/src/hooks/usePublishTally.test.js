@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
 import { usePublishTally } from './usePublishTally'
-import { useReadContract } from 'wagmi'
+import { useReadContract, useChainId } from 'wagmi'
 import { usePollRegistry } from '@/hooks/usePollRegistry'
 import { publishEncryptedResults } from '@/lib/blockchain/engine/write'
 import { decryptTally, generateTallyProof } from '@/lib/crypto/tally'
@@ -10,6 +10,7 @@ import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
 // Mock dependencies
 jest.mock('wagmi', () => ({
   useReadContract: jest.fn(),
+  useChainId: jest.fn(),
 }))
 
 jest.mock('@/hooks/usePollRegistry', () => ({
@@ -51,6 +52,8 @@ describe('usePublishTally', () => {
       data: [Array(16).fill(['0', '0']), Array(16).fill(['0', '0'])], // [ciphertexts, sum]
       refetch: mockRefetch,
     })
+    
+    useChainId.mockReturnValue(11155111) // Sepolia
     
     usePollRegistry.mockReturnValue({ refetchPollState: mockRefetchPollState })
     

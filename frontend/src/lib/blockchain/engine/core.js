@@ -1,4 +1,4 @@
-import { getPublicClient } from '@wagmi/core'
+import { getPublicClient, getAccount } from '@wagmi/core'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { votingSystemContract, getAddresses } from '@/lib/contracts'
 
@@ -11,7 +11,9 @@ import { votingSystemContract, getAddresses } from '@/lib/contracts'
  */
 export async function getModules(pollId) {
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const currentChainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId: currentChainId })
     const chainId = publicClient.chain.id
     const addresses = getAddresses(chainId)
 

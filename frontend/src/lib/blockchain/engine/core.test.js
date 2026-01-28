@@ -3,6 +3,7 @@ import { getModules } from './core'
 
 jest.mock('@wagmi/core', () => ({
   getPublicClient: jest.fn(),
+  getAccount: jest.fn(),
 }))
 
 jest.mock('@/lib/wagmi/config', () => ({

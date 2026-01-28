@@ -15,7 +15,9 @@ export async function getPollById(pollId) {
   if (!pollId) return { data: null, error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { pollManager } = await getModules(pollId)
 
     const [id, owner, title, description, options, state] = await publicClient.readContract({
@@ -46,7 +48,9 @@ export async function getOwnedPolls(address) {
   if (!address) return { data: [], error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { pollManager } = await getModules()
 
     const logs = await publicClient.getLogs({
@@ -70,7 +74,9 @@ export async function getWhitelistedPolls(address) {
   if (!address) return { data: [], error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const currentChainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId: currentChainId })
     
     const chainId = publicClient.chain.id
     const addresses = getAddresses(chainId)

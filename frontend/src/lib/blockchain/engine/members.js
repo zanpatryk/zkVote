@@ -15,7 +15,9 @@ export async function getWhitelistedAddresses(pollId, fromBlock, toBlock) {
   if (!pollId) return { data: [], error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
   
     const [logsStandard, logsV0] = await Promise.all([
@@ -47,7 +49,9 @@ export async function getMerkleTreeDepth(pollId) {
   if (!pollId) return { data: 0, error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
 
     // Only call if it's the Semaphore eligibility module
@@ -75,7 +79,9 @@ export async function getGroupMembers(pollId) {
   if (!pollId) return { data: [], error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
     
     const logs = await publicClient.getLogs({
@@ -105,7 +111,9 @@ export async function isUserWhitelisted(pollId, userAddress) {
   if (!pollId || !userAddress) return { data: false, error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
 
     const isWhitelisted = await publicClient.readContract({
@@ -125,7 +133,9 @@ export async function isUserRegistered(pollId, userAddress) {
   if (!pollId || !userAddress) return { data: false, error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
 
     // Only SemaphoreEligibilityModule supports isRegistered

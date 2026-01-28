@@ -11,7 +11,9 @@ export async function getPollBudget(pollId) {
   if (!pollId && pollId !== 0) return { data: 0n, error: null }
 
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const currentChainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId: currentChainId })
     const chainId = publicClient.chain.id
     const addresses = getAddresses(chainId)
 
@@ -72,7 +74,9 @@ export async function withdrawPollBudget(pollId, amountWei) {
   if (!address) throw new Error('Wallet not connected')
 
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const currentChainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId: currentChainId })
     const { chainId } = getAccount(config)
     const addresses = getAddresses(chainId)
 

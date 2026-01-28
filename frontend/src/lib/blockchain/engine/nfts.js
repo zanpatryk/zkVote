@@ -12,7 +12,9 @@ import {
 export async function getUserNFTs(userAddress) {
   if (!userAddress) return { data: [], error: null }
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
     const addresses = getAddresses(publicClient.chain.id)
     const resultNFTAddress = await publicClient.readContract({
       address: addresses.vse,
