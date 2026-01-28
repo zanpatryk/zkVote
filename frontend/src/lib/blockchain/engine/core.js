@@ -1,6 +1,10 @@
-import { getPublicClient } from '@wagmi/core'
+import { getPublicClient, getAccount } from '@wagmi/core'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { votingSystemContract, getAddresses } from '@/lib/contracts'
+
+// Simple memory cache to prevent redundant RPC calls within a short window
+export const modulesCache = new Map()
+const CACHE_TTL = 5000 // 5 seconds
 
 /**
  * Fetches the addresses of the core modules (PollManager, Eligibility, VoteStorage) 
@@ -10,54 +14,79 @@ import { votingSystemContract, getAddresses } from '@/lib/contracts'
  * @returns {Promise<{pollManager: string, eligibilityModule: string, voteStorage: string}>}
  */
 export async function getModules(pollId) {
+  const cacheKey = pollId ? `poll-${pollId}` : 'system'
+  const cached = modulesCache.get(cacheKey)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data
+  }
+
   try {
-    const publicClient = getPublicClient(config)
-    const chainId = publicClient.chain.id
-    const addresses = getAddresses(chainId)
+    const account = getAccount(config)
+    const currentChainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = getPublicClient(config, { chainId: currentChainId })
+    const addresses = getAddresses(currentChainId)
 
-    // pollManager is global
-    const pollManager = await publicClient.readContract({
-      address: addresses.vse,
-      abi: votingSystemContract.abi,
-      functionName: 's_pollManager',
-    })
-
-    // Prepare read calls
-    const readBase = [
-        publicClient.readContract({ address: addresses.vse, abi: votingSystemContract.abi, functionName: 's_defaultEligibility' }),
-        publicClient.readContract({ address: addresses.vse, abi: votingSystemContract.abi, functionName: 's_defaultVoteStorage' })
+    const calls = [
+      {
+        address: addresses.vse,
+        abi: votingSystemContract.abi,
+        functionName: 's_pollManager',
+      },
+      {
+        address: addresses.vse,
+        abi: votingSystemContract.abi,
+        functionName: 's_defaultEligibility',
+      },
+      {
+        address: addresses.vse,
+        abi: votingSystemContract.abi,
+        functionName: 's_defaultVoteStorage',
+      }
     ]
 
     if (pollId) {
-        readBase.push(
-            publicClient.readContract({ address: addresses.vse, abi: votingSystemContract.abi, functionName: 's_pollEligibility', args: [BigInt(pollId)] }),
-            publicClient.readContract({ address: addresses.vse, abi: votingSystemContract.abi, functionName: 's_pollVoteStorage', args: [BigInt(pollId)] })
-        )
+      calls.push(
+        {
+          address: addresses.vse,
+          abi: votingSystemContract.abi,
+          functionName: 's_pollEligibility',
+          args: [BigInt(pollId)],
+        },
+        {
+          address: addresses.vse,
+          abi: votingSystemContract.abi,
+          functionName: 's_pollVoteStorage',
+          args: [BigInt(pollId)],
+        }
+      )
     }
 
-    const results = await Promise.all(readBase)
-    const defaultEli = results[0]
-    const defaultVote = results[1]
-    
-    let eligibilityModule = defaultEli
-    let voteStorage = defaultVote
+    const results = await publicClient.multicall({
+      contracts: calls,
+      allowFailure: false, // Core infrastructure must succeed
+    })
 
-    if (pollId && results[2] && results[3]) {
-        // results[2] = s_pollEligibility, results[3] = s_pollVoteStorage
-        const pollEli = results[2]
-        const pollVote = results[3]
+    const pollManager = results[0]
+    let eligibilityModule = results[1]
+    let voteStorage = results[2]
 
-        if (pollEli && pollEli !== '0x0000000000000000000000000000000000000000') {
-            eligibilityModule = pollEli
-        }
-        if (pollVote && pollVote !== '0x0000000000000000000000000000000000000000') {
-            voteStorage = pollVote
-        }
+    if (pollId && results[3] && results[4]) {
+      const pollEli = results[3]
+      const pollVote = results[4]
+
+      if (pollEli && pollEli !== '0x0000000000000000000000000000000000000000') {
+        eligibilityModule = pollEli
+      }
+      if (pollVote && pollVote !== '0x0000000000000000000000000000000000000000') {
+        voteStorage = pollVote
+      }
     }
 
-    return { pollManager, eligibilityModule, voteStorage }
+    const data = { pollManager, eligibilityModule, voteStorage }
+    modulesCache.set(cacheKey, { data, timestamp: Date.now() })
+    return data
   } catch (err) {
     console.error('getModules failed:', err)
-    throw new Error('Failed to connect to blockchain. Please check your connection.')
+    throw new Error('Failed to connect to blockchain infrastructure. Please check your internet connection and try again.')
   }
 }

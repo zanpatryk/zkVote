@@ -1,4 +1,5 @@
-import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
+import { getPublicClient, writeContract, getAccount } from '@wagmi/core'
+import { waitForTransactionResilient } from '@/lib/blockchain/utils/transaction'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { parseAbiItem, encodeAbiParameters, parseAbiParameters, encodeEventTopics, decodeEventLog } from 'viem'
 import { 
@@ -6,8 +7,9 @@ import {
   PollManagerABI, 
   pollManagerContract
 } from '@/lib/contracts'
-import { getAddresses, CONTRACT_ADDRESSES } from '@/lib/contracts'
-import { getModules } from './core'
+import { getModules, getAddresses, CONTRACT_ADDRESSES } from '@/lib/contracts'
+import { getModules as getEngineModules } from './core'
+import { getLogsChunked } from '@/lib/blockchain/utils/logs'
 
 // --- READS ---
 
@@ -15,8 +17,10 @@ export async function getPollById(pollId) {
   if (!pollId) return { data: null, error: null }
   
   try {
-    const publicClient = getPublicClient(config)
-    const { pollManager } = await getModules(pollId)
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
+    const { pollManager } = await getEngineModules(pollId)
 
     const [id, owner, title, description, options, state] = await publicClient.readContract({
       address: pollManager,
@@ -46,14 +50,17 @@ export async function getOwnedPolls(address) {
   if (!address) return { data: [], error: null }
   
   try {
-    const publicClient = getPublicClient(config)
-    const { pollManager } = await getModules()
+    const account = getAccount(config)
+    const chainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId })
+    const { pollManager } = await getEngineModules()
 
-    const logs = await publicClient.getLogs({
+    const addresses = getAddresses(publicClient.chain.id)
+    const logs = await getLogsChunked(publicClient, {
       address: pollManager,
       event: parseAbiItem('event PollCreated(uint256 indexed pollId, address indexed creator)'),
       args: { creator: address },
-      fromBlock: 'earliest'
+      fromBlock: BigInt(addresses.startBlock || 0)
     })
 
     const pollIds = logs.map(log => log.args.pollId)
@@ -70,7 +77,9 @@ export async function getWhitelistedPolls(address) {
   if (!address) return { data: [], error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const currentChainId = account?.chainId
+    const publicClient = getPublicClient(config, { chainId: currentChainId })
     
     const chainId = publicClient.chain.id
     const addresses = getAddresses(chainId)
@@ -82,17 +91,17 @@ export async function getWhitelistedPolls(address) {
 
     const allLogs = await Promise.all(
       modulesToQuery.flatMap(moduleAddr => [
-        publicClient.getLogs({
+        getLogsChunked(publicClient, {
           address: moduleAddr,
           event: parseAbiItem('event Whitelisted(address indexed user, uint256 indexed pollId)'),
           args: { user: address },
-          fromBlock: 'earliest'
+          fromBlock: BigInt(addresses.startBlock || 0)
         }),
-        publicClient.getLogs({
+        getLogsChunked(publicClient, {
           address: moduleAddr,
           event: parseAbiItem('event EligibilityModuleV0__AddressWhitelisted(address indexed user, uint256 indexed pollId)'),
           args: { user: address },
-          fromBlock: 'earliest'
+          fromBlock: BigInt(addresses.startBlock || 0)
         })
       ])
     )
@@ -158,7 +167,7 @@ export async function createPoll(pollDetails) {
       ],
     })
 
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
 
     const pollCreatedTopic = encodeEventTopics({ abi: pollManagerContract.abi, eventName: 'PollCreated' })
@@ -195,7 +204,7 @@ export async function startPoll(pollId) {
       args: [BigInt(pollId)],
     })
 
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
     
     return true
@@ -220,7 +229,7 @@ export async function endPoll(pollId) {
       args: [BigInt(pollId)],
     })
 
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
     
     return true

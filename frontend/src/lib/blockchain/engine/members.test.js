@@ -13,13 +13,20 @@ import { toast } from 'react-hot-toast'
 import { getModules } from './core'
 import { CONTRACT_ADDRESSES } from '@/lib/contracts'
 
+jest.mock('@/lib/wagmi/config', () => ({
+  wagmiConfig: {
+    state: { chainId: 31337 }
+  }
+}))
+
 jest.mock('@/lib/contracts', () => ({
   CONTRACT_ADDRESSES: { semaphoreEligibility: '0xSemEli' },
   votingSystemContract: { abi: [], address: '0xVSE' },
   SemaphoreEligibilityModuleABI: [],
   getAddresses: jest.fn(() => ({
     vse: '0xVSE',
-    semaphoreEligibility: '0xSemEli'
+    semaphoreEligibility: '0xSemEli',
+    startBlock: 0
   }))
 }))
 
@@ -50,6 +57,7 @@ describe('members domain engine', () => {
     mockPublicClient = {
       readContract: jest.fn(),
       getLogs: jest.fn(),
+      getBlockNumber: jest.fn().mockResolvedValue(100n),
       chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
@@ -66,16 +74,18 @@ describe('members domain engine', () => {
 
     it('returns array of addresses from logs', async () => {
        mockPublicClient.getLogs
-         .mockResolvedValueOnce([{ args: { user: '0xV1' } }]) // Standard
-         .mockResolvedValueOnce([{ args: { user: '0xV2' } }]) // V0
-       const { data } = await getWhitelistedAddresses('1')
-       expect(data).toEqual(['0xV1', '0xV2'])
+         .mockResolvedValueOnce([{ args: { user: '0xV1', pollId: 1n } }]) // Standard
+         .mockResolvedValueOnce([{ args: { user: '0xV2', pollId: 1n } }]) // V0
+        const { data } = await getWhitelistedAddresses('1')
+        expect(data).toHaveLength(2)
+        expect(data).toContain('0xV1')
+        expect(data).toContain('0xV2')
     })
 
     it('handles one log type failing', async () => {
         mockPublicClient.getLogs
           .mockRejectedValueOnce(new Error('Standard fail'))
-          .mockResolvedValueOnce([{ args: { user: '0xV2' } }])
+          .mockResolvedValueOnce([{ args: { user: '0xV2', pollId: 1n } }])
         const { data } = await getWhitelistedAddresses('1')
         expect(data).toEqual(['0xV2'])
     })
@@ -129,7 +139,7 @@ describe('members domain engine', () => {
 
     it('parses registration logs correctly', async () => {
       mockPublicClient.getLogs.mockResolvedValue([
-        { args: { identityCommitment: 100n }, transactionHash: '0x1', blockNumber: 1n }
+        { args: { identityCommitment: 100n, groupId: 1n }, transactionHash: '0x1', blockNumber: 1n }
       ])
       const { data } = await getGroupMembers('1')
       expect(data[0].identityCommitment).toBe('100')

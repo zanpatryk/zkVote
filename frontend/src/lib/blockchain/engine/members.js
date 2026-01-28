@@ -1,13 +1,14 @@
-import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
+import { getPublicClient, writeContract, getAccount } from '@wagmi/core'
+import { waitForTransactionResilient } from '@/lib/blockchain/utils/transaction'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { parseAbiItem } from 'viem'
 import { 
   votingSystemContract, 
   SemaphoreEligibilityModuleABI,
-  CONTRACT_ADDRESSES,
   getAddresses
 } from '@/lib/contracts'
 import { getModules } from './core'
+import { getLogsChunked } from '@/lib/blockchain/utils/logs'
 
 // --- READS ---
 
@@ -15,28 +16,57 @@ export async function getWhitelistedAddresses(pollId, fromBlock, toBlock) {
   if (!pollId) return { data: [], error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
-  
+    
+    // Use ACTUAL chain ID from client if possible, fallback to detected
+    const clientChainId = publicClient.chain?.id || chainId
+    const addresses = getAddresses(clientChainId)
+    
+    const deploymentStartBlock = BigInt(addresses.startBlock || 0)
+    
+    // Resilient block range: use provided fromBlock but don't go before startBlock
+    const startRange = fromBlock || deploymentStartBlock
+    const effectiveFromBlock = startRange > deploymentStartBlock ? startRange : deploymentStartBlock
+
     const [logsStandard, logsV0] = await Promise.all([
-      publicClient.getLogs({
+      getLogsChunked(publicClient, {
         address: eligibilityModule,
         event: parseAbiItem('event Whitelisted(address indexed user, uint256 indexed pollId)'),
-        args: { pollId: BigInt(pollId) },
-        fromBlock: fromBlock || 'earliest',
+        fromBlock: effectiveFromBlock,
         toBlock: toBlock || 'latest'
-      }).catch(() => []),
-      publicClient.getLogs({
+      }).catch((err) => {
+        console.warn('Standard Whitelisted log fetch failed:', err.message)
+        return []
+      }),
+      getLogsChunked(publicClient, {
         address: eligibilityModule,
         event: parseAbiItem('event EligibilityModuleV0__AddressWhitelisted(address indexed user, uint256 indexed pollId)'),
-        args: { pollId: BigInt(pollId) },
-        fromBlock: fromBlock || 'earliest',
+        fromBlock: effectiveFromBlock,
         toBlock: toBlock || 'latest'
-      }).catch(() => [])
+      }).catch((err) => {
+        console.warn('V0 Whitelisted log fetch failed:', err.message)
+        return []
+      })
     ])
   
-    const logs = [...logsStandard, ...logsV0]
-    return { data: logs.map(log => log.args.user), error: null }
+    const allLogs = [...logsStandard, ...logsV0]
+    
+    // Filter by pollId in JS and extract user address
+    const targetPollId = BigInt(pollId)
+    const whitelistedAddresses = allLogs
+      .filter(log => {
+        const logPollId = log.args?.pollId !== undefined ? log.args.pollId : log.args?.[1]
+        if (logPollId === undefined) return false
+        // Loose string comparison to be extremely safe against types
+        return logPollId.toString() === pollId.toString()
+      })
+      .map(log => log.args?.user || log.args?.[0])
+      .filter(Boolean)
+
+    return { data: whitelistedAddresses, error: null }
   } catch (err) {
     console.error('getWhitelistedAddresses failed:', err)
     return { data: [], error: 'Could not fetch whitelisted addresses.' }
@@ -47,11 +77,14 @@ export async function getMerkleTreeDepth(pollId) {
   if (!pollId) return { data: 0, error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
 
     // Only call if it's the Semaphore eligibility module
-    const addresses = getAddresses(publicClient.chain.id)
+    const clientChainId = publicClient.chain?.id || chainId
+    const addresses = getAddresses(clientChainId)
     const isSemaphore = eligibilityModule?.toLowerCase() === addresses.semaphoreEligibility?.toLowerCase()
     
     if (!isSemaphore) {
@@ -75,24 +108,34 @@ export async function getGroupMembers(pollId) {
   if (!pollId) return { data: [], error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
     
-    const logs = await publicClient.getLogs({
+    const clientChainId = publicClient.chain?.id || chainId
+    const addresses = getAddresses(clientChainId)
+    
+    const logs = await getLogsChunked(publicClient, {
       address: eligibilityModule,
       event: parseAbiItem('event MemberAdded(uint256 indexed groupId, uint256 index, uint256 identityCommitment, uint256 merkleTreeRoot)'),
-      args: { groupId: BigInt(pollId) },
-      fromBlock: 'earliest'
+      fromBlock: BigInt(addresses.startBlock || 0)
     })
 
-    const members = logs.map(log => {
-      const id = log.args?.identityCommitment || log.args?.[2]
-      return id ? { 
-        identityCommitment: id.toString(),
-        transactionHash: log.transactionHash,
-        blockNumber: log.blockNumber
-      } : null
-    }).filter(Boolean)
+    const targetGroupId = BigInt(pollId)
+    const members = logs
+      .filter(log => {
+        const logGroupId = log.args?.groupId !== undefined ? log.args.groupId : log.args?.[0]
+        return logGroupId !== undefined && BigInt(logGroupId) === targetGroupId
+      })
+      .map(log => {
+        const id = log.args?.identityCommitment !== undefined ? log.args.identityCommitment : log.args?.[2]
+        return id ? { 
+          identityCommitment: id.toString(),
+          transactionHash: log.transactionHash,
+          blockNumber: log.blockNumber
+        } : null
+      }).filter(Boolean)
     
     return { data: members, error: null }
   } catch (err) {
@@ -105,7 +148,9 @@ export async function isUserWhitelisted(pollId, userAddress) {
   if (!pollId || !userAddress) return { data: false, error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
 
     const isWhitelisted = await publicClient.readContract({
@@ -114,7 +159,7 @@ export async function isUserWhitelisted(pollId, userAddress) {
       functionName: 'isWhitelisted',
       args: [BigInt(pollId), userAddress],
     })
-    return { data: isWhitelisted, error: null }
+    return { data: !!isWhitelisted, error: null }
   } catch (err) {
     console.error('isUserWhitelisted failed:', err)
     return { data: false, error: 'Could not check whitelist status.' }
@@ -125,11 +170,14 @@ export async function isUserRegistered(pollId, userAddress) {
   if (!pollId || !userAddress) return { data: false, error: null }
   
   try {
-    const publicClient = getPublicClient(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = getPublicClient(config, { chainId })
     const { eligibilityModule } = await getModules(pollId)
 
     // Only SemaphoreEligibilityModule supports isRegistered
-    const addresses = getAddresses(publicClient.chain.id)
+    const clientChainId = publicClient.chain?.id || chainId
+    const addresses = getAddresses(clientChainId)
     if (eligibilityModule?.toLowerCase() !== addresses.semaphoreEligibility?.toLowerCase()) {
       return { data: false, error: null }
     }
@@ -140,7 +188,7 @@ export async function isUserRegistered(pollId, userAddress) {
       functionName: 'isRegistered',
       args: [BigInt(pollId), userAddress],
     })
-    return { data: registered, error: null }
+    return { data: !!registered, error: null }
   } catch (err) {
     console.warn('isUserRegistered failed or not supported:', err.message)
     return { data: false, error: null }
@@ -153,7 +201,8 @@ export async function whitelistUser(pollId, userAddress) {
   if (!userAddress) throw new Error('No user to whitelist.')
   
   try {
-    const { chainId } = getAccount(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
     const addresses = getAddresses(chainId)
 
     const hash = await writeContract(config, {
@@ -162,7 +211,7 @@ export async function whitelistUser(pollId, userAddress) {
       functionName: 'whitelistUser',
       args: [BigInt(pollId), userAddress],
     })
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
     
     return true
@@ -176,7 +225,8 @@ export async function whitelistUsers(pollId, users) {
   if (!users || users.length === 0) throw new Error('No users to whitelist.')
   
   try {
-    const { chainId } = getAccount(config)
+    const account = getAccount(config)
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
     const addresses = getAddresses(chainId)
 
     const hash = await writeContract(config, {
@@ -185,7 +235,7 @@ export async function whitelistUsers(pollId, users) {
       functionName: 'whitelistUsers',
       args: [BigInt(pollId), users],
     })
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
     
     return true
@@ -196,11 +246,11 @@ export async function whitelistUsers(pollId, users) {
 }
 
 export async function addMember(pollId, identityCommitment) {
-  const { address } = getAccount(config)
-  if (!address) throw new Error('Wallet not connected')
+  const account = getAccount(config)
+  if (!account?.address) throw new Error('Wallet not connected')
 
   try {
-    const { chainId } = getAccount(config)
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
     const addresses = getAddresses(chainId)
 
     const hash = await writeContract(config, {
@@ -210,7 +260,7 @@ export async function addMember(pollId, identityCommitment) {
       args: [BigInt(pollId), BigInt(identityCommitment)],
     })
     
-    const receipt = await waitForTransactionReceipt(config, { hash })
+    const receipt = await waitForTransactionResilient(config, { hash })
     if (receipt.status === 'reverted' || receipt.status === 0) throw new Error('Transaction REVERTED on chain.')
     
     return true

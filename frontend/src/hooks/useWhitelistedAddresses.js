@@ -5,14 +5,7 @@ import { useMultiContractEvents } from '@/hooks/useContractEvents'
 import { toast } from 'react-hot-toast'
 
 // Batch size for pagination (blocks)
-const BATCH_SIZE = 5000n
-
-// Parser for whitelist events
-const parseWhitelistLog = (log) => ({
-  user: log.args.user,
-  transactionHash: log.transactionHash,
-  blockNumber: log.blockNumber,
-})
+const BATCH_SIZE = 900n
 
 /**
  * Hook to manage whitelisted addresses with pagination and real-time updates
@@ -41,6 +34,24 @@ export function useWhitelistedAddresses(pollId) {
     fetchModule()
   }, [pollId])
 
+  // Robust event parser with JS-side pollId filtering
+  const parseLog = useCallback((log) => {
+    const user = log.args?.user
+    const logPollId = log.args?.pollId
+    if (!user) return null
+    
+    // Filter by pollId in JS to bypass RPC filtering inconsistencies
+    if (logPollId !== undefined && logPollId !== null) {
+      if (logPollId.toString() !== pollId?.toString()) return null
+    }
+    
+    return {
+      user: user.toLowerCase(),
+      transactionHash: log.transactionHash,
+      blockNumber: log.blockNumber,
+    }
+  }, [pollId])
+
   // Real-time event listeners
   const { events: liveWhitelisted } = useMultiContractEvents({
     address: eligibilityModuleAddress,
@@ -48,56 +59,48 @@ export function useWhitelistedAddresses(pollId) {
       {
         eventSignature: 'event Whitelisted(address indexed user, uint256 indexed pollId)',
         eventName: 'Whitelisted',
-        args: { pollId: BigInt(pollId || 0) },
+        // args intentionally omitted for JS-side filtering robustness
       },
       {
         eventSignature: 'event EligibilityModuleV0__AddressWhitelisted(address indexed user, uint256 indexed pollId)',
         eventName: 'EligibilityModuleV0__AddressWhitelisted',
-        args: { pollId: BigInt(pollId || 0) },
       },
     ],
     enabled: !!eligibilityModuleAddress && !!pollId,
-    parseLog: parseWhitelistLog,
+    parseLog,
   })
 
   // Merge live events with addresses
   useEffect(() => {
     if (liveWhitelisted.length > 0) {
-      let hasNew = false
-      // We must track if we actually add anything to avoid infinite loops if addresses strictly depends on this
-      // But since we check existence first, it should be fine.
-      const next = new Set(addresses)
-      
-      liveWhitelisted.forEach(e => {
-        if (!next.has(e.user)) {
-          next.add(e.user)
-          hasNew = true
-        }
+      setAddresses(prev => {
+        const next = new Set(prev)
+        let hasNew = false
+        
+        liveWhitelisted.forEach(e => {
+          const addr = e.user?.toLowerCase()
+          if (addr && !next.has(addr)) {
+            next.add(addr)
+            hasNew = true
+          }
+        })
+
+        if (!hasNew) return prev
+        // Note: Success toast for manual action is handled in addToWhitelist,
+        // but this effect ensures real-time updates for everyone else too.
+        return next
       })
-
-      if (hasNew) {
-        setAddresses(next)
-      }
     }
-  }, [liveWhitelisted, addresses])
-
-  // Initialize on first load when block number is available
-  useEffect(() => {
-    if (currentBlock && lastInternalBlock === null) {
-      loadMore(currentBlock)
-    }
-  }, [currentBlock])
-
+  }, [liveWhitelisted])
+    
   const loadMore = useCallback(async (startScanBlock) => {
     if (!pollId || loading) return
     
     // Determine range
-    // If startScanBlock is provided (initial load), use it. 
-    // Otherwise use lastInternalBlock - 1
     const endBlock = startScanBlock ? startScanBlock : (lastInternalBlock ? lastInternalBlock - 1n : null)
     
-    if (!endBlock || endBlock <= 0n) {
-        setHasMore(false)
+    if (endBlock === null || endBlock <= 0n) {
+        if (endBlock !== null) setHasMore(false)
         return
     }
 
@@ -108,15 +111,19 @@ export function useWhitelistedAddresses(pollId) {
       const { data: newAddresses, error } = await getWhitelistedAddresses(pollId, startBlock, endBlock)
       if (error) throw new Error(error)
       
-      setAddresses(prev => {
-        const next = new Set(prev)
-        ;(newAddresses || []).forEach(addr => next.add(addr))
-        return next
-      })
+      if (newAddresses && newAddresses.length > 0) {
+        setAddresses(prev => {
+          const next = new Set(prev)
+          newAddresses.forEach(addr => {
+            if (addr) next.add(addr.toLowerCase())
+          })
+          return next
+        })
+      }
 
       setLastInternalBlock(startBlock)
       
-      // If we reached genesis, no more data
+      // If we reached genesis, or we scanned the whole range (if we know the deployment start), no more data
       if (startBlock === 0n) {
           setHasMore(false)
       }
@@ -127,6 +134,13 @@ export function useWhitelistedAddresses(pollId) {
       setLoading(false)
     }
   }, [pollId, lastInternalBlock, loading])
+
+  // Initial load when both pollId and currentBlock are available
+  useEffect(() => {
+    if (currentBlock && pollId && lastInternalBlock === null && !loading) {
+      loadMore(currentBlock)
+    }
+  }, [currentBlock, pollId, lastInternalBlock, loading, loadMore])
 
   // Mutation: Add to Whitelist
   const addToWhitelist = useCallback(async (addressesToAdd) => {

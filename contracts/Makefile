@@ -6,6 +6,11 @@
 #   make deploy-sepolia     # deploy to Sepolia (requires env vars)
 #   make build test clean
 
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
 SCRIPT := script/DeployVotingSystem.s.sol:DeployVotingSystem
 ANVIL_PORT := 8545
 ANVIL_RPC := http://127.0.0.1:$(ANVIL_PORT)
@@ -175,7 +180,7 @@ ifndef PRIVATE_KEY
 	$(error PRIVATE_KEY is not set. export PRIVATE_KEY="0x...")
 endif
 	@echo "Deploying to Sepolia via $(SEPOLIA_RPC_URL)..."
-	forge script $(SCRIPT) \
+	FOUNDRY_PROFILE=sepolia forge script $(SCRIPT) \
 	  --rpc-url $(SEPOLIA_RPC_URL) \
 	  --private-key $(PRIVATE_KEY) \
 	  --broadcast

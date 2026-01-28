@@ -10,6 +10,7 @@ import { getPollPublicKey } from '@/lib/blockchain/engine/read'
 import { ELGAMAL_VECTOR_SIZE, VOTE_CIRCUIT_WASM_PATH, VOTE_CIRCUIT_ZKEY_PATH } from '@/lib/constants'
 import { toast } from 'react-hot-toast'
 import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
+import { buildSponsoredVoteUserOp, sendSponsoredPlainVote } from '@/lib/accountAbstraction/userOp'
 
 
 export function useZKVote(pollId) {
@@ -133,6 +134,7 @@ export function useZKVote(pollId) {
         } catch (err) {
             const msg = formatTransactionError(err)
             toast.error(msg, { id: toastId })
+            err.isHandled = true
             throw err
         }
 
@@ -152,32 +154,44 @@ export function useZKVote(pollId) {
         setCurrentStep(0)
         const toastId = toast.loading('Submitting vote...', { id: 'vote' })
         try {
-            result = await castPlainVote(pollId, optionIndex)
-            toast.success('Vote submitted successfully!', { id: toastId })
+          if (!address) {
+            throw new Error('Wallet account not connected')
+          }
+
+          // Build unsigned UserOperation for this poll + option, preserving EOA voter identity
+          const { userOp, entryPoint } = await buildSponsoredVoteUserOp({
+            pollId,
+            optionIdx: optionIndex,
+            voterAddress: address,
+          })
+
+          // Submit unsigned UserOperation to the backend bundler
+          const { txHash, voteId } = await sendSponsoredPlainVote({
+            userOp,
+            entryPoint,
+          })
+          result = { voteId: voteId ?? null, txHash }
+
+          toast.success('Vote submitted successfully!', { id: toastId })
         } catch (err) {
-            const msg = formatTransactionError(err)
-            toast.error(msg, { id: toastId })
-            throw err
+          const msg = formatTransactionError(err)
+          toast.error(msg, { id: toastId })
+          err.isHandled = true
+          throw err
         }
       }
 
       return result
     } catch (error) {
-      console.error('Unified Vote failed:', error)
-      // We rethrow because the component might need to know, but we already handled toast for known paths
-      // For top-level errors (like circuit init failure), we should toast too if not covered.
-      if (!error?.message?.includes('User rejected') && !error?.message?.includes('already cast')) {
-           // Only toast generic if specific toast wasn't triggered (e.g. circuit failure)
-           // But identifying if specific toast fired is hard. 
-           // However, local try/catches above will throw.
-           // So this catch also catches those throws.
-           // To avoid double toast, we can check if it's already handled?
-           // Actually, simplest is to NOT toast here if we toasted above.
-           // But how to know?
-           // We can rely on the fact that we re-threw inside the inner blocks.
-           // Let's just log here.
+      console.warn('Unified Vote failed:', error)
+      
+      // If error hasn't been handled (toasted) yet, do it now
+      if (!error.isHandled && !error?.message?.includes('User rejected')) {
+            const msg = formatTransactionError(error)
+            toast.error(msg)
       }
-      throw error
+      
+      return null
     } finally {
       setIsSubmitting(false)
     }

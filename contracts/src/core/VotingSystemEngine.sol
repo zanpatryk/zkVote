@@ -186,6 +186,40 @@ contract VotingSystemEngine {
         voteId = s_pollVoteStorage[pollId].castVote(pollId, voter, abi.encode(optionIdx));
     }
 
+    /**
+     * @notice Casts a plain vote on behalf of an EOA voter, allowing
+     *         third-party sponsors (e.g. smart accounts or relayers)
+     *         to pay gas while preserving EOA-based eligibility and
+     *         storage accounting.
+     *
+     * Requirements:
+     * - `voter` must be eligible to vote for the given poll (whitelisted).
+     * - `optionIdx` must be within bounds of available options.
+     *
+     * Security:
+     * - `msg.sender` is not used for eligibility; any relayer can call
+     *   this as long as `voter` is eligible. This is intentional for
+     *   the Account Abstraction + paymaster use case, where a bundler
+     *   sponsors gas for voters.
+     */
+    function castSponsoredVote(uint256 pollId, uint256 optionIdx, address voter)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 1)
+        returns (uint256 voteId)
+    {
+        if (!s_pollEligibility[pollId].isEligibleToVote(pollId, abi.encode(voter))) {
+            revert VotingSystem__AddressNotWhitelisted(voter);
+        }
+
+        uint256 optionCount = s_pollManager.getPollOptionCount(pollId);
+        if (optionIdx >= optionCount) {
+            revert VotingSystem__InvalidOption();
+        }
+
+        voteId = s_pollVoteStorage[pollId].castVote(pollId, voter, abi.encode(optionIdx));
+    }
+
     // ============ ZK Voting ============
 
     function registerVoter(uint256 pollId, uint256 identityCommitment)

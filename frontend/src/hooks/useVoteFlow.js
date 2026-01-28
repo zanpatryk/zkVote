@@ -135,7 +135,7 @@ export function useVoteFlow(pollId) {
         router.push(`/poll/${pollId}/vote/receipt/${voteId}?txHash=${txHash}&nullifier=${nullifier || ''}&proof=${proofStr}`)
       }
     } catch (err) {
-       console.error('Vote submission error:', err)
+       console.warn('Vote submission error:', err)
        // toast handled in useZKVote hook
     }
   }, [poll, pollId, isConnected, isZK, isRegistered, loadedIdentity, alreadyVoted, submitVote, router])

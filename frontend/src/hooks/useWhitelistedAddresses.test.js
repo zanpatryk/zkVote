@@ -34,7 +34,7 @@ describe('useWhitelistedAddresses', () => {
     
     // Default mocks
     getModules.mockResolvedValue({ eligibilityModule: '0xEligibility' })
-    useBlockNumber.mockReturnValue({ data: 10000n })
+    useBlockNumber.mockReturnValue({ data: 1000n })
     useMultiContractEvents.mockReturnValue({ events: [] })
     getWhitelistedAddresses.mockResolvedValue({ data: [], error: null })
   })
@@ -54,9 +54,9 @@ describe('useWhitelistedAddresses', () => {
     })
     
     // Check args: (pollId, startBlock, endBlock)
-    // BATCH_SIZE is 5000. Current is 10000.
-    // endBlock = 10000. startBlock = 5000.
-    expect(getWhitelistedAddresses).toHaveBeenCalledWith(mockPollId, 5000n, 10000n)
+    // BATCH_SIZE is 900. Current is 1000.
+    // endBlock = 1000. startBlock = 100.
+    expect(getWhitelistedAddresses).toHaveBeenCalledWith(mockPollId, 100n, 1000n)
     
     expect(result.current.addresses.has('0x1')).toBe(true)
     expect(result.current.addresses.has('0x2')).toBe(true)
@@ -67,7 +67,7 @@ describe('useWhitelistedAddresses', () => {
     const { result } = renderHook(() => useWhitelistedAddresses(mockPollId))
     
     await waitFor(() => {
-        expect(getWhitelistedAddresses).toHaveBeenCalledWith(mockPollId, 5000n, 10000n)
+        expect(getWhitelistedAddresses).toHaveBeenCalledWith(mockPollId, 100n, 1000n)
         expect(result.current.loading).toBe(false)
     })
     
@@ -83,10 +83,10 @@ describe('useWhitelistedAddresses', () => {
         expect(result.current.loading).toBe(false)
     })
 
-    // Last internal was 5000.
-    // New end = 4999.
-    // New start = 0 (since 4999 - 5000 < 0)
-    expect(getWhitelistedAddresses).toHaveBeenCalledWith(mockPollId, 0n, 4999n)
+    // Last internal was 100.
+    // New end = 99.
+    // New start = 0 (since 99 - 900 < 0)
+    expect(getWhitelistedAddresses).toHaveBeenCalledWith(mockPollId, 0n, 99n)
     expect(result.current.addresses.has('0x3')).toBe(true)
     
     // Should set hasMore to false since startBlock was 0
@@ -108,7 +108,7 @@ describe('useWhitelistedAddresses', () => {
     rerender()
 
     await waitFor(() => {
-      expect(result.current.addresses.has('0xLive')).toBe(true)
+      expect(result.current.addresses.has('0xlive')).toBe(true)
     })
     // We removed the toast to avoid double-toasting for the sender
     // expect(toast.success).toHaveBeenCalledWith('New address whitelisted!')
@@ -159,7 +159,7 @@ describe('useWhitelistedAddresses', () => {
     const { result, rerender } = renderHook(() => useWhitelistedAddresses(mockPollId))
 
     await waitFor(() => {
-      expect(result.current.addresses.has(existingAddress)).toBe(true)
+      expect(result.current.addresses.has(existingAddress.toLowerCase())).toBe(true)
     })
 
     // Simulate duplicate event

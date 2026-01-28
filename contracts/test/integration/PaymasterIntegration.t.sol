@@ -36,14 +36,12 @@ contract SimpleAccountForTest {
         entryPoint = _entryPoint;
     }
 
-    // EntryPoint will call this to validate the userOp.
-    // We expect userOp.signature to be standard (r || s || v)
     function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
         external
         view
         returns (uint256 validationData)
     {
-        // Removed 'bytes memory context'
+
         bytes calldata sig = userOp.signature;
         require(sig.length == 65, "invalid signature length");
 
@@ -58,18 +56,15 @@ contract SimpleAccountForTest {
         if (v < 27) v += 27;
 
         address signer = ecrecover(userOpHash, v, r, s);
-        // Return 0 for success, 1 for signature failure
         return (signer == owner) ? 0 : 1;
     }
 
-    // EntryPoint will call execute on success. Allow only EntryPoint to call.
     function execute(address target, uint256 value, bytes calldata data) external returns (bool, bytes memory) {
         require(msg.sender == address(entryPoint), "only entryPoint");
         (bool ok, bytes memory ret) = target.call{value: value}(data);
         return (ok, ret);
     }
 
-    // helper to build the execute calldata externally
     function getExecuteCalldata(address target, uint256 value, bytes memory data) external pure returns (bytes memory) {
         return abi.encodeWithSelector(this.execute.selector, target, value, data);
     }
@@ -89,7 +84,6 @@ contract PaymasterIntegrationTest is Test {
 
     string[] private options;
 
-    // keys for test accounts
     uint256 ownerKey = 0xA11CE;
     address ownerAddress;
 
@@ -101,13 +95,17 @@ contract PaymasterIntegrationTest is Test {
 
         (
             vse,
-            pollManager,, // SemaphoreEligibilityModule
-            eligibilityModule,
-            voteStorage,, // ZKElGamalVoteVector
+            pollManager,
+            , // semaphoreEligibility
+            eligibilityModule, // eligibilityV0
+            voteStorage, // voteStorageV0
+            , // zkElGamalVoteVector
             resultNFT,
             entryPoint,
             paymaster,
+            , // simpleAccount
             helperConfig,
+            // verifierContract
         ) = deployer.run();
 
         ownerAddress = vm.addr(ownerKey);
@@ -204,9 +202,7 @@ contract PaymasterIntegrationTest is Test {
         // 12) Assert VSE recorded the vote: the VoteStorage emits VoteCasted event and voteId increments
         // easiest: call vle.getResults or use VoteStorage view
         IVoteStorage vs = IVoteStorage(address(vse)); // your voting engine delegates to storage; adjust if necessary
-        // Your storage has getResults; but VSE castVote will write into the pollVoteStorage mapping; to keep things simple we'll assume castVote incremented vote count and we can check via call to VSE's functions (e.g. read result)
-        // For compactness, we check that a VoteCasted event occurred by fetching logs is more involved; instead verify s_pollVoteStorage via VSE view if you have it exposed
-        // If not available, we can at least assert pollManager state remains ACTIVE
+
         assertEq(uint8(pollManager.getState(pollId)), 1);
     }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useReadContract } from 'wagmi'
-import { votingSystemContract } from '@/lib/contracts'
+import { useReadContract, useChainId } from 'wagmi'
+import { votingSystemContract, getAddresses } from '@/lib/contracts'
 import { publishEncryptedResults } from '@/lib/blockchain/engine/write'
 import { decryptTally, generateTallyProof } from '@/lib/crypto/tally'
 import { toast } from 'react-hot-toast'
@@ -11,12 +11,16 @@ export function usePublishTally(pollId) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [decryptedTally, setDecryptedTally] = useState(null)
   
+  const chainId = useChainId()
+  const addresses = getAddresses(chainId)
+
   // Fetch Aggregated Ciphertexts from contract
   const { data: ciphertexts, refetch: refetchCiphertexts } = useReadContract({
     ...votingSystemContract,
+    address: addresses.vse,
     functionName: 'getAggregatedCiphertexts',
     args: [BigInt(pollId || 0)],
-    query: { enabled: !!pollId }
+    query: { enabled: !!pollId && !!addresses.vse }
   })
 
   const { refetchPollState } = usePollRegistry(pollId)

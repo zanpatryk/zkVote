@@ -5,20 +5,37 @@ import {Script, console} from "forge-std/Script.sol";
 
 import {VotingSystemEngine} from "../src/core/VotingSystemEngine.sol";
 import {PollManager} from "../src/poll_management/PollManager.sol";
-import {SemaphoreEligibilityModule} from "../src/eligibility/SemaphoreEligibilityModule.sol";
+import {
+    SemaphoreEligibilityModule
+} from "../src/eligibility/SemaphoreEligibilityModule.sol";
 import {EligibilityModuleV0} from "../src/eligibility/EligibilityModuleV0.sol";
-import {SemaphoreVerifier} from "@semaphore-protocol/contracts/base/SemaphoreVerifier.sol";
-import {ISemaphoreVerifier} from "@semaphore-protocol/contracts/interfaces/ISemaphoreVerifier.sol";
+import {
+    SemaphoreVerifier
+} from "@semaphore-protocol/contracts/base/SemaphoreVerifier.sol";
+import {
+    ISemaphoreVerifier
+} from "@semaphore-protocol/contracts/interfaces/ISemaphoreVerifier.sol";
 import {VoteStorageV0} from "../src/vote_storage/VoteStorageV0.sol";
 import {ZKElGamalVoteVector} from "../src/vote_storage/ZKElGamalVoteVector.sol";
 import {ResultNFT} from "../src/result_nft/ResultNFT.sol";
 
-import {ElGamalVoteVectorVerifier_N16} from "zkvote-lib/ElGamalVoteVectorVerifier_N16.sol";
-import {ElGamalTallyDecryptVerifier_N16} from "zkvote-lib/ElGamalTallyDecryptVerifier_N16.sol";
+import {
+    ElGamalVoteVectorVerifier_N16
+} from "zkvote-lib/ElGamalVoteVectorVerifier_N16.sol";
+import {
+    ElGamalTallyDecryptVerifier_N16
+} from "zkvote-lib/ElGamalTallyDecryptVerifier_N16.sol";
 
 import {EntryPoint} from "@account-abstraction/contracts/core/EntryPoint.sol";
-import {IEntryPoint} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
-import {PollSponsorPaymaster} from "../src/account_abstraction/PollSponsorPaymaster.sol";
+import {
+    IEntryPoint
+} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
+import {
+    PollSponsorPaymaster
+} from "../src/account_abstraction/PollSponsorPaymaster.sol";
+import {
+    zkVoteSimpleAccount
+} from "../src/account_abstraction/zkVoteSimpleAccount.sol";
 
 import {HelperConfig} from "./HelperConfig.s.sol";
 
@@ -35,12 +52,14 @@ contract DeployVotingSystem is Script {
             ResultNFT resultNFT,
             EntryPoint entryPoint,
             PollSponsorPaymaster pollSponsorPaymaster,
+            zkVoteSimpleAccount simpleAccount,
             HelperConfig helper,
             ISemaphoreVerifier verifierContract
         )
     {
         helper = new HelperConfig();
-        (uint256 deployerKey, address semaphoreVerifierAddr) = helper.activeNetworkConfig();
+        (uint256 deployerKey, address semaphoreVerifierAddr) = helper
+            .activeNetworkConfig();
         address deployerAddress = vm.addr(deployerKey);
 
         vm.startBroadcast(deployerKey);
@@ -50,14 +69,17 @@ contract DeployVotingSystem is Script {
 
         // 2) Deploy core modules
         pollManager = new PollManager(address(vse));
-        
+
         ISemaphoreVerifier verifier;
         if (semaphoreVerifierAddr != address(0)) {
             verifier = ISemaphoreVerifier(semaphoreVerifierAddr);
         } else {
             verifier = ISemaphoreVerifier(address(new SemaphoreVerifier()));
         }
-        semaphoreEligibility = new SemaphoreEligibilityModule(verifier, address(vse));
+        semaphoreEligibility = new SemaphoreEligibilityModule(
+            verifier,
+            address(vse)
+        );
         eligibilityV0 = new EligibilityModuleV0(address(vse));
 
         voteStorageV0 = new VoteStorageV0(address(vse));
@@ -76,11 +98,24 @@ contract DeployVotingSystem is Script {
         zkElGamalVoteVector.transferOwnership(address(vse));
 
         // 5) Initialize VSE (Default Modules)
-        vse.initialize(address(pollManager), address(eligibilityV0), address(voteStorageV0), address(resultNFT));
+        vse.initialize(
+            address(pollManager),
+            address(eligibilityV0),
+            address(voteStorageV0),
+            address(resultNFT)
+        );
 
-        // 6) Deploy Paymaster
+        // 6) Deploy Paymaster and SimpleAccount
         entryPoint = new EntryPoint();
-        pollSponsorPaymaster = new PollSponsorPaymaster(entryPoint, address(pollManager), address(vse));
+        pollSponsorPaymaster = new PollSponsorPaymaster(
+            entryPoint,
+            address(pollManager),
+            address(vse)
+        );
+        simpleAccount = new zkVoteSimpleAccount(
+            deployerAddress,
+            IEntryPoint(address(entryPoint))
+        );
 
         // Write simplified address.json for frontend
         string memory json = string.concat(
@@ -94,7 +129,9 @@ contract DeployVotingSystem is Script {
             '  "semaphoreEligibility": "',
             vm.toString(address(semaphoreEligibility)),
             '",\n',
-            '  "semaphoreVerifier": "', vm.toString(address(verifier)), '",\n',
+            '  "semaphoreVerifier": "',
+            vm.toString(address(verifier)),
+            '",\n',
             '  "eligibilityV0": "',
             vm.toString(address(eligibilityV0)),
             '",\n',
@@ -115,11 +152,18 @@ contract DeployVotingSystem is Script {
             '",\n',
             '  "paymaster": "',
             vm.toString(address(pollSponsorPaymaster)),
+            '",\n',
+            '  "simpleAccount": "',
+            vm.toString(address(simpleAccount)),
             '"\n',
             "}"
         );
         string memory chainId = vm.toString(block.chainid);
-        string memory path = string.concat("../frontend/src/lib/deployments/", chainId, ".json");
+        string memory path = string.concat(
+            "../frontend/src/lib/deployments/",
+            chainId,
+            ".json"
+        );
         vm.writeFile(path, json);
 
         vm.stopBroadcast();

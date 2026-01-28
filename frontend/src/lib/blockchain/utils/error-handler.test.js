@@ -39,6 +39,16 @@ describe('blockchain error-handler', () => {
       expect(formatTransactionError({ message: 'insufficient funds for gas' })).toBe('Insufficient funds to complete transaction')
     })
 
+    it('handles AA31 paymaster deposit too low', () => {
+      const errorMsg = 'FailedOp(uint256 opIndex, string reason) (0, AA31 paymaster deposit too low)'
+      const expected = 'Voting failed: The poll has run out of sponsored gas funds. If you are the owner, please check the "Poll Funding" section in the Manage Poll page.'
+      expect(formatTransactionError({ message: errorMsg })).toBe(expected)
+      
+      const errorInDetails = { message: 'Contract revert', details: 'AA31 paymaster deposit too low' }
+      expect(formatTransactionError(errorInDetails)).toBe(expected)
+    })
+
+
     it('returns shortMessage if available', () => {
       expect(formatTransactionError({ shortMessage: 'Viem short message' })).toBe('Viem short message')
     })

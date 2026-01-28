@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { createPoll } from '@/lib/blockchain/engine/write'
-import { MODULE_ADDRESSES } from '@/lib/contracts'
+import { getAddresses } from '@/lib/contracts'
+import { wagmiConfig as config } from '@/lib/wagmi/config'
+import { getAccount } from '@wagmi/core'
 import { toast } from 'react-hot-toast'
 import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
 
@@ -64,9 +66,12 @@ export function useCreatePollForm() {
     const toastId = toast.loading('Initializing poll creation...')
 
     try {
+      const { chainId } = getAccount(config)
+      const addresses = getAddresses(chainId)
+
       // Map toggles to module addresses
-      const eligibilityModule = isAnonymous ? MODULE_ADDRESSES.semaphoreEligibility : MODULE_ADDRESSES.eligibilityV0
-      const voteStorage = isSecret ? MODULE_ADDRESSES.zkElGamalVoteVector : MODULE_ADDRESSES.voteStorageV0
+      const eligibilityModule = isAnonymous ? addresses.semaphoreEligibility : addresses.eligibilityV0
+      const voteStorage = isSecret ? addresses.zkElGamalVoteVector : addresses.voteStorageV0
 
       let voteStorageParams = null
       

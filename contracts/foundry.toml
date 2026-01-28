@@ -28,5 +28,9 @@ remappings = [
 
 solc_version = "0.8.28"
 
+[profile.sepolia]
+libraries = [
+    "poseidon-solidity/PoseidonT3.sol:PoseidonT3:0xB43122Ecb241DD50062641f089876679fd06599a"
+]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

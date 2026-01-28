@@ -21,7 +21,8 @@ jest.mock('@/lib/contracts', () => ({
     elgamalVoteVerifier: '0xEVV',
     elgamalTallyVerifier: '0xETV',
     eligibilityV0: '0xEliV0',
-    semaphoreEligibility: '0xSemEli'
+    semaphoreEligibility: '0xSemEli',
+    startBlock: 0
   }))
 }))
 jest.mock('react-hot-toast', () => ({
@@ -63,6 +64,7 @@ describe('polls domain engine', () => {
     mockPublicClient = {
       readContract: jest.fn(),
       getLogs: jest.fn(),
+      getBlockNumber: jest.fn().mockResolvedValue(100n),
       chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)

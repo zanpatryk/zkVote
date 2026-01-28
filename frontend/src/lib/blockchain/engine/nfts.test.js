@@ -5,7 +5,8 @@ jest.mock('@/lib/contracts', () => ({
   votingSystemContract: { abi: [], address: '0xVSE' },
   ResultNFTABI: [],
   getAddresses: jest.fn(() => ({
-    vse: '0xVSE'
+    vse: '0xVSE',
+    startBlock: 0
   }))
 }))
 jest.mock('@wagmi/core', () => ({
@@ -31,6 +32,7 @@ describe('nfts domain engine', () => {
     mockPublicClient = {
       readContract: jest.fn(),
       getLogs: jest.fn(),
+      getBlockNumber: jest.fn().mockResolvedValue(100n),
       chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)

@@ -71,6 +71,7 @@ jest.mock('wagmi', () => {
     useSignMessage: jest.fn(),
     useDisconnect: jest.fn(),
     useConnect: jest.fn(),
+    useChainId: jest.fn(() => 11155111), // Default to Sepolia
   }
   return {
     __esModule: true,
@@ -98,6 +99,7 @@ jest.mock('@wagmi/core', () => {
     readContract: jest.fn(),
     writeContract: jest.fn(),
     waitForTransactionReceipt: jest.fn(),
+    getAccount: jest.fn(() => ({ address: '0x123', chainId: 11155111 })),
     createConfig: jest.fn(),
     http: jest.fn(),
   }
@@ -119,6 +121,8 @@ jest.mock('viem', () => {
     http: jest.fn(),
     parseAbiItem: jest.fn(i => i),
     isAddress: jest.fn(() => true),
+    encodeFunctionData: jest.fn(() => '0xEncodedFunctionData'),
+    decodeEventLog: jest.fn(() => ({ eventName: 'VoteCasted', args: { voteId: 123n } })),
   }
   return {
     __esModule: true,

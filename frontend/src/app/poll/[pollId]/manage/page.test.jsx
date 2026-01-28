@@ -42,9 +42,7 @@ jest.mock('@/components/PollStatusManager.jsx', () => ({
   default: () => <div data-testid="poll-status-manager">Poll Status Manager Component</div>,
 }))
 
-jest.mock('wagmi', () => ({
-  useAccount: jest.fn(),
-}))
+
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
