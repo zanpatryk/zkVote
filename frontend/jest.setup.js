@@ -119,6 +119,8 @@ jest.mock('viem', () => {
     http: jest.fn(),
     parseAbiItem: jest.fn(i => i),
     isAddress: jest.fn(() => true),
+    encodeFunctionData: jest.fn(() => '0xEncodedFunctionData'),
+    decodeEventLog: jest.fn(() => ({ eventName: 'VoteCasted', args: { voteId: 123n } })),
   }
   return {
     __esModule: true,

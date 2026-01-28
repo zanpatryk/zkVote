@@ -45,11 +45,20 @@ jest.mock('@/lib/blockchain/engine/write', () => ({
 
 // --- TESTS ---
 
+jest.mock('@/lib/accountAbstraction/userOp', () => ({
+  buildSponsoredVoteUserOp: jest.fn(),
+  sendSponsoredPlainVote: jest.fn(),
+}))
+
+// --- TESTS ---
+
 describe('useZKVote', () => {
   const mockPollId = '123'
   const mockIdentity = { commitment: '123' }
   const mockCastSemaphoreVote = jest.fn()
   const mockGenerateVoteProof = jest.fn()
+  // Mock AA functions
+  const { buildSponsoredVoteUserOp, sendSponsoredPlainVote } = require('@/lib/accountAbstraction/userOp')
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -73,6 +82,10 @@ describe('useZKVote', () => {
     castEncryptedVoteWithProof.mockResolvedValue({ txHash: '0xUnified' })
     mockGenerateVoteProof.mockResolvedValue({ proof: [1], nullifier: '0xN' })
 
+    // AA - Default Mocks
+    buildSponsoredVoteUserOp.mockResolvedValue({ userOp: {}, entryPoint: '0xEP' })
+    sendSponsoredPlainVote.mockResolvedValue({ txHash: '0xAA', voteId: 1 })
+
     // Default Crypto
     elgamal.init.mockResolvedValue(true)
     elgamal.randomScalar.mockReturnValue(123n)
@@ -81,14 +94,19 @@ describe('useZKVote', () => {
     proofUtils.formatProofForSolidity.mockReturnValue([1, 2, 3])
   })
 
-  it('runs plain vote flow when not ZK', async () => {
+  it('runs sponsored plain vote flow when not ZK', async () => {
     const { result } = renderHook(() => useZKVote(mockPollId))
     
     await act(async () => {
       await result.current.submitVote(1, null)
     })
     
-    expect(castPlainVote).toHaveBeenCalledWith(mockPollId, 1)
+    expect(buildSponsoredVoteUserOp).toHaveBeenCalledWith(expect.objectContaining({
+        pollId: mockPollId,
+        optionIdx: 1,
+        voterAddress: '0xUser'
+    }))
+    expect(sendSponsoredPlainVote).toHaveBeenCalled()
   })
 
   it('fetches public keys if registry says isZK', async () => {
@@ -159,5 +177,21 @@ describe('useZKVote', () => {
     })
     
     expect(mockCastSemaphoreVote).toHaveBeenCalled()
+  })
+
+  it('handles AA31 paymaster error without re-throwing', async () => {
+    const error = new Error('FailedOp(0, AA31 paymaster deposit too low)')
+    sendSponsoredPlainVote.mockRejectedValue(error)
+
+    const { result } = renderHook(() => useZKVote(mockPollId))
+
+    let submissionResult
+    await act(async () => {
+      // It should NOT throw
+      submissionResult = await result.current.submitVote(1, null)
+    })
+
+    expect(sendSponsoredPlainVote).toHaveBeenCalled()
+    expect(submissionResult).toBeNull()
   })
 })
