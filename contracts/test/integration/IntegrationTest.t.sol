@@ -44,11 +44,17 @@ contract IntegrationTest is Test {
         deployer = new DeployVotingSystem();
         (
             vse,
-            pollManager,, 
-            eligibilityModule,
-            voteStorage,,
-            resultNFT,,,
-            helperConfig,
+            pollManager,
+            , // semaphoreEligibility
+            eligibilityModule, // eligibilityV0
+            voteStorage, // voteStorageV0
+            , // zkElGamalVoteVector
+            resultNFT,
+            , // entryPoint
+            , // pollSponsorPaymaster
+            , // simpleAccount
+            helperConfig, 
+            // verifierContract
         ) = deployer.run();
 
         // Deploy Plain Eligibility for these tests

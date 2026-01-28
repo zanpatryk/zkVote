@@ -95,13 +95,17 @@ contract PaymasterIntegrationTest is Test {
 
         (
             vse,
-            pollManager,,
-            eligibilityModule,
-            voteStorage,, 
+            pollManager,
+            , // semaphoreEligibility
+            eligibilityModule, // eligibilityV0
+            voteStorage, // voteStorageV0
+            , // zkElGamalVoteVector
             resultNFT,
             entryPoint,
             paymaster,
+            , // simpleAccount
             helperConfig,
+            // verifierContract
         ) = deployer.run();
 
         ownerAddress = vm.addr(ownerKey);
