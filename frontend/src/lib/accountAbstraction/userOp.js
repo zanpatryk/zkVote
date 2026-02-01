@@ -267,7 +267,15 @@ export async function sendSponsoredPlainVote({ userOp, entryPoint }) {
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}))
-    throw new Error(errorBody.error || 'Bundler request failed')
+    const msg = errorBody.error || 'Bundler request failed'
+    const enhancedError = new Error(msg)
+    // Attach extra fields so formatTransactionError can read them
+    if (errorBody.details) enhancedError.details = errorBody.details
+    if (errorBody.shortMessage) enhancedError.shortMessage = errorBody.shortMessage
+    // If the server sent a 'cause' string or object, we can attach it to help parsing
+    if (errorBody.cause) enhancedError.cause = errorBody.cause
+    
+    throw enhancedError
   }
 
   const data = await response.json()

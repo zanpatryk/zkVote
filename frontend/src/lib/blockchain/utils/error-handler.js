@@ -50,6 +50,14 @@ export function formatTransactionError(error, fallbackMsg = 'Transaction failed'
     return 'Voting failed: The poll has run out of sponsored gas funds. If you are the owner, please check the "Poll Funding" section in the Manage Poll page.'
   }
 
+  // 5. Paymaster Budget Exceeded (AA33 - 0x09baf19d)
+  if (
+    fullErrorText.includes('0x09baf19d') || 
+    (fullErrorText.includes('aa33') && fullErrorText.includes('reverted'))
+  ) {
+    return 'Voting failed: This poll has run out of sponsored gas funds. Please contact the poll owner.'
+  }
+
 
   // 4. Contract Logic Reverts (Generic)
   if (error?.shortMessage) {

@@ -74,7 +74,12 @@ export async function POST(request) {
     return NextResponse.json({ txHash })
   } catch (error) {
     console.error('Bundler route error:', error)
-    return NextResponse.json({ error: error.message || 'Bundler error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: error.message || 'Bundler error',
+      details: error.details,
+      shortMessage: error.shortMessage,
+      cause: error.cause ? (typeof error.cause === 'string' ? error.cause : error.cause.message) : undefined
+    }, { status: 500 })
   }
 }
 
