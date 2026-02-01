@@ -50,6 +50,31 @@
   },
   {
     "type": "function",
+    "name": "getBaseSepoliaConfig",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct HelperConfig.NetworkConfig",
+        "components": [
+          {
+            "name": "deployerKey",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "semaphoreVerifier",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getOrCreateAnvilConfig",
     "inputs": [],
     "outputs": [

@@ -17,6 +17,8 @@ contract HelperConfig is Script {
     constructor() {
         if (block.chainid == 11155111) {
             activeNetworkConfig = getSepoliaConfig();
+        } else if (block.chainid == 84532) {
+            activeNetworkConfig = getBaseSepoliaConfig();
         } else {
             activeNetworkConfig = getOrCreateAnvilConfig();
         }
@@ -24,6 +26,15 @@ contract HelperConfig is Script {
 
     function getSepoliaConfig() public view returns (NetworkConfig memory) {
         // read PRIVATE_KEY from env when deploying to sepolia / public nets
+        return
+            NetworkConfig({
+                deployerKey: vm.envUint("PRIVATE_KEY"),
+                semaphoreVerifier: 0x4DeC9E3784EcC1eE002001BfE91deEf4A48931f8
+            });
+    }
+
+    function getBaseSepoliaConfig() public view returns (NetworkConfig memory) {
+        // read PRIVATE_KEY from env when deploying to Base Sepolia
         return
             NetworkConfig({
                 deployerKey: vm.envUint("PRIVATE_KEY"),

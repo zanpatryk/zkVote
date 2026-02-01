@@ -82,7 +82,18 @@ jest.mock('wagmi', () => {
 
 jest.mock('wagmi/chains', () => {
   const mock = {
-    sepolia: { id: 11155111, name: 'Sepolia', testnet: true },
+    sepolia: { 
+      id: 11155111, 
+      name: 'Sepolia', 
+      testnet: true,
+      rpcUrls: { default: { http: ['https://ethereum-sepolia-rpc.publicnode.com'] } }
+    },
+    baseSepolia: { 
+      id: 84532, 
+      name: 'Base Sepolia', 
+      testnet: true,
+      rpcUrls: { default: { http: ['https://sepolia.base.org'] } }
+    },
     mainnet: { id: 1, name: 'Mainnet' },
     localhost: { id: 1337, name: 'Localhost' },
     anvil: { id: 31337, name: 'Anvil', testnet: true },
