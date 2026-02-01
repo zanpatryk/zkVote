@@ -1,0 +1,39 @@
+# Vercel Ignore
+# Allow workspaces (contracts, circuits, packages) to be uploaded so bun install works
+# but exclude their heavy artifacts
+
+# General
+.git
+.github
+.vscode
+.DS_Store
+
+# Dependencies
+**/node_modules
+
+# Contracts artifacts (Heavy!)
+contracts/out
+contracts/cache
+contracts/broadcast
+
+# Circuits artifacts
+circuits/build
+circuits/.temp
+circuits/ptau
+
+# Script artifacts
+scripts/node_modules
+
+# Frontend build
+frontend/.next
+
+# Tests & Coverage
+coverage
+tests
+
+# Documentation
+docs
+
+# Environment
+.env
+.env.local

@@ -1,0 +1,9 @@
+# Frontend Vercel Ignore
+# Since we are deploying from root with "Root Directory = frontend", this is relative to frontend/
+node_modules
+.next
+.DS_Store
+coverage
+tests
+.env*
+!env.example
