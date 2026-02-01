@@ -1,4 +1,4 @@
-import { anvil, sepolia, supportedChains, transports } from './chains'
+import { anvil, sepolia, baseSepolia, supportedChains, transports } from './chains'
 
 describe('wagmi chains', () => {
   it('defines anvil chain correctly', () => {
@@ -13,13 +13,21 @@ describe('wagmi chains', () => {
     expect(sepolia.rpcUrls.default.http[0]).toBeDefined()
   })
 
+  it('defines base sepolia with custom RPC', () => {
+    expect(baseSepolia.id).toBe(84532)
+    expect(baseSepolia.name).toBe('Base Sepolia')
+    expect(baseSepolia.rpcUrls.default.http[0]).toBeDefined()
+  })
+
   it('includes required chains', () => {
     expect(supportedChains).toContain(anvil)
     expect(supportedChains).toContain(sepolia)
+    expect(supportedChains).toContain(baseSepolia)
   })
 
   it('configures transports for all supported chains', () => {
     expect(transports[anvil.id]).toBeDefined()
     expect(transports[sepolia.id]).toBeDefined()
+    expect(transports[baseSepolia.id]).toBeDefined()
   })
 })

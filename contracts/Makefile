@@ -184,3 +184,14 @@ endif
 	  --rpc-url $(SEPOLIA_RPC_URL) \
 	  --private-key $(PRIVATE_KEY) \
 	  --broadcast
+
+# Deploy to Base Sepolia (requires BASE_SEPOLIA_RPC_URL and PRIVATE_KEY set in env)
+deploy-base-sepolia:
+ifndef PRIVATE_KEY
+	$(error PRIVATE_KEY is not set. export PRIVATE_KEY="0x...")
+endif
+	@echo "Deploying to Base Sepolia..."
+	FOUNDRY_PROFILE=sepolia forge script $(SCRIPT) \
+	  --rpc-url https://sepolia.base.org \
+	  --private-key $(PRIVATE_KEY) \
+	  --broadcast
