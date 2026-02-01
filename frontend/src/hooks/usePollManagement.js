@@ -17,7 +17,9 @@ export function usePollManagement() {
     try {
       await startPoll(pollId)
       toast.success('Poll started successfully!', { id: toastId })
-      onSuccess?.()
+      // Wait for indexing
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      await onSuccess?.()
     } catch (error) {
       console.error('Failed to start poll:', error)
       toast.error(formatTransactionError(error, 'Failed to start poll'), { id: toastId })
@@ -33,7 +35,9 @@ export function usePollManagement() {
     try {
       await endPoll(pollId)
       toast.success('Poll ended successfully!', { id: toastId })
-      onSuccess?.()
+      // Wait for indexing
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      await onSuccess?.()
     } catch (error) {
       console.error('Failed to end poll:', error)
       toast.error(formatTransactionError(error, 'Failed to end poll'), { id: toastId })

@@ -1,9 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { getExplorerTxUrl } from '@/lib/utils/explorer'
+import { useExplorer } from '@/hooks/useExplorer'
 
 export default function ReceiptCard({ pollId, voteId, txHash, nullifier, proof, interactive = true }) {
+  const { getTxUrl } = useExplorer()
+
   return (
     <div className="bg-white p-6 md:p-8 max-w-sm mx-auto border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative mb-8 font-mono text-left">      
       <div className="text-center border-b-2 border-dashed border-gray-300 pb-6 mb-6">
@@ -33,7 +35,7 @@ export default function ReceiptCard({ pollId, voteId, txHash, nullifier, proof, 
             <p className="text-xs text-gray-500 uppercase">Transaction Hash</p>
             {interactive ? (
               <a 
-                href={getExplorerTxUrl(txHash)}
+                href={getTxUrl(txHash)}
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-sm text-gray-600 hover:text-black break-all underline decoration-dotted underline-offset-2 transition-colors"

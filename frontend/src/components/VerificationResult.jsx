@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getVote, getPollById } from '@/lib/blockchain/engine/read'
-import { getExplorerTxUrl } from '@/lib/utils/explorer'
+import { useExplorer } from '@/hooks/useExplorer'
 import { motion } from 'framer-motion'
 
 export default function VerificationResult({ pollId, voteId, txHash, nullifier, proof, onReset }) {
   const router = useRouter()
+  const { getTxUrl } = useExplorer()
   const [vote, setVote] = useState(null)
   const [poll, setPoll] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -107,7 +108,7 @@ export default function VerificationResult({ pollId, voteId, txHash, nullifier, 
           {txHash && (
             <div>
               <p className="text-xs text-gray-500 uppercase">Transaction Hash</p>
-              <a href={getExplorerTxUrl(txHash)} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 underline decoration-dotted block break-all">
+              <a href={getTxUrl(txHash)} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 underline decoration-dotted block break-all">
                 {txHash}
               </a>
             </div>

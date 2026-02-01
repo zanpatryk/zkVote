@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { POLL_STATE } from '@/lib/constants'
-import { getExplorerTxUrl } from '@/lib/utils/explorer'
+import { useExplorer } from '@/hooks/useExplorer'
 
 export default function VoteBallot({ 
   poll, 
@@ -16,6 +16,8 @@ export default function VoteBallot({
   currentStep = 0,
   steps = []
 }) {
+  const { getTxUrl } = useExplorer()
+
   if (!poll) return null
 
   return (
@@ -56,7 +58,7 @@ export default function VoteBallot({
           
           {voteTxHash && (
             <a 
-              href={getExplorerTxUrl(voteTxHash)}
+              href={getTxUrl(voteTxHash)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block px-6 py-3 bg-black text-white font-bold uppercase tracking-wider text-sm hover:bg-gray-800 transition-colors"

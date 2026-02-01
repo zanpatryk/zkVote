@@ -1,33 +1,24 @@
+import { useState } from 'react'
 import { POLL_STATE } from '@/lib/constants'
-import { useRouter } from 'next/navigation'
 import { usePollManagement } from '@/hooks/usePollManagement'
 
 export default function PollStatusManager({ pollId, status, onStatusChange }) {
   const { startPoll: hookStartPoll, endPoll: hookEndPoll, isStarting, isEnding } = usePollManagement()
-  const router = useRouter() // Keep router if it's still used for refresh
+  const [modalOpen, setModalOpen] = useState(false)
+  const [actionType, setActionType] = useState(null) // 'start' | 'end'
 
-  const handleStart = async () => {
-    if (!confirm('Are you sure you want to start this poll? Users will be able to vote.')) return
-
-    try {
-      await hookStartPoll(pollId)
-      if (onStatusChange) onStatusChange()
-      router.refresh()
-    } catch (error) {
-      console.error('Failed to start poll:', error)
-    }
+  const openModal = (type) => {
+    setActionType(type)
+    setModalOpen(true)
   }
 
-  const handleEnd = async () => {
-    if (!confirm('Are you sure you want to end this poll? No more votes will be accepted.')) return
-
-    try {
-      await hookEndPoll(pollId)
-      if (onStatusChange) onStatusChange()
-      router.refresh()
-    } catch (error) {
-      console.error('Failed to end poll:', error)
+  const handleConfirm = async () => {
+    if (actionType === 'start') {
+      await hookStartPoll(pollId, onStatusChange)
+    } else if (actionType === 'end') {
+      await hookEndPoll(pollId, onStatusChange)
     }
+    setModalOpen(false)
   }
 
   if (status === POLL_STATE.ENDED) {
@@ -43,7 +34,7 @@ export default function PollStatusManager({ pollId, status, onStatusChange }) {
   }
 
   return (
-    <div className="bg-white p-8 rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <div className="bg-white p-8 rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative">
       <h3 className="text-2xl font-serif font-bold mb-6">Poll Status</h3>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -58,7 +49,7 @@ export default function PollStatusManager({ pollId, status, onStatusChange }) {
 
         {status === POLL_STATE.CREATED && (
           <button
-            onClick={handleStart}
+            onClick={() => openModal('start')}
             disabled={isStarting}
             className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 transition font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px]"
           >
@@ -68,7 +59,7 @@ export default function PollStatusManager({ pollId, status, onStatusChange }) {
 
         {status === POLL_STATE.ACTIVE && (
           <button
-            onClick={handleEnd}
+            onClick={() => openModal('end')}
             disabled={isEnding}
             className="px-6 py-3 border-2 border-black bg-white text-black rounded-lg hover:bg-red-50 disabled:opacity-50 transition font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5"
           >
@@ -76,6 +67,7 @@ export default function PollStatusManager({ pollId, status, onStatusChange }) {
           </button>
         )}
       </div>
+      
       <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 flex gap-3">
         <p className="leading-relaxed">
            {status === POLL_STATE.CREATED 
@@ -83,6 +75,45 @@ export default function PollStatusManager({ pollId, status, onStatusChange }) {
           : 'Ending the poll will close voting permanently. Results will be finalized and can be minted as NFTs.'}
         </p>
       </div>
+
+      {/* Confirmation Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full p-6 mx-4 relative animate-in fade-in zoom-in duration-200">
+            <h4 className="text-xl font-serif font-bold mb-4">
+              {actionType === 'start' ? 'Start Voting?' : 'End Voting?'}
+            </h4>
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+              {actionType === 'start' 
+                ? 'Are you sure you want to start this poll? Once started, registered users will be allowed to vote immediately.'
+                : 'Are you sure you want to end this poll? This action cannot be undone and no further votes will be accepted.'}
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="px-4 py-2 text-sm rounded-lg border-2 border-black bg-white hover:bg-gray-100 font-semibold transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={isStarting || isEnding}
+                className={`px-5 py-2 text-sm rounded-lg text-white font-bold transition disabled:opacity-50 ${
+                  actionType === 'start' ? 'bg-black hover:bg-gray-800' : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {actionType === 'start' 
+                  ? (isStarting ? 'Starting...' : 'Confirm Start')
+                  : (isEnding ? 'Ending...' : 'End Poll Now')
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

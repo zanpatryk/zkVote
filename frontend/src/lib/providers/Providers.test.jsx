@@ -7,6 +7,8 @@ import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 // We need to mock these to avoid rendering the actual complex providers
 jest.mock('wagmi', () => ({
   WagmiProvider: jest.fn(({ children }) => <div data-testid="wagmi-provider">{children}</div>),
+  useChainId: jest.fn(() => 11155111),
+  useAccount: jest.fn(() => ({ isConnected: true })),
 }))
 
 jest.mock('@tanstack/react-query', () => {
@@ -20,6 +22,9 @@ jest.mock('@tanstack/react-query', () => {
                     retry: jest.fn()
                 }
             }
+        })),
+        useQueryClient: jest.fn(() => ({
+            invalidateQueries: jest.fn()
         }))
     }
 })

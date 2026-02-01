@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { usePoll } from '@/hooks/usePolls'
+import { useWhitelistedAddresses } from '@/hooks/useWhitelistedAddresses'
 import WhitelistManager from '@/components/WhitelistManager'
 import WhitelistedAddressesList from '@/components/WhitelistedAddressesList'
 import BackButton from '@/components/BackButton'
@@ -12,6 +13,9 @@ export default function WhitelistPage() {
   const router = useRouter()
   const { poll, isLoading } = usePoll(pollId)
   const pollState = poll?.state
+  
+  // Use hook at page level to share state between components
+  const whitelistHook = useWhitelistedAddresses(pollId)
 
   if (isLoading) {
       return (
@@ -44,8 +48,15 @@ export default function WhitelistPage() {
         <WhitelistManager 
           pollId={pollId} 
           pollState={pollState}
+          addToWhitelist={whitelistHook.addToWhitelist}
         />
-        <WhitelistedAddressesList pollId={pollId} />
+        <WhitelistedAddressesList 
+          addresses={whitelistHook.addresses}
+          loading={whitelistHook.loading}
+          hasMore={whitelistHook.hasMore}
+          loadMore={whitelistHook.loadMore}
+          lastScannedBlock={whitelistHook.lastScannedBlock}
+        />
       </motion.div>
     </div>
   )

@@ -1,10 +1,11 @@
 import { POLL_STATE } from '@/lib/constants'
-import { getExplorerTxUrl } from '@/lib/utils/explorer'
+import { useExplorer } from '@/hooks/useExplorer'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePollRegistrations } from '@/hooks/usePollRegistrations'
 
 export default function RegistrationList({ pollId, pollState }) {
   const { registrations, loading, error } = usePollRegistrations(pollId, pollState)
+  const { getTxUrl } = useExplorer()
 
   if (loading) {
      return (
@@ -66,7 +67,7 @@ export default function RegistrationList({ pollId, pollState }) {
                                     </td>
                                     <td className="py-3 px-2 text-right">
                                         <a 
-                                            href={getExplorerTxUrl(reg.transactionHash)}
+                                            href={getTxUrl(reg.transactionHash)}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex items-center text-blue-600 hover:text-black font-medium text-sm transition-colors group"

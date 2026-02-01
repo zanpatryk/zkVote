@@ -57,6 +57,8 @@ export function usePollFunding(pollId) {
       try {
         await fundPollBudget(pollId, amountWei)
         toast.success('Poll funded successfully!', { id: toastId })
+        // Wait for indexing
+        await new Promise(resolve => setTimeout(resolve, 2000))
         await refreshBalance()
       } catch (error) {
         console.error('Failed to fund poll:', error)
@@ -81,6 +83,8 @@ export function usePollFunding(pollId) {
     try {
       await withdrawPollBudget(pollId, balance)
       toast.success('Funds withdrawn successfully!', { id: toastId })
+      // Wait for indexing
+      await new Promise(resolve => setTimeout(resolve, 2000))
       await refreshBalance()
     } catch (error) {
       console.error('Failed to withdraw poll funds:', error)

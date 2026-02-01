@@ -3,14 +3,23 @@
 import { useWhitelistedAddresses } from '@/hooks/useWhitelistedAddresses'
 import { motion, AnimatePresence } from 'framer-motion'
 
-export default function WhitelistedAddressesList({ pollId }) {
-  const { 
-    addresses, 
-    loading, 
-    hasMore, 
-    loadMore, 
-    lastScannedBlock 
-  } = useWhitelistedAddresses(pollId)
+export default function WhitelistedAddressesList({ 
+  pollId,
+  // Accept props from parent or use hook as fallback
+  addresses: addressesProp,
+  loading: loadingProp,
+  hasMore: hasMoreProp,
+  loadMore: loadMoreProp,
+  lastScannedBlock: lastScannedBlockProp
+}) {
+  // Use hook as fallback if props not provided (backwards compatibility)
+  const hookResult = useWhitelistedAddresses(pollId)
+  
+  const addresses = addressesProp ?? hookResult.addresses
+  const loading = loadingProp ?? hookResult.loading
+  const hasMore = hasMoreProp ?? hookResult.hasMore
+  const loadMore = loadMoreProp ?? hookResult.loadMore
+  const lastScannedBlock = lastScannedBlockProp ?? hookResult.lastScannedBlock
 
   const addressList = Array.from(addresses)
 

@@ -3,11 +3,15 @@ import PollStatusManager from './PollStatusManager'
 import { POLL_STATE } from '@/lib/constants'
 import '@testing-library/jest-dom'
 
+// Define mocks outside to keep them stable across renders
+const mockStartPoll = jest.fn((id, cb) => { cb?.(); return Promise.resolve() })
+const mockEndPoll = jest.fn((id, cb) => { cb?.(); return Promise.resolve() })
+
 // Mock dependencies
 jest.mock('@/hooks/usePollManagement', () => ({
   usePollManagement: () => ({
-    startPoll: jest.fn((id, cb) => { cb?.(); return Promise.resolve() }),
-    endPoll: jest.fn((id, cb) => { cb?.(); return Promise.resolve() }),
+    startPoll: mockStartPoll,
+    endPoll: mockEndPoll,
     isStarting: false,
     isEnding: false
   })
@@ -23,7 +27,6 @@ jest.mock('next/navigation', () => ({
 describe('PollStatusManager', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    window.confirm = jest.fn(() => true)
   })
 
   it('renders start button for Created state', () => {
@@ -50,29 +53,53 @@ describe('PollStatusManager', () => {
     expect(screen.queryByText('End Poll')).not.toBeInTheDocument()
   })
 
-  it('starts poll when start button clicked', async () => {
+  it('shows start confirmation modal and starts poll on confirm', async () => {
     render(<PollStatusManager pollId="123" status={POLL_STATE.CREATED} />)
     fireEvent.click(screen.getByText('Start Poll'))
     
-    expect(window.confirm).toHaveBeenCalled()
-    // We can't easily spy on the internal hook function here without more setup,
-    // but we can verify the UI interaction doesn't crash and calls confirm.
-    // Ideally we would spy on the imported hook if needed.
+    // Modal should appear
+    expect(screen.getByText('Start Voting?')).toBeInTheDocument()
+    expect(screen.getByText('Confirm Start')).toBeInTheDocument()
+    
+    // Click confirm in modal
+    fireEvent.click(screen.getByText('Confirm Start'))
+    
+    await waitFor(() => {
+        expect(mockStartPoll).toHaveBeenCalledWith("123", undefined)
+    })
   })
 
-  it('ends poll when end button clicked', async () => {
+  it('shows end confirmation modal and ends poll on confirm', async () => {
     render(<PollStatusManager pollId="123" status={POLL_STATE.ACTIVE} />)
     fireEvent.click(screen.getByText('End Poll'))
     
-    expect(window.confirm).toHaveBeenCalled()
+    // Modal should appear
+    expect(screen.getByText('End Voting?')).toBeInTheDocument()
+    expect(screen.getByText('End Poll Now')).toBeInTheDocument()
+
+    // Click confirm in modal
+    fireEvent.click(screen.getByText('End Poll Now'))
+    
+    await waitFor(() => {
+        expect(mockEndPoll).toHaveBeenCalledWith("123", undefined)
+    })
   })
 
-  it('does not act if confirm is cancelled', async () => {
-    window.confirm.mockReturnValue(false)
+  it('closes modal and does not start/end poll if cancelled', async () => {
     render(<PollStatusManager pollId="123" status={POLL_STATE.CREATED} />)
     fireEvent.click(screen.getByText('Start Poll'))
     
-    // We can verify confirm was called but nothing else happened
-    expect(window.confirm).toHaveBeenCalled()
+    // Modal should appear
+    expect(screen.getByText('Start Voting?')).toBeInTheDocument()
+
+    // Click cancel
+    fireEvent.click(screen.getByText('Cancel'))
+
+    // Modal should disappear
+    await waitFor(() => {
+        expect(screen.queryByText('Start Voting?')).not.toBeInTheDocument()
+    })
+    
+    expect(mockStartPoll).not.toHaveBeenCalled()
   })
 })

@@ -22,7 +22,7 @@ describe('NFTDashboard', () => {
     useAccount.mockReturnValue({ isConnected: false, address: null })
     render(<NFTDashboard />)
 
-    expect(screen.getByText('No Badges Yet')).toBeInTheDocument()
+    expect(screen.getByText(/Participate in completed polls/)).toBeInTheDocument()
   })
 
   it('fetches and displays badges when connected', async () => {
@@ -54,7 +54,7 @@ describe('NFTDashboard', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('No Badges Yet')).toBeInTheDocument()
+      expect(screen.getByText(/Participate in completed polls/)).toBeInTheDocument()
     })
   })
 

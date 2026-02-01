@@ -29,6 +29,17 @@ jest.mock('@/hooks/usePolls', () => ({
   }),
 }))
 
+jest.mock('@/hooks/useWhitelistedAddresses', () => ({
+  useWhitelistedAddresses: jest.fn().mockReturnValue({
+    addresses: new Set(),
+    loading: false,
+    hasMore: false,
+    loadMore: jest.fn(),
+    lastScannedBlock: 0n,
+    addToWhitelist: jest.fn(),
+  }),
+}))
+
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: jest.fn(),

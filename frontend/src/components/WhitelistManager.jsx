@@ -9,9 +9,11 @@ import { toast } from 'react-hot-toast'
 import { isAddress } from 'viem'
 import { parseAddressesFromFile } from '@/lib/utils/file'
 
-export default function WhitelistManager({ pollId, pollState, onSuccess, demo = false }) {
+export default function WhitelistManager({ pollId, pollState, onSuccess, demo = false, addToWhitelist: addToWhitelistProp }) {
   const { isConnected } = useAccount()
-  const { addToWhitelist } = useWhitelistedAddresses(pollId)
+  // Use hook as fallback if prop not provided (backwards compatibility)
+  const hookResult = useWhitelistedAddresses(pollId)
+  const addToWhitelist = addToWhitelistProp || hookResult.addToWhitelist
 
   const [singleAddress, setSingleAddress] = useState(demo ? '0xdef0...mnop' : '')
   const [batchAddresses, setBatchAddresses] = useState([])

@@ -59,13 +59,9 @@ export default function NFTDashboard() {
       {error ? (
         <ConnectionError error={error} />
       ) : loading ? (
-          <motion.p 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            className="text-center text-gray-500 py-12 italic font-serif"
-          >
+          <div className="text-center py-20 text-xl text-gray-600 font-serif italic">
             Loading badges...
-          </motion.p>
+          </div>
       ) : filteredNfts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           {/* Column 1 (Even indices) */}
@@ -105,13 +101,10 @@ export default function NFTDashboard() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-black"
+          className="text-center py-24 border-2 border-dashed border-gray-300 rounded-xl"
         >
-            <h1 className="text-2xl font-serif font-bold mb-2 text-gray-900">
-               {nfts.length === 0 ? "No Badges Yet" : "No results found"}
-            </h1>
-            <p className="text-gray-600">
-               {nfts.length === 0 ? "Participate in completed polls to earn your first NFT badge!" : "Try a different search term."}
+            <p className="text-xl text-gray-400 font-serif italic">
+               {nfts.length === 0 ? "Participate in completed polls to earn your first NFT badge!" : "No results found. Try a different search term."}
             </p>
         </motion.div>
       )}

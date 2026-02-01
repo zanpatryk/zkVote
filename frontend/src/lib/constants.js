@@ -23,6 +23,7 @@ export const POLL_STATE = {
 export const BLOCK_EXPLORERS = {
   1: 'https://etherscan.io',           // Ethereum Mainnet
   11155111: 'https://sepolia.etherscan.io',  // Sepolia
+  84532: 'https://sepolia.basescan.org',     // Base Sepolia
   31337: 'https://sepolia.etherscan.io',     // Hardhat/Anvil (fallback to Sepolia for local dev)
 }
 

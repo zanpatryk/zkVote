@@ -53,7 +53,7 @@ describe('Integration Test: NFT Dashboard', () => {
         expect(screen.getByText('My NFT Badges')).toBeInTheDocument()
         
         await waitFor(() => {
-            expect(screen.getByText('No Badges Yet')).toBeInTheDocument()
+            expect(screen.getByText(/Participate in completed polls/)).toBeInTheDocument()
         })
     })
 

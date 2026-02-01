@@ -1,11 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { POLL_STATE } from '@/lib/constants'
-import { getExplorerTxUrl } from '@/lib/utils/explorer'
+import { useExplorer } from '@/hooks/useExplorer'
 import { usePollVotes } from '@/hooks/usePollVotes'
 import { getAddress } from 'viem'
 
 export default function VotesList({ pollId, pollState }) {
   const { votes, loading } = usePollVotes(pollId, pollState)
+  const { getTxUrl } = useExplorer()
 
   const formatAddress = (addr) => {
     try {
@@ -70,7 +71,7 @@ export default function VotesList({ pollId, pollState }) {
                     </td>
                     <td className="py-3 px-2 text-right">
                       <a 
-                        href={getExplorerTxUrl(vote.transactionHash)}
+                        href={getTxUrl(vote.transactionHash)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center text-blue-600 hover:text-black font-medium text-sm transition-colors group"

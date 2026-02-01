@@ -61,8 +61,7 @@ describe('HomePage', () => {
     render(<HomePage />)
     
     await waitFor(() => {
-      expect(screen.getByText('No Badges Yet')).toBeInTheDocument()
-      expect(screen.getByText(/Participate/)).toBeInTheDocument()
+      expect(screen.getByText(/Participate in completed polls/)).toBeInTheDocument()
     })
   })
 })

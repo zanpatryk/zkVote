@@ -35,6 +35,7 @@ export function useWhitelistedAddresses(pollId) {
         if (!pollId) return
         try {
             const { eligibilityModule } = await getModules(pollId)
+            console.log('[useWhitelistedAddresses] Fetched eligibilityModule:', eligibilityModule)
             setEligibilityModuleAddress(eligibilityModule)
         } catch (error) {
             console.error('Failed to fetch eligibility module:', error)
@@ -45,15 +46,23 @@ export function useWhitelistedAddresses(pollId) {
 
   // Robust event parser with JS-side pollId filtering
   const parseLog = useCallback((log) => {
+    console.log('[useWhitelistedAddresses] Received raw log:', log)
     const user = log.args?.user
     const logPollId = log.args?.pollId
-    if (!user) return null
+    if (!user) {
+      console.log('[useWhitelistedAddresses] No user in log args, skipping')
+      return null
+    }
     
     // Filter by pollId in JS to bypass RPC filtering inconsistencies
     if (logPollId !== undefined && logPollId !== null) {
-      if (logPollId.toString() !== pollId?.toString()) return null
+      if (logPollId.toString() !== pollId?.toString()) {
+        console.log('[useWhitelistedAddresses] pollId mismatch:', logPollId.toString(), '!==', pollId?.toString())
+        return null
+      }
     }
     
+    console.log('[useWhitelistedAddresses] Parsed valid event for user:', user)
     return {
       user: user.toLowerCase(),
       transactionHash: log.transactionHash,
@@ -79,9 +88,15 @@ export function useWhitelistedAddresses(pollId) {
     parseLog,
   })
 
+  // Debug: Log when liveWhitelisted changes
+  useEffect(() => {
+    console.log('[useWhitelistedAddresses] liveWhitelisted events:', liveWhitelisted)
+  }, [liveWhitelisted])
+
   // Merge live events with addresses
   useEffect(() => {
     if (liveWhitelisted.length > 0) {
+      console.log('[useWhitelistedAddresses] Merging live events into addresses')
       setAddresses(prev => {
         const next = new Set(prev)
         let hasNew = false
@@ -95,8 +110,7 @@ export function useWhitelistedAddresses(pollId) {
         })
 
         if (!hasNew) return prev
-        // Note: Success toast for manual action is handled in addToWhitelist,
-        // but this effect ensures real-time updates for everyone else too.
+        console.log('[useWhitelistedAddresses] Added new addresses, total:', next.size)
         return next
       })
     }

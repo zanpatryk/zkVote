@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { WagmiProvider } from 'wagmi'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useState, useEffect, useRef } from 'react'
+import { WagmiProvider, useChainId } from 'wagmi'
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { IdentityTransferProvider } from '@/lib/providers/IdentityTransferContext'
 import { wagmiConfig } from '@/lib/wagmi/config'
@@ -54,6 +54,23 @@ const customTheme = {
   },
 }
 
+// Invalidates all queries when chain changes to prevent stale cross-chain data
+function ChainChangeHandler({ children }) {
+  const chainId = useChainId()
+  const queryClient = useQueryClient()
+  const prevChainIdRef = useRef(chainId)
+
+  useEffect(() => {
+    if (prevChainIdRef.current !== chainId) {
+      // Chain changed - invalidate all queries to refetch with new chain data
+      queryClient.invalidateQueries()
+      prevChainIdRef.current = chainId
+    }
+  }, [chainId, queryClient])
+
+  return children
+}
+
 export default function Providers({ children }) {
   const [mounted, setMounted] = useState(false)
   const [queryClient] = useState(() => new QueryClient({
@@ -78,11 +95,13 @@ export default function Providers({ children }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={customTheme}>
-          <IdentityTransferProvider>
-            {children}
-          </IdentityTransferProvider>
-        </RainbowKitProvider>
+        <ChainChangeHandler>
+          <RainbowKitProvider theme={customTheme}>
+            <IdentityTransferProvider>
+              {children}
+            </IdentityTransferProvider>
+          </RainbowKitProvider>
+        </ChainChangeHandler>
       </QueryClientProvider>
     </WagmiProvider>
   )
