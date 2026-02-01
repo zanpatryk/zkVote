@@ -1,4 +1,5 @@
 import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
+import { createHttpPublicClient } from '@/lib/wagmi/chains'
 import { 
   getWhitelistedAddresses, 
   getMerkleTreeDepth, 
@@ -17,6 +18,12 @@ jest.mock('@/lib/wagmi/config', () => ({
   wagmiConfig: {
     state: { chainId: 31337 }
   }
+}))
+
+jest.mock('@/lib/wagmi/chains', () => ({
+  createHttpPublicClient: jest.fn(),
+  anvil: { id: 31337 },
+  sepolia: { id: 11155111 },
 }))
 
 jest.mock('@/lib/contracts', () => ({
@@ -61,6 +68,7 @@ describe('members domain engine', () => {
       chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
+    createHttpPublicClient.mockReturnValue(mockPublicClient)
     getAccount.mockReturnValue({ address: '0xUser' })
     writeContract.mockResolvedValue('0xHash')
     waitForTransactionReceipt.mockResolvedValue({ status: 1 })

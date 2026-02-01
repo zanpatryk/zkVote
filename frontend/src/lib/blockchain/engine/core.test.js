@@ -1,9 +1,16 @@
 import { getPublicClient, getAccount } from '@wagmi/core'
 import { getModules, modulesCache } from './core'
+import { createHttpPublicClient } from '@/lib/wagmi/chains'
 
 jest.mock('@wagmi/core', () => ({
   getPublicClient: jest.fn(),
   getAccount: jest.fn(),
+}))
+
+jest.mock('@/lib/wagmi/chains', () => ({
+  createHttpPublicClient: jest.fn(),
+  anvil: { id: 31337 },
+  sepolia: { id: 11155111 },
 }))
 
 jest.mock('@/lib/wagmi/config', () => ({
@@ -36,6 +43,7 @@ describe('core blockchain engine', () => {
       chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
+    createHttpPublicClient.mockReturnValue(mockPublicClient)
     getAccount.mockReturnValue({ chainId: 31337 })
   })
 

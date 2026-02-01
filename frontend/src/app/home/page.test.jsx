@@ -14,6 +14,7 @@ jest.mock('next/navigation', () => ({
 // Mock wagmi
 jest.mock('wagmi', () => ({
   useAccount: jest.fn(() => ({ isConnected: true, address: '0x123' })),
+  useChainId: jest.fn(() => 31337),
   http: jest.fn(),
 }))
 

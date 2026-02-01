@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAccount } from 'wagmi'
+import { useAccount, useChainId } from 'wagmi'
 import { getUserNFTs } from '@/lib/blockchain/engine/read'
 import NFTCard from './NFTCard'
 import ConnectionError from './ConnectionError'
@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 export default function NFTDashboard() {
   const { address, isConnected } = useAccount()
+  const chainId = useChainId()
   const [nfts, setNfts] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -32,7 +33,7 @@ export default function NFTDashboard() {
     }
 
     fetchBadges()
-  }, [address, isConnected])
+  }, [address, isConnected, chainId])
 
   const filteredNfts = nfts.filter(nft => 
       (nft.pollId && nft.pollId.toString().toLowerCase().includes(searchQuery.toLowerCase())) ||

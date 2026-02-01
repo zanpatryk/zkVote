@@ -3,6 +3,7 @@ import { wagmiConfig as config } from '@/lib/wagmi/config'
 import { getAddresses, votingSystemContract } from '@/lib/contracts'
 import EntryPointABI from '@/lib/contracts/abis/EntryPoint.json'
 import { encodeFunctionData, decodeEventLog } from 'viem'
+import { waitForTransactionResilient } from '@/lib/blockchain/utils/transaction'
 
 // Generic SimpleAccount-style execute ABI (not tied to test contracts)
 const ACCOUNT_EXECUTE_ABI = [
@@ -272,10 +273,10 @@ export async function sendSponsoredPlainVote({ userOp, entryPoint }) {
   const data = await response.json()
   const txHash = data.txHash
 
-  // Try to extract voteId from the transaction receipt (for plain polls)
+  // Wait for receipt with retries - bundler transactions may take time to be mined
   let voteId = null
   try {
-    const receipt = await publicClient.getTransactionReceipt({ hash: txHash })
+    const receipt = await waitForTransactionResilient(config, { hash: txHash })
 
     const voteCastedAbi = [
       {
@@ -304,8 +305,9 @@ export async function sendSponsoredPlainVote({ userOp, entryPoint }) {
         // Not a VoteCasted event, skip
       }
     }
-  } catch {
-    // If anything fails while decoding, we still return txHash with null voteId
+  } catch (err) {
+    // If waiting for receipt fails, log warning but still return txHash
+    console.warn('Failed to get transaction receipt for voteId extraction:', err.message)
   }
 
   return { txHash, voteId }

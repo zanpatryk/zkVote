@@ -1,6 +1,7 @@
-import { getPublicClient, writeContract, getAccount } from '@wagmi/core'
+import { writeContract, getAccount } from '@wagmi/core'
 import { waitForTransactionResilient } from '@/lib/blockchain/utils/transaction'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
+import { createHttpPublicClient } from '@/lib/wagmi/chains'
 import { parseAbiItem, encodeAbiParameters, parseAbiParameters, encodeEventTopics, decodeEventLog } from 'viem'
 import { 
   votingSystemContract, 
@@ -18,8 +19,8 @@ export async function getPollById(pollId) {
   
   try {
     const account = getAccount(config)
-    const chainId = account?.chainId
-    const publicClient = getPublicClient(config, { chainId })
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = createHttpPublicClient(chainId)
     const { pollManager } = await getEngineModules(pollId)
 
     const [id, owner, title, description, options, state] = await publicClient.readContract({
@@ -51,11 +52,11 @@ export async function getOwnedPolls(address) {
   
   try {
     const account = getAccount(config)
-    const chainId = account?.chainId
-    const publicClient = getPublicClient(config, { chainId })
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = createHttpPublicClient(chainId)
     const { pollManager } = await getEngineModules()
 
-    const addresses = getAddresses(publicClient.chain.id)
+    const addresses = getAddresses(chainId)
     const logs = await getLogsChunked(publicClient, {
       address: pollManager,
       event: parseAbiItem('event PollCreated(uint256 indexed pollId, address indexed creator)'),
@@ -78,10 +79,9 @@ export async function getWhitelistedPolls(address) {
   
   try {
     const account = getAccount(config)
-    const currentChainId = account?.chainId
-    const publicClient = getPublicClient(config, { chainId: currentChainId })
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = createHttpPublicClient(chainId)
     
-    const chainId = publicClient.chain.id
     const addresses = getAddresses(chainId)
     
     const modulesToQuery = [

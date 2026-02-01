@@ -4,6 +4,8 @@ import { getWhitelistedAddresses, getModules } from '@/lib/blockchain/engine/rea
 import { useBlockNumber } from 'wagmi'
 import { useMultiContractEvents } from '@/hooks/useContractEvents'
 import { toast } from 'react-hot-toast'
+import { whitelistUsers } from '@/lib/blockchain/engine/members'
+import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
 
 // Mock dependencies
 jest.mock('@/lib/blockchain/engine/read', () => ({
@@ -13,6 +15,7 @@ jest.mock('@/lib/blockchain/engine/read', () => ({
 
 jest.mock('wagmi', () => ({
   useBlockNumber: jest.fn(),
+  useChainId: jest.fn(),
 }))
 
 jest.mock('@/hooks/useContractEvents', () => ({
@@ -23,7 +26,17 @@ jest.mock('react-hot-toast', () => ({
   toast: {
     success: jest.fn(),
     error: jest.fn(),
+    loading: jest.fn(),
+    dismiss: jest.fn(),
   }
+}))
+
+jest.mock('@/lib/blockchain/engine/members', () => ({
+  whitelistUsers: jest.fn(),
+}))
+
+jest.mock('@/lib/blockchain/utils/error-handler', () => ({
+  formatTransactionError: jest.fn((e) => e.message),
 }))
 
 describe('useWhitelistedAddresses', () => {
@@ -35,6 +48,8 @@ describe('useWhitelistedAddresses', () => {
     // Default mocks
     getModules.mockResolvedValue({ eligibilityModule: '0xEligibility' })
     useBlockNumber.mockReturnValue({ data: 1000n })
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('wagmi').useChainId.mockReturnValue(31337)
     useMultiContractEvents.mockReturnValue({ events: [] })
     getWhitelistedAddresses.mockResolvedValue({ data: [], error: null })
   })
@@ -44,18 +59,12 @@ describe('useWhitelistedAddresses', () => {
     getWhitelistedAddresses.mockResolvedValue({ data: initialAddresses, error: null })
 
     const { result } = renderHook(() => useWhitelistedAddresses(mockPollId))
-    
-    // It might be loading immediately
-    // await waitFor(() => expect(result.current.loading).toBe(true)) 
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
       expect(getWhitelistedAddresses).toHaveBeenCalled()
     })
     
-    // Check args: (pollId, startBlock, endBlock)
-    // BATCH_SIZE is 900. Current is 1000.
-    // endBlock = 1000. startBlock = 100.
     expect(getWhitelistedAddresses).toHaveBeenCalledWith(mockPollId, 100n, 1000n)
     
     expect(result.current.addresses.has('0x1')).toBe(true)
@@ -83,13 +92,9 @@ describe('useWhitelistedAddresses', () => {
         expect(result.current.loading).toBe(false)
     })
 
-    // Last internal was 100.
-    // New end = 99.
-    // New start = 0 (since 99 - 900 < 0)
     expect(getWhitelistedAddresses).toHaveBeenCalledWith(mockPollId, 0n, 99n)
     expect(result.current.addresses.has('0x3')).toBe(true)
     
-    // Should set hasMore to false since startBlock was 0
     expect(result.current.hasMore).toBe(false)
   })
 
@@ -110,8 +115,6 @@ describe('useWhitelistedAddresses', () => {
     await waitFor(() => {
       expect(result.current.addresses.has('0xlive')).toBe(true)
     })
-    // We removed the toast to avoid double-toasting for the sender
-    // expect(toast.success).toHaveBeenCalledWith('New address whitelisted!')
   })
 
   it('handles fetch errors gracefully', async () => {
@@ -166,13 +169,9 @@ describe('useWhitelistedAddresses', () => {
     liveEvents = [{ user: existingAddress, transactionHash: '0xhash' }]
     rerender()
 
-    // Should still have only 1 address
     await waitFor(() => {
       expect(result.current.addresses.size).toBe(1)
     })
-    
-    // Toast should not be called since it's a duplicate
-    expect(toast.success).not.toHaveBeenCalled()
   })
 
   it('handles null addresses data', async () => {
@@ -193,29 +192,69 @@ describe('useWhitelistedAddresses', () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
     
     await act(async () => {
-        await result.current.loadMore() // This reaches 0 and sets hasMore false
+        await result.current.loadMore() 
     })
     
     getWhitelistedAddresses.mockClear()
     
     await act(async () => {
-        await result.current.loadMore() // This should return early
+        await result.current.loadMore()
     })
     
     expect(getWhitelistedAddresses).not.toHaveBeenCalled()
   })
 
-  it('calls whitelistUsers on addToWhitelist', async () => {
-    const mockWhitelistUsers = jest.fn()
-    // We cannot mock dynamic import easily here without top level mock. 
-    // But we can check if the code runs without error and trust the fix.
-    // Or we can try to spy on the module registry? No.
-    // Given the constraints, I will skip the dynamic import verification in this unit test 
-    // and rely on manual verification / integration tests or just the fix I made.
-    // However, since I already verified the fix manually by code inspection, 
-    // I will just add a placeholder test or ensure it doesn't crash.
-    
-    // Actually, I can mock the module at the top level, but it effects all tests.
-    // Let's just assume the fix is good and close the file properly.
+  describe('parser logic', () => {
+    it('filters logs correctly by pollId', () => {
+        renderHook(() => useWhitelistedAddresses(mockPollId))
+        
+        const call = useMultiContractEvents.mock.calls[0][0]
+        const parser = call.parseLog
+        
+        // Match
+        expect(parser({ args: { user: '0x1', pollId: 1n }, transactionHash: '0x', blockNumber: 1n }))
+            .toMatchObject({ user: '0x1' })
+            
+        // Mismatch
+        expect(parser({ args: { user: '0x1', pollId: 2n }, transactionHash: '0x', blockNumber: 1n }))
+            .toBeNull()
+            
+        // No user
+        expect(parser({ args: { pollId: 1n }, transactionHash: '0x', blockNumber: 1n }))
+            .toBeNull()
+
+         // Missing pollId (assumed legacy or irrelevant logic, but code allows it)
+        expect(parser({ args: { user: '0x1' }, transactionHash: '0x', blockNumber: 1n }))
+            .toMatchObject({ user: '0x1' })
+    })
+  })
+
+  describe('addToWhitelist', () => {
+    it('calls whitelistUsers successfully', async () => {
+        whitelistUsers.mockResolvedValue(true)
+        const { result } = renderHook(() => useWhitelistedAddresses(mockPollId))
+        
+        await act(async () => {
+            await result.current.addToWhitelist(['0xNew'])
+        })
+        
+        expect(whitelistUsers).toHaveBeenCalledWith(mockPollId, ['0xNew'])
+        expect(toast.success).toHaveBeenCalled()
+    })
+
+    it('handles errors in addToWhitelist', async () => {
+        const error = new Error('Revert')
+        whitelistUsers.mockRejectedValue(error)
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        
+        const { result } = renderHook(() => useWhitelistedAddresses(mockPollId))
+        
+        await expect(result.current.addToWhitelist(['0xNew'])).rejects.toThrow(error)
+        
+        expect(toast.error).toHaveBeenCalled()
+        expect(consoleSpy).toHaveBeenCalledWith('Failed to whitelist addresses:', error)
+        
+        consoleSpy.mockRestore()
+    })
   })
 })

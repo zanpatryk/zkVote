@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { useWhitelistedPolls, useOwnedPolls } from './usePolls'
+import { useWhitelistedPolls, useOwnedPolls, usePoll } from './usePolls'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import * as read from '@/lib/blockchain/engine/read'
 
@@ -7,7 +7,12 @@ import * as read from '@/lib/blockchain/engine/read'
 jest.mock('@/lib/blockchain/engine/read', () => ({
   getWhitelistedPolls: jest.fn(),
   getOwnedPolls: jest.fn(),
+  getPollById: jest.fn(),
   isUserWhitelisted: jest.fn(),
+}))
+
+jest.mock('wagmi', () => ({
+  useChainId: jest.fn(() => 31337),
 }))
 
 const createWrapper = () => {
@@ -32,7 +37,7 @@ describe('usePolls Hooks', () => {
 
   describe('useWhitelistedPolls', () => {
     it('fetches whitelisted polls', async () => {
-      const mockData = [{ pollId: 1n, title: 'Poll 1' }]
+      const mockData = [{ pollId: '1', title: 'Poll 1' }]
       read.getWhitelistedPolls.mockResolvedValue({ data: mockData, error: null })
 
       const { result } = renderHook(() => useWhitelistedPolls(mockAddress, true), {
@@ -50,9 +55,6 @@ describe('usePolls Hooks', () => {
         wrapper: createWrapper(),
       })
       
-      
-      // When enabled is false, useQuery behavior depends on version for isLoading.
-      // We primarily want to verify the API was not called.
       expect(read.getWhitelistedPolls).not.toHaveBeenCalled()
     })
 
@@ -72,11 +74,11 @@ describe('usePolls Hooks', () => {
   describe('useOwnedPolls', () => {
     it('fetches owned polls and checks whitelist status', async () => {
       const mockOwnedPolls = [
-          { pollId: 1n, title: 'Poll 1' },
-          { pollId: 2n, title: 'Poll 2' }
+          { pollId: '1', title: 'Poll 1' },
+          { pollId: '2', title: 'Poll 2' }
       ]
       read.getOwnedPolls.mockResolvedValue({ data: mockOwnedPolls, error: null })
-      read.isUserWhitelisted.mockImplementation((id) => Promise.resolve({ data: id === 1n, error: null })) // Poll 1 whitelisted, Poll 2 not
+      read.isUserWhitelisted.mockImplementation((id) => Promise.resolve({ data: id === '1', error: null })) // Poll 1 whitelisted, Poll 2 not
 
       const { result } = renderHook(() => useOwnedPolls(mockAddress, true), {
         wrapper: createWrapper(),
@@ -123,6 +125,46 @@ describe('usePolls Hooks', () => {
 
       await waitFor(() => expect(result.current.isLoading).toBe(false))
       expect(result.current.error).toBe('Custom Error')
+    })
+  })
+
+  describe('usePoll', () => {
+    const mockPollId = '1'
+
+    it('fetches poll by ID', async () => {
+      const mockPoll = { pollId: '1', title: 'Poll 1' }
+      read.getPollById.mockResolvedValue({ data: mockPoll, error: null })
+
+      const { result } = renderHook(() => usePoll(mockPollId), {
+        wrapper: createWrapper(),
+      })
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      
+      expect(result.current.poll).toEqual(mockPoll)
+      expect(read.getPollById).toHaveBeenCalledWith(mockPollId)
+    })
+
+    it('handles errors', async () => {
+      read.getPollById.mockResolvedValue({ data: null, error: 'Not found' })
+
+      const { result } = renderHook(() => usePoll(mockPollId), {
+        wrapper: createWrapper(),
+      })
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      
+      expect(result.current.error).toBe('Not found')
+      expect(result.current.poll).toBeNull()
+    })
+
+    it('does not fetch if pollId is missing', async () => {
+      const { result } = renderHook(() => usePoll(null), {
+        wrapper: createWrapper(),
+      })
+
+      expect(result.current.isLoading).toBe(false)
+      expect(read.getPollById).not.toHaveBeenCalled()
     })
   })
 })

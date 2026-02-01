@@ -1,6 +1,7 @@
-import { getPublicClient, writeContract, getAccount } from '@wagmi/core'
+import { getAccount, writeContract } from '@wagmi/core'
 import { waitForTransactionResilient } from '@/lib/blockchain/utils/transaction'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
+import { createHttpPublicClient } from '@/lib/wagmi/chains'
 import { parseAbiItem } from 'viem'
 import { 
   votingSystemContract, 
@@ -16,9 +17,9 @@ export async function getUserNFTs(userAddress) {
   if (!userAddress) return { data: [], error: null }
   try {
     const account = getAccount(config)
-    const chainId = account?.chainId
-    const publicClient = getPublicClient(config, { chainId })
-    const addresses = getAddresses(publicClient.chain.id)
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = createHttpPublicClient(chainId)
+    const addresses = getAddresses(chainId)
     const resultNFTAddress = await publicClient.readContract({
       address: addresses.vse,
       abi: votingSystemContract.abi,

@@ -12,6 +12,7 @@ jest.mock('next/navigation', () => ({
 const mockUseAccount = jest.fn()
 jest.mock('wagmi', () => ({
   useAccount: () => mockUseAccount(),
+  useChainId: () => 31337,
   http: jest.fn(),
 }))
 

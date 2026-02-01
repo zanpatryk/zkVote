@@ -1,6 +1,7 @@
-import { getPublicClient, writeContract, getAccount } from '@wagmi/core'
+import { writeContract, getAccount } from '@wagmi/core'
 import { waitForTransactionResilient } from '@/lib/blockchain/utils/transaction'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
+import { createHttpPublicClient } from '@/lib/wagmi/chains'
 import { parseAbiItem } from 'viem'
 import { 
   votingSystemContract, 
@@ -18,12 +19,9 @@ export async function getWhitelistedAddresses(pollId, fromBlock, toBlock) {
   try {
     const account = getAccount(config)
     const chainId = account?.chainId || config?.state?.chainId || 11155111
-    const publicClient = getPublicClient(config, { chainId })
+    const publicClient = createHttpPublicClient(chainId)
     const { eligibilityModule } = await getModules(pollId)
-    
-    // Use ACTUAL chain ID from client if possible, fallback to detected
-    const clientChainId = publicClient.chain?.id || chainId
-    const addresses = getAddresses(clientChainId)
+    const addresses = getAddresses(chainId)
     
     const deploymentStartBlock = BigInt(addresses.startBlock || 0)
     
@@ -79,12 +77,9 @@ export async function getMerkleTreeDepth(pollId) {
   try {
     const account = getAccount(config)
     const chainId = account?.chainId || config?.state?.chainId || 11155111
-    const publicClient = getPublicClient(config, { chainId })
+    const publicClient = createHttpPublicClient(chainId)
     const { eligibilityModule } = await getModules(pollId)
-
-    // Only call if it's the Semaphore eligibility module
-    const clientChainId = publicClient.chain?.id || chainId
-    const addresses = getAddresses(clientChainId)
+    const addresses = getAddresses(chainId)
     const isSemaphore = eligibilityModule?.toLowerCase() === addresses.semaphoreEligibility?.toLowerCase()
     
     if (!isSemaphore) {
@@ -110,11 +105,9 @@ export async function getGroupMembers(pollId) {
   try {
     const account = getAccount(config)
     const chainId = account?.chainId || config?.state?.chainId || 11155111
-    const publicClient = getPublicClient(config, { chainId })
+    const publicClient = createHttpPublicClient(chainId)
     const { eligibilityModule } = await getModules(pollId)
-    
-    const clientChainId = publicClient.chain?.id || chainId
-    const addresses = getAddresses(clientChainId)
+    const addresses = getAddresses(chainId)
     
     const logs = await getLogsChunked(publicClient, {
       address: eligibilityModule,
@@ -150,7 +143,7 @@ export async function isUserWhitelisted(pollId, userAddress) {
   try {
     const account = getAccount(config)
     const chainId = account?.chainId || config?.state?.chainId || 11155111
-    const publicClient = getPublicClient(config, { chainId })
+    const publicClient = createHttpPublicClient(chainId)
     const { eligibilityModule } = await getModules(pollId)
 
     const isWhitelisted = await publicClient.readContract({
@@ -172,12 +165,9 @@ export async function isUserRegistered(pollId, userAddress) {
   try {
     const account = getAccount(config)
     const chainId = account?.chainId || config?.state?.chainId || 11155111
-    const publicClient = getPublicClient(config, { chainId })
+    const publicClient = createHttpPublicClient(chainId)
     const { eligibilityModule } = await getModules(pollId)
-
-    // Only SemaphoreEligibilityModule supports isRegistered
-    const clientChainId = publicClient.chain?.id || chainId
-    const addresses = getAddresses(clientChainId)
+    const addresses = getAddresses(chainId)
     if (eligibilityModule?.toLowerCase() !== addresses.semaphoreEligibility?.toLowerCase()) {
       return { data: false, error: null }
     }

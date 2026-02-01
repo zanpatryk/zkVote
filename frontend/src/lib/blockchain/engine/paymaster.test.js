@@ -1,6 +1,7 @@
 
 import { getPollBudget, fundPollBudget, withdrawPollBudget } from './paymaster'
 import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
+import { createHttpPublicClient } from '@/lib/wagmi/chains'
 import { getAddresses, pollManagerContract } from '@/lib/contracts'
 import { getModules } from './core'
 
@@ -10,6 +11,13 @@ jest.mock('@wagmi/core', () => ({
   waitForTransactionReceipt: jest.fn(),
   getAccount: jest.fn()
 }))
+
+jest.mock('@/lib/wagmi/chains', () => ({
+  createHttpPublicClient: jest.fn(),
+  anvil: { id: 31337 },
+  sepolia: { id: 11155111 },
+}))
+
 jest.mock('@/lib/contracts')
 jest.mock('./core')
 jest.mock('@/lib/wagmi/config', () => ({
@@ -34,6 +42,7 @@ describe('paymaster engine', () => {
     
     // Default mocks
     getPublicClient.mockReturnValue(mockPublicClient)
+    createHttpPublicClient.mockReturnValue(mockPublicClient)
     getAccount.mockReturnValue({ address: '0xUser', chainId: 31337 })
     getAddresses.mockReturnValue(mockAddresses)
     getModules.mockResolvedValue({ pollManager: '0xPollManager' })

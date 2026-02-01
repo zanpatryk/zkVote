@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getWhitelistedAddresses, getModules } from '@/lib/blockchain/engine/read'
-import { useBlockNumber } from 'wagmi'
+import { useBlockNumber, useChainId } from 'wagmi'
 import { useMultiContractEvents } from '@/hooks/useContractEvents'
 import { toast } from 'react-hot-toast'
 
@@ -13,12 +13,21 @@ const BATCH_SIZE = 900n
  * @returns {Object} - { addresses, loading, hasMore, loadMore, lastScannedBlock }
  */
 export function useWhitelistedAddresses(pollId) {
+  const chainId = useChainId()
   const { data: currentBlock } = useBlockNumber()
   const [addresses, setAddresses] = useState(new Set())
   const [loading, setLoading] = useState(false)
   const [lastInternalBlock, setLastInternalBlock] = useState(null)
   const [hasMore, setHasMore] = useState(true)
   const [eligibilityModuleAddress, setEligibilityModuleAddress] = useState(null)
+
+  // Reset state when chain changes
+  useEffect(() => {
+    setAddresses(new Set())
+    setLastInternalBlock(null)
+    setHasMore(true)
+    setEligibilityModuleAddress(null)
+  }, [chainId])
 
   // Fetch Eligibility Module Address
   useEffect(() => {
@@ -32,7 +41,7 @@ export function useWhitelistedAddresses(pollId) {
         }
     }
     fetchModule()
-  }, [pollId])
+  }, [pollId, chainId])
 
   // Robust event parser with JS-side pollId filtering
   const parseLog = useCallback((log) => {

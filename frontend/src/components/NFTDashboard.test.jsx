@@ -6,6 +6,7 @@ import { getUserNFTs } from '@/lib/blockchain/engine/read'
 // Mock dependencies
 jest.mock('wagmi', () => ({
   useAccount: jest.fn(),
+  useChainId: jest.fn(() => 31337),
   http: jest.fn(),
 }))
 jest.mock('@/lib/blockchain/engine/read', () => ({

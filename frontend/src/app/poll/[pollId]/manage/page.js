@@ -102,7 +102,7 @@ export default function ManagePollPage() {
   if (!isOwner) {
     return (
       <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 text-center">
-        <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
         <p className="text-gray-600 mb-6">You are not the owner of this poll.</p>
         <button 
           onClick={() => router.push(`/poll/${pollId}`)}

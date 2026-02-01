@@ -1,4 +1,5 @@
 import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
+import { createHttpPublicClient } from '@/lib/wagmi/chains'
 import { 
   getPollById, 
   getOwnedPolls, 
@@ -15,7 +16,6 @@ jest.mock('@/lib/contracts', () => ({
   pollManagerContract: { abi: [] },
   CONTRACT_ADDRESSES: { zkElGamalVoteVector: '0xZK' },
   getAddresses: jest.fn(() => ({
-    vse: '0xVSE',
     vse: '0xVSE',
     zkElGamalVoteVector: '0xZK',
     elgamalVoteVerifier: '0xEVV',
@@ -38,6 +38,12 @@ jest.mock('@wagmi/core', () => ({
   writeContract: jest.fn(),
   waitForTransactionReceipt: jest.fn(),
   getAccount: jest.fn(),
+}))
+
+jest.mock('@/lib/wagmi/chains', () => ({
+  createHttpPublicClient: jest.fn(),
+  anvil: { id: 31337 },
+  sepolia: { id: 11155111 },
 }))
 
 jest.mock('./core', () => ({
@@ -68,6 +74,7 @@ describe('polls domain engine', () => {
       chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
+    createHttpPublicClient.mockReturnValue(mockPublicClient)
     getAccount.mockReturnValue({ address: '0xUser' })
     writeContract.mockResolvedValue('0xHash')
     waitForTransactionReceipt.mockResolvedValue({ status: 1, logs: [{ topics: ['0x'] }] })

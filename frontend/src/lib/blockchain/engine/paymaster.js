@@ -1,5 +1,6 @@
-import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
+import { writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
+import { createHttpPublicClient } from '@/lib/wagmi/chains'
 import { getAddresses, pollManagerContract } from '@/lib/contracts'
 import PollSponsorPaymasterABI from '@/lib/contracts/abis/PollSponsorPaymaster.json'
 import { getModules } from './core'
@@ -12,9 +13,8 @@ export async function getPollBudget(pollId) {
 
   try {
     const account = getAccount(config)
-    const currentChainId = account?.chainId
-    const publicClient = getPublicClient(config, { chainId: currentChainId })
-    const chainId = publicClient.chain.id
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = createHttpPublicClient(chainId)
     const addresses = getAddresses(chainId)
 
     const amount = await publicClient.readContract({
@@ -75,9 +75,8 @@ export async function withdrawPollBudget(pollId, amountWei) {
 
   try {
     const account = getAccount(config)
-    const currentChainId = account?.chainId
-    const publicClient = getPublicClient(config, { chainId: currentChainId })
-    const { chainId } = getAccount(config)
+    const chainId = account?.chainId || config?.state?.chainId || 11155111
+    const publicClient = createHttpPublicClient(chainId)
     const addresses = getAddresses(chainId)
 
     // Debug: Check on-chain values before attempting withdraw

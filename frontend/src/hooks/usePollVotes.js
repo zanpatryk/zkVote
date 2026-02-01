@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useChainId } from 'wagmi'
 import { getPollVotes, getModules } from '@/lib/blockchain/engine/read'
 import { useContractEvents } from '@/hooks/useContractEvents'
 import { POLL_STATE } from '@/lib/constants'
@@ -18,6 +19,7 @@ const parseVoteLog = (log) => ({
  * @returns {Object} - { votes, loading }
  */
 export function usePollVotes(pollId, pollState) {
+  const chainId = useChainId()
   const [votes, setVotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [voteStorageAddress, setVoteStorageAddress] = useState(null)
@@ -34,7 +36,7 @@ export function usePollVotes(pollId, pollState) {
       }
     }
     fetchAddress()
-  }, [pollId])
+  }, [pollId, chainId])
 
   // Fetch initial votes
   useEffect(() => {
@@ -53,7 +55,7 @@ export function usePollVotes(pollId, pollState) {
       }
     }
     fetchVotes()
-  }, [pollId])
+  }, [pollId, chainId])
 
   // Watch for new votes
   const { events: liveVotes } = useContractEvents({

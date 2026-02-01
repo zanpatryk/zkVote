@@ -1,4 +1,5 @@
 import { getPublicClient, writeContract, waitForTransactionReceipt, getAccount } from '@wagmi/core'
+import { createHttpPublicClient } from '@/lib/wagmi/chains'
 import { encodeEventTopics, decodeEventLog } from 'viem'
 import { 
   hasVoted, 
@@ -39,6 +40,12 @@ jest.mock('@wagmi/core', () => ({
   getAccount: jest.fn(),
 }))
 
+jest.mock('@/lib/wagmi/chains', () => ({
+  createHttpPublicClient: jest.fn(),
+  anvil: { id: 31337 },
+  sepolia: { id: 11155111 },
+}))
+
 jest.mock('./core', () => ({
   getModules: jest.fn().mockResolvedValue({ 
     pollManager: '0xPM', 
@@ -72,6 +79,7 @@ describe('voting domain engine', () => {
       chain: { id: 31337 },
     }
     getPublicClient.mockReturnValue(mockPublicClient)
+    createHttpPublicClient.mockReturnValue(mockPublicClient)
     getAccount.mockReturnValue({ address: '0xUser' })
     writeContract.mockResolvedValue('0xHash')
     waitForTransactionReceipt.mockResolvedValue({ status: 1, transactionHash: '0xHash', logs: [{ topics: ['0xTopic'] }] })

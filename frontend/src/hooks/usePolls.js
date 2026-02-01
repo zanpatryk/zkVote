@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
+import { useChainId } from 'wagmi'
 import { getWhitelistedPolls, getOwnedPolls, getPollById } from '@/lib/blockchain/engine/read'
 import { isUserWhitelisted } from '@/lib/blockchain/engine/read'
 
 export function useWhitelistedPolls(address, isConnected) {
+  const chainId = useChainId()
   const { data: result = { data: [], error: null }, isLoading, error: queryError } = useQuery({
-    queryKey: ['whitelistedPolls', address],
+    queryKey: ['whitelistedPolls', address, chainId],
     queryFn: () => getWhitelistedPolls(address),
     enabled: isConnected && !!address,
   })
@@ -13,8 +15,9 @@ export function useWhitelistedPolls(address, isConnected) {
 }
 
 export function useOwnedPolls(address, isConnected) {
+  const chainId = useChainId()
   const { data: result = { data: [], error: null }, isLoading, error: queryError } = useQuery({
-    queryKey: ['ownedPolls', address],
+    queryKey: ['ownedPolls', address, chainId],
     queryFn: async () => {
       const { data, error } = await getOwnedPolls(address)
       if (error || !data) return { data: [], error }
@@ -33,11 +36,13 @@ export function useOwnedPolls(address, isConnected) {
 }
 
 export function usePoll(pollId) {
+  const chainId = useChainId()
   const { data: result = { data: null, error: null }, isLoading, error: queryError } = useQuery({
-    queryKey: ['poll', pollId],
+    queryKey: ['poll', pollId, chainId],
     queryFn: () => getPollById(pollId),
     enabled: !!pollId,
   })
 
   return { poll: result.data, isLoading, error: queryError || result.error }
 }
+

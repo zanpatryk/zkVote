@@ -6,6 +6,7 @@ import '@testing-library/jest-dom'
 const mockUseAccount = jest.fn()
 jest.mock('wagmi', () => ({
   useAccount: () => mockUseAccount(),
+  useChainId: () => 31337,
 }))
 
 // Mock framer-motion

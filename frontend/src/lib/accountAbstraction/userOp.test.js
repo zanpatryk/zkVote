@@ -93,6 +93,11 @@ jest.mock('@/lib/contracts', () => ({
   votingSystemContract: { abi: [] } // Mock ABI
 }))
 
+// Mock transaction utilities
+jest.mock('@/lib/blockchain/utils/transaction', () => ({
+  waitForTransactionResilient: jest.fn(),
+}))
+
 // Mock global fetch
 global.fetch = jest.fn()
 
@@ -188,9 +193,9 @@ describe('buildSponsoredVoteUserOp', () => {
 describe('sendSponsoredPlainVote', () => {
     const mockPublicClient = {
         chain: { id: 31337 },
-        getTransactionReceipt: jest.fn()
     }
     const mockUserOp = { sender: '0xSender', nonce: 1n }
+    const { waitForTransactionResilient } = require('@/lib/blockchain/utils/transaction')
 
     beforeEach(() => {
         jest.clearAllMocks()
@@ -203,8 +208,8 @@ describe('sendSponsoredPlainVote', () => {
             json: jest.fn().mockResolvedValue({ txHash: '0xTxHash' })
         })
 
-        // Mock receipt that fails decoding or has no logs (simplest case)
-        mockPublicClient.getTransactionReceipt.mockResolvedValue({ logs: [] })
+        // Mock resilient receipt that has no matching logs
+        waitForTransactionResilient.mockResolvedValue({ logs: [] })
 
         const result = await sendSponsoredPlainVote({
             userOp: mockUserOp,

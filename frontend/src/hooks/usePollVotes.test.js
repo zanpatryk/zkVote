@@ -20,6 +20,10 @@ jest.mock('@wagmi/core', () => ({
   })),
 }))
 
+jest.mock('wagmi', () => ({
+  useChainId: jest.fn(() => 31337),
+}))
+
 jest.mock('@/lib/wagmi/config', () => ({
   wagmiConfig: {},
 }))

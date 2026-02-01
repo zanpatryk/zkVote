@@ -1,10 +1,48 @@
-import { getPublicClient, getAccount } from '@wagmi/core'
+import { getAccount } from '@wagmi/core'
 import { wagmiConfig as config } from '@/lib/wagmi/config'
+import { createHttpPublicClient } from '@/lib/wagmi/chains'
 import { votingSystemContract, getAddresses } from '@/lib/contracts'
 
 // Simple memory cache to prevent redundant RPC calls within a short window
 export const modulesCache = new Map()
 const CACHE_TTL = 5000 // 5 seconds
+
+/**
+ * Executes multiple contract reads - uses multicall if available, falls back to Promise.all
+ */
+async function executeMultiRead(publicClient, calls) {
+  try {
+    // Try multicall first (more efficient)
+    const results = await publicClient.multicall({
+      contracts: calls,
+      allowFailure: false,
+    })
+    return results
+  } catch (err) {
+    // If multicall fails (e.g., chain doesn't support it or contract not deployed), fall back to individual calls
+    const isMulticallError = 
+      err.name === 'ChainDoesNotSupportContract' || 
+      err.message?.includes('multicall3') ||
+      err.message?.includes('aggregate3') ||
+      err.message?.includes('returned no data');
+    
+    if (isMulticallError) {
+      console.warn('Multicall not available, falling back to individual calls')
+      const results = await Promise.all(
+        calls.map(call => 
+          publicClient.readContract({
+            address: call.address,
+            abi: call.abi,
+            functionName: call.functionName,
+            args: call.args,
+          })
+        )
+      )
+      return results
+    }
+    throw err
+  }
+}
 
 /**
  * Fetches the addresses of the core modules (PollManager, Eligibility, VoteStorage) 
@@ -23,7 +61,7 @@ export async function getModules(pollId) {
   try {
     const account = getAccount(config)
     const currentChainId = account?.chainId || config?.state?.chainId || 11155111
-    const publicClient = getPublicClient(config, { chainId: currentChainId })
+    const publicClient = createHttpPublicClient(currentChainId)
     const addresses = getAddresses(currentChainId)
 
     const calls = [
@@ -61,10 +99,7 @@ export async function getModules(pollId) {
       )
     }
 
-    const results = await publicClient.multicall({
-      contracts: calls,
-      allowFailure: false, // Core infrastructure must succeed
-    })
+    const results = await executeMultiRead(publicClient, calls)
 
     const pollManager = results[0]
     let eligibilityModule = results[1]
@@ -90,3 +125,4 @@ export async function getModules(pollId) {
     throw new Error('Failed to connect to blockchain infrastructure. Please check your internet connection and try again.')
   }
 }
+
