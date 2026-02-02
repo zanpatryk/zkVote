@@ -16,6 +16,7 @@
     "build:contracts": "cd contracts && make build && cd .. && bun run generate:abis",
     "build:circuits": "bun --filter circuits build",
     "generate:abis": "bun scripts/generate-abis.js",
+    "deploy:local": "cd contracts && make deploy-anvil",
     "setup": "node scripts/setup.js",
     "start": "bun --filter frontend start"
   }
