@@ -39,11 +39,41 @@ Ensure you have installed dependencies from the root directory:
 bun install
 ```
 
-### Circuit Setup
+### Environment Variables
 
-The frontend requires ZK artifacts (`.wasm` and `.zkey` files) to generate proofs in the browser. This includes both the standard Semaphore protocols and our custom ElGamal/Tally circuits.
+Create a `.env.local` file in the `frontend/` directory with the following variables:
 
-To initialize all required artifacts:
+```bash
+# Required: WalletConnect Project ID (get from https://cloud.walletconnect.com)
+NEXT_PUBLIC_WC_PROJECT_ID=your_walletconnect_project_id
+
+# Required for gasless voting: Private key for the bundler account that signs UserOperations
+BUNDLER_PRIVATE_KEY=0xYourPrivateKey
+
+# Optional: CDN URL for ZK circuit artifacts (wasm/zkey files)
+# If not set, local files from /public/circuits will be used
+NEXT_PUBLIC_CDN_URL=https://your-cdn-url.example.com
+
+# Optional: Custom RPC URLs (defaults to public endpoints)
+# NEXT_PUBLIC_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
+# NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY
+```
+
+### Circuit Setup (CDN vs Local)
+
+The frontend requires ZK artifacts (`.wasm` and `.zkey` files) to generate proofs in the browser. By default, these are fetched from a **CDN** for faster loading.
+
+#### Option 1: Use CDN (Recommended for Production)
+
+Set the `NEXT_PUBLIC_CDN_URL` environment variable to your CDN hosting the circuit artifacts. The production deployment uses Cloudflare R2.
+
+#### Option 2: Use Local Files (Development)
+
+To use locally compiled circuits instead of CDN:
+
+1. Set `USE_LOCAL_ZKVOTE_CIRCUITS = true` in `src/lib/constants.js`
+2. Set `USE_LOCAL_SEMAPHORE_CIRCUITS = true` if you want local Semaphore circuits as well
+3. Run the setup script to copy artifacts to the public folder:
 
 ```bash
 bun run setup:circuits
@@ -74,9 +104,20 @@ The application will be available at `http://localhost:3000`.
 - `bun run test:ui:watch`: Runs unit tests in watch mode.
 - `bun run test:ui:coverage`: Generates a test coverage report.
 - `bun run test:ui:integration`: Runs specific UI integration tests.
-- `bun run setup:circuits`: Runs both download and copy scripts to prepare all ZK artifacts.
-- `bun run download:circuits`: Downloads Semaphore ZK artifacts from a remote CDN.
+- `bun run setup:circuits`: Runs both download and copy scripts to prepare local ZK artifacts.
+- `bun run download:circuits`: Downloads Semaphore ZK artifacts from the PSE CDN.
 - `bun run copy:circuits`: Copies locally compiled ElGamal/Tally artifacts from the `circuits/` package.
+
+## Account Abstraction (Gasless Voting)
+
+The frontend supports gasless voting via ERC-4337 Account Abstraction. This requires:
+
+1. **`BUNDLER_PRIVATE_KEY`**: The private key that signs UserOperations on behalf of voters.
+2. **Paymaster Contract**: The `PollSponsorPaymaster` contract must be deployed and funded by poll creators.
+
+> **Important**: The `BUNDLER_PRIVATE_KEY` must correspond to the **owner** of the deployed `zkVoteSimpleAccount` contract. The smart account verifies that UserOperations are signed by its owner before executing. You cannot use an arbitrary key—it must match the address set during contract deployment.
+
+When a user casts a vote, the frontend constructs a UserOperation and sends it to the `/api/bundler` endpoint, which signs and submits the transaction to the EntryPoint contract.
 
 ## Testing
 
