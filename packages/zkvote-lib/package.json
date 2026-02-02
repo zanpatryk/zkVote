@@ -1,0 +1,26 @@
+{
+  "name": "@zkvote/lib",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./elgamal": "./src/elgamal.js",
+    "./pedersen": "./src/pedersen.js",
+    "./proof": "./src/proof.js",
+    "./node": "./src/node.js",
+    "./contracts/*": "./contracts/*"
+  },
+  "scripts": {
+    "test": "bun test && node test/proof.integration.js",
+    "test:coverage": "bun test --coverage",
+    "sync:artifacts": "node scripts/sync-artifacts.js",
+    "benchmark": "bun run sync:artifacts && node benchmark/run.js"
+  },
+  "dependencies": {
+    "circomlibjs": "^0.1.7",
+    "snarkjs": "^0.7.5",
+    "ffjavascript": "^0.3.0"
+  }
+}

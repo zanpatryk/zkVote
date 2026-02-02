@@ -1,0 +1,11 @@
+# Dependencies
+node_modules
+
+# ZK Artifacts (linked via sync:artifacts)
+artifacts
+
+# Test results
+coverage/
+
+# Misc
+.DS_Store

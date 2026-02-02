@@ -15,3 +15,11 @@ next-env.d.ts
 # testing
 /coverage
 .swc
+
+# zk artifacts
+*.wasm
+*.zkey
+/public/semaphore/
+/public/circuits/
+
+.env.local

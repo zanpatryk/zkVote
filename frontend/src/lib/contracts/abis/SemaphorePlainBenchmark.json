@@ -1,0 +1,182 @@
+[
+  {
+    "type": "function",
+    "name": "IS_SCRIPT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "baseCfg",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "participants",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gasCostPerGwei",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "ethUsdRate",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "deployerKey",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "deployer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "testSuffix",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "batchUpload",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "gasMeter",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract GasMeter"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "localSys",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "eligibility",
+        "type": "address",
+        "internalType": "contract SemaphoreEligibilityModule"
+      },
+      {
+        "name": "resultNFT",
+        "type": "address",
+        "internalType": "contract ResultNFT"
+      },
+      {
+        "name": "plainStorage",
+        "type": "address",
+        "internalType": "contract VoteStorageV0"
+      },
+      {
+        "name": "mockSemVerifier",
+        "type": "address",
+        "internalType": "contract MockSemaphoreVerifier"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "results",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "gas_create",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gas_whitelist",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gas_register",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gas_start",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gas_end",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gas_publish",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "totalGas",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "run",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "sys",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "vse",
+        "type": "address",
+        "internalType": "contract VotingSystemEngine"
+      },
+      {
+        "name": "pollManager",
+        "type": "address",
+        "internalType": "contract PollManager"
+      },
+      {
+        "name": "eligibilityAddr",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "voteStorageAddr",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "ownerActor",
+        "type": "address",
+        "internalType": "contract BenchmarkActor"
+      }
+    ],
+    "stateMutability": "view"
+  }
+]

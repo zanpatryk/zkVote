@@ -1,41 +1,45 @@
 "use client"
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { hexToString } from 'viem'
 import { toast } from 'react-hot-toast'
-
-export function formatDuration(ms) {
-  if (ms <= 0) return '0m'
-  const totalSeconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60) % 60
-  const hours = Math.floor(totalSeconds / 3600) % 24
-  const days = Math.floor(totalSeconds / 86400)
-
-  const parts = []
-  if (days) parts.push(`${days}d`)
-  if (hours) parts.push(`${hours}h`)
-  if (minutes || parts.length === 0) parts.push(`${minutes}m`)
-  return parts.join(' ')
-}
+import { useAccount } from 'wagmi'
+import { useSemaphore } from '@/hooks/useSemaphore'
+import { useUserNFTs } from '@/hooks/useUserNFTs'
+import { usePollRegistry } from '@/hooks/usePollRegistry'
+import { POLL_STATE } from '@/lib/constants'
+import { getAddresses } from '@/lib/contracts'
 
 export default function PollCard({ pollId, title, state, isOwner = false, showVoteButton = false, interactive = true }) {
-  const [now, setNow] = useState(Date.now())
+  const { address, isConnected } = useAccount()
+  const { nfts } = useUserNFTs(address, isConnected)
+  const { createIdentity, register, isLoadingIdentity, isRegistering } = useSemaphore()
+  const { isZK, isRegistered, eligibilityModuleAddress, voteStorageAddress, resultsPublished } = usePollRegistry(pollId)
+  
+  const hasMinted = nfts?.some(nft => nft.name === `Poll #${pollId} Results`)
 
-  // State mapping: 0 = CREATED, 1 = ACTIVE, 2 = ENDED
-  let statusLabel = null
-  let statusValue = null
+  // Dynamic address resolution
+  const { chainId } = useAccount()
+  const addresses = getAddresses(chainId)
 
-  if (state === 0) {
-    statusLabel = 'Status'
-    statusValue = 'Created'
-  } else if (state === 1) {
-    statusLabel = 'Status'
-    statusValue = 'Active'
-  } else if (state === 2) {
-    statusLabel = 'Status'
-    statusValue = 'Ended'
+  const isAnonymous = eligibilityModuleAddress?.toLowerCase() === addresses.semaphoreEligibility?.toLowerCase()
+  const isSecret = voteStorageAddress?.toLowerCase() === addresses.zkElGamalVoteVector?.toLowerCase()
+
+  const canRegister = isZK && !isRegistered && state === POLL_STATE.CREATED
+
+  const handleRegister = async () => {
+    const identity = await createIdentity(pollId)
+    if (identity) {
+      await register(pollId)
+    }
   }
+
+  // State to label mapping
+  const statusLabel = 'Status'
+  const statusValue = {
+    [POLL_STATE.CREATED]: 'Created',
+    [POLL_STATE.ACTIVE]: 'Active',
+    [POLL_STATE.ENDED]: 'Ended',
+  }[state] || null
 
   const handleCopy = (e) => {
     e.preventDefault()
@@ -52,10 +56,22 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
 
   return (
     <div className={`p-6 md:p-8 bg-white border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all duration-200`}>
-      <div className="flex justify-between items-start pointer-events-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start pointer-events-auto">
         <div>
-          <h3 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 leading-tight">
+          <h3 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 leading-tight flex items-center gap-3">
             {title}
+            <div className="flex gap-2">
+              {isAnonymous && (
+                <span className="bg-gray-100 text-gray-600 text-[10px] font-black px-2 py-0.5 uppercase tracking-tighter border border-gray-200 rounded-sm">
+                  Anonymous
+                </span>
+              )}
+              {isSecret && (
+                <span className="bg-gray-100 text-gray-600 text-[10px] font-black px-2 py-0.5 uppercase tracking-tighter border border-gray-200 rounded-sm">
+                  Secret
+                </span>
+              )}
+            </div>
           </h3>
           <div className="mt-3 flex items-center gap-3 text-gray-600">
             <span className="text-xs font-mono uppercase tracking-wider text-gray-500 border border-black/20 px-2 py-1 rounded-sm" title={pollId.toString()}>
@@ -76,19 +92,28 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
           </div>
           {statusLabel && statusValue && (
             <div className="mt-3 flex items-center gap-2">
-                 <span className={`w-2 h-2 rounded-full ${state === 1 ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                 <span className={`w-2 h-2 rounded-full ${state === POLL_STATE.ACTIVE ? 'bg-green-500' : 'bg-gray-400'}`}></span>
                  <p className="text-sm font-medium uppercase tracking-wide text-gray-600">{statusValue}</p>
             </div>
           )}
         </div>
-        {isOwner && (
-          <span className="bg-black text-white text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black">
-            Owner
-          </span>
-        )}
+        <div className="flex flex-col items-start md:items-end gap-2 mt-4 md:mt-0">
+          <div className="flex gap-2">
+            {isRegistered && (
+              <span className="bg-gray-100 text-black text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black/20">
+                Registered
+              </span>
+            )}
+            {isOwner && (
+              <span className="bg-black text-white text-xs font-bold px-3 py-1 uppercase tracking-widest border border-black">
+                Owner
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-6 border-t-2 border-black/5 pt-6 items-center">
+      <div className="mt-8 flex flex-wrap gap-4 md:gap-6 border-t-2 border-black/5 pt-6 items-center">
         {isOwner ? (
           <InteractiveLink href={`/poll/${pollId}/manage`}>
             <span className="text-black font-semibold hover:underline decoration-2 underline-offset-4">
@@ -103,19 +128,43 @@ export default function PollCard({ pollId, title, state, isOwner = false, showVo
           </InteractiveLink>
         )}
 
-        {state === 2 ? (
+      {/* NFT Minting Logic */}
+      {state === POLL_STATE.ENDED && (!isSecret || resultsPublished) ? (
+        hasMinted ? (
+          <InteractiveLink href="/nfts">
+             <span className="bg-gray-100 text-black px-4 py-2 rounded-sm font-bold border border-black/20 text-sm uppercase tracking-wide flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                NFT Minted
+             </span>
+          </InteractiveLink>
+        ) : (
           <InteractiveLink href={`/poll/${pollId}/nft`}>
-            <span className="text-black font-semibold hover:underline decoration-2 underline-offset-4">
+            <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-sm uppercase tracking-wide">
               Mint Result NFT
             </span>
           </InteractiveLink>
-        ) : showVoteButton && state === 1 ? (
-          <InteractiveLink href={`/poll/${pollId}/vote`}>
-            <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all text-sm uppercase tracking-wide">
-              Vote Now
-            </span>
-          </InteractiveLink>
-        ) : null}
+        )
+      ) : showVoteButton ? (
+        <>
+          {state === POLL_STATE.CREATED && canRegister && (
+            <InteractiveLink href={`/poll/${pollId}/register`}>
+              <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-sm uppercase tracking-wide">
+                Register Identity
+              </span>
+            </InteractiveLink>
+          )}
+          
+          {state === POLL_STATE.ACTIVE && (isRegistered || !isZK) && (
+            <InteractiveLink href={`/poll/${pollId}/auth`}>
+              <span className="bg-black text-white px-6 py-2 rounded-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-sm uppercase tracking-wide">
+                Vote Now
+              </span>
+            </InteractiveLink>
+          )}
+        </>
+      ) : null}
       </div>
     </div>
   )

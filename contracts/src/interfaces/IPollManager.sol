@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 interface IPollManager {
     event PollCreated(uint256 indexed pollId, address indexed creator);

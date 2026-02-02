@@ -1,69 +1,44 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
-import { getOwnedPolls } from '@/lib/blockchain/engine/read'
+import { useIsMounted } from '@/hooks/useIsMounted'
 import PollCard from '@/components/PollCard.jsx'
 import Link from 'next/link'
 import StatusFilter from '@/components/StatusFilter.jsx'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useOwnedPolls } from '@/hooks/usePolls'
+import { usePollFilter } from '@/hooks/usePollFilter'
+import ConnectionError from '@/components/ConnectionError'
 
 export default function PollsPage() {
   const { address, isConnected } = useAccount()
-  const [polls, setPolls] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  
+  const { polls, isLoading, error } = useOwnedPolls(address, isConnected)
+  
+  const {
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    filteredPolls
+  } = usePollFilter(polls)
 
-  useEffect(() => {
-    if (!isConnected || !address) {
-      setPolls([])
-      setIsLoading(false)
-      return
-    }
-
-    let cancelled = false
-
-    getOwnedPolls(address).then(async (data) => {
-      if (cancelled) return
-
-      // Check whitelist status for each poll
-      const pollsWithWhitelist = await Promise.all(data.map(async (poll) => {
-        const isWhitelisted = await import('@/lib/blockchain/engine/read').then(m => m.isUserWhitelisted(poll.pollId, address))
-        return { ...poll, isWhitelisted }
-      }))
-
-      if (!cancelled) {
-        setPolls(pollsWithWhitelist)
-        setIsLoading(false)
-      }
-    }).catch(err => {
-      console.error('Failed to load owned polls:', err)
-      if (!cancelled) setIsLoading(false)
-    })
-
-    return () => { cancelled = true }
-  }, [address, isConnected])
-
-  const filteredPolls = polls.filter(poll => {
-    const matchesSearch = poll.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || poll.state.toString() === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  const mounted = useIsMounted()
+  const showLoading = !mounted || isLoading
 
   return (
     <div className="pt-24 max-w-5xl mx-auto px-6 pb-32 relative">
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between mb-12"
+        className="flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-12 gap-6 md:gap-0"
       >
         <div>
           <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">My Polls</h1>
           <p className="text-gray-500 text-lg">Manage your secure voting events.</p>
         </div>
-        <Link href="/poll/create">
-          <button className="bg-black text-white px-8 py-4 rounded-lg text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
+        <Link href="/poll/create" className="w-full md:w-auto">
+          <button className="w-full md:w-auto bg-black text-white px-8 py-4 rounded-lg text-lg font-bold border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all">
             + Create New Poll
           </button>
         </Link>
@@ -96,12 +71,14 @@ export default function PollsPage() {
       </motion.div>
 
       <div>
-        {isLoading ? (
+        {showLoading ? (
           <div className="text-center py-20 text-xl text-gray-600 font-serif italic">Loading your polls...</div>
+        ) : error ? (
+           <ConnectionError error={error} />
         ) : filteredPolls.length === 0 ? (
           <div className="text-center py-24 border-2 border-dashed border-gray-300 rounded-xl">
              <p className="text-xl text-gray-400 font-serif italic">
-                {polls.length === 0 ? "You haven't created any polls yet." : "No polls match your search."}
+                {!polls || polls.length === 0 ? "You haven't created any polls yet." : "No polls match your search."}
              </p>
           </div>
         ) : (
@@ -126,7 +103,7 @@ export default function PollsPage() {
                     title={poll.title} 
                     state={poll.state}
                     isOwner 
-                    showVoteButton={poll.isWhitelisted && poll.state === 1}
+                    showVoteButton={poll.isWhitelisted && (poll.state === 0 || poll.state === 1)}
                   />
                 </motion.div>
               ))}

@@ -1,0 +1,22 @@
+{
+  "builds": {
+    "testing": [
+      { "circuit": "pedersenVoteVector", "params": { "N": 8 } },
+      { "circuit": "elGamalVoteVector", "params": { "N": 8 } },
+      { "circuit": "elGamalVoteScalar", "params": { "N": 8 } },
+      { "circuit": "elGamalTallyDecrypt", "params": { "N": 8 } }
+    ],
+    "verifiers": [
+      { "circuit": "pedersenVoteVector", "params": { "N": 8 } },
+      { "circuit": "pedersenVoteVector", "params": { "N": 16 } },
+      { "circuit": "elGamalVoteVector", "params": { "N": 8 } },
+      { "circuit": "elGamalVoteVector", "params": { "N": 16 } },
+      { "circuit": "elGamalVoteScalar", "params": { "N": 8 } },
+      { "circuit": "elGamalVoteScalar", "params": { "N": 16 } },
+      { "circuit": "elGamalVoteScalar", "params": { "N": 32 } },
+      { "circuit": "elGamalVoteScalar", "params": { "N": 64 } },
+      { "circuit": "elGamalTallyDecrypt", "params": { "N": 8 } },
+      { "circuit": "elGamalTallyDecrypt", "params": { "N": 16 } }
+    ]
+  }
+}

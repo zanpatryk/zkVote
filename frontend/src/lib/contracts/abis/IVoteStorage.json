@@ -101,6 +101,24 @@
     "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "initPoll",
+    "inputs": [
+      {
+        "name": "pollId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "initData",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
     "type": "event",
     "name": "VoteCasted",
     "inputs": [

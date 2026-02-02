@@ -4,23 +4,19 @@
   "version": "0.0.1",
   "workspaces": [
     "contracts",
-    "frontend"
+    "frontend",
+    "circuits",
+    "packages/zkvote-lib"
   ],
   "scripts": {
     "dev:frontend": "bun --filter frontend dev",
-    "dev:chain": "anvil",
+    "dev:chain": "anvil --code-size-limit 50000",
     "dev:local": "bun scripts/start-local-env.js",
     "build": "bun run build:contracts && bun --filter frontend build",
     "build:contracts": "cd contracts && make build && cd .. && bun run generate:abis",
-    "test:contracts": "cd contracts && make test",
-    "test:ui": "bun --filter frontend test:ui",
-    "test:ui:coverage": "bun --filter frontend test:ui:coverage",
-    "test:ui:integration": "bun --filter frontend test:ui:integration",
-    "deploy:local": "cd contracts && make deploy-anvil",
-    "deploy:sepolia": "cd contracts && make deploy-sepolia",
-    "benchmarking:local": "cd contracts && make benchmark-anvil",
+    "build:circuits": "bun --filter circuits build",
     "generate:abis": "bun scripts/generate-abis.js",
-    "setup": "git submodule update --init --recursive && bun install",
+    "setup": "node scripts/setup.js",
     "start": "bun --filter frontend start"
   }
 }

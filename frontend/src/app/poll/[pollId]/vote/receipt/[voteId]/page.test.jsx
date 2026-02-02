@@ -6,11 +6,20 @@ import { useParams, useSearchParams } from 'next/navigation'
 jest.mock('next/navigation', () => ({
   useParams: jest.fn(),
   useSearchParams: jest.fn(),
+  useRouter: jest.fn(),
 }))
 
 jest.mock('framer-motion', () => ({
-  motion: { div: 'div', button: 'button' },
+  motion: {
+    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }) => <button {...props}>{children}</button>,
+    h1: ({ children, ...props }) => <h1 {...props}>{children}</h1>,
+    p: ({ children, ...props }) => <p {...props}>{children}</p>,
+  },
+  AnimatePresence: ({ children }) => <>{children}</>,
 }))
+
+jest.mock('@/components/ReceiptCard', () => () => <div data-testid="receipt-card">ReceiptCard Mock</div>)
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
 global.URL.createObjectURL = jest.fn()
@@ -29,25 +38,36 @@ describe('VoteReceiptPage', () => {
   it('renders success message', () => {
     render(<VoteReceiptPage />)
     expect(screen.getByText('Vote Submitted')).toBeInTheDocument()
-    expect(screen.getByText('Your vote has been successfully cast. Here is your receipt.')).toBeInTheDocument()
+    expect(screen.getByText('Your vote has been successfully cast.')).toBeInTheDocument()
+  })
+
+  it('renders receipt card', () => {
+    render(<VoteReceiptPage />)
+    expect(screen.getByTestId('receipt-card')).toBeInTheDocument()
   })
 
   it('handles download button click', () => {
     render(<VoteReceiptPage />)
     
-    const downloadBtn = screen.getByText('Download Receipt (.txt)')
+    const downloadBtn = screen.getByText('Download Receipt')
     
     // Mock anchor click
-    const link = { click: jest.fn() }
-    jest.spyOn(document, 'createElement').mockImplementation(() => link)
-    jest.spyOn(document.body, 'appendChild').mockImplementation(() => {})
-    jest.spyOn(document.body, 'removeChild').mockImplementation(() => {})
+    const link = document.createElement('a')
+    const clickSpy = jest.spyOn(link, 'click').mockImplementation(() => {})
+    const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue(link)
+    const appendSpy = jest.spyOn(document.body, 'appendChild').mockImplementation((el) => el)
+    const removeSpy = jest.spyOn(document.body, 'removeChild').mockImplementation((el) => el)
 
     fireEvent.click(downloadBtn)
 
     expect(global.URL.createObjectURL).toHaveBeenCalled()
-    expect(link.download).toBe(`zkvote-receipt-poll-${mockPollId}-vote-${mockVoteId}.txt`)
-    expect(link.click).toHaveBeenCalled()
+    expect(link.download).toBe(`zkvote-receipt-poll-${mockPollId}-vote-${mockVoteId}.json`)
+    expect(clickSpy).toHaveBeenCalled()
     expect(global.URL.revokeObjectURL).toHaveBeenCalled()
+
+    createElementSpy.mockRestore()
+    appendSpy.mockRestore()
+    removeSpy.mockRestore()
   })
 })
+

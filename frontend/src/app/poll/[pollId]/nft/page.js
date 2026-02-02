@@ -1,97 +1,79 @@
-"use client"
+'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
-import { getPollById, isUserWhitelisted, getUserNFTs } from '@/lib/blockchain/engine/read'
 import { mintResultNFT } from '@/lib/blockchain/engine/write'
+import { useMintEligibility } from '@/hooks/useMintEligibility'
 import PollDetails from '@/components/PollDetails'
 import { toast } from 'react-hot-toast'
+import { formatTransactionError } from '@/lib/blockchain/utils/error-handler'
 import { motion } from 'framer-motion'
+import BackButton from '@/components/BackButton'
+import ConnectionError from '@/components/ConnectionError'
 
 export default function MintNFTPage() {
   const { pollId } = useParams()
   const router = useRouter()
-  const { address: userAddress, isConnected } = useAccount()
+  const { isConnected } = useAccount()
   
-  const [loading, setLoading] = useState(true)
-  const [canMint, setCanMint] = useState(false)
-  const [poll, setPoll] = useState(null)
+  const { 
+    poll, 
+    canMint, 
+    hasMinted, 
+    isWrongState, 
+    isResultsPending, 
+    isLoading, 
+    error, 
+    refetchNFTs 
+  } = useMintEligibility(pollId)
+
   const [minting, setMinting] = useState(false)
-  const [hasMinted, setHasMinted] = useState(false)
 
+  // Redirect Logic
   useEffect(() => {
-    async function checkEligibility() {
-      if (!isConnected || !userAddress || !pollId) {
-        setLoading(false)
-        return
-      }
-
-      try {
-        const pollData = await getPollById(pollId)
-        setPoll(pollData)
-
-        if (!pollData) {
-          setLoading(false)
-          return
-        }
-
-        // Must be ENDED (state 2)
-        if (Number(pollData.state) !== 2) {
+    if (!isLoading && !error) {
+       if (isWrongState) {
           toast.error("This poll has not ended yet.")
           router.replace(`/poll/${pollId}`)
-          return
-        }
-
-        const isCreator = pollData.creator.toLowerCase() === userAddress.toLowerCase()
-        let isWhitelisted = false
-        
-        if (!isCreator) {
-             isWhitelisted = await isUserWhitelisted(pollId, userAddress)
-        }
-
-        if (isCreator || isWhitelisted) {
-          setCanMint(true)
-        } else {
-          setCanMint(false)
-        }
-
-        // Check ownership
-        const userNFTs = await getUserNFTs(userAddress)
-        const owned = userNFTs.some(nft => nft.name === `Poll #${pollId} Results`)
-        setHasMinted(owned)
-
-      } catch (error) {
-        console.error('Failed to check eligibility:', error)
-        toast.error('Failed to verify eligibility.')
-      } finally {
-        setLoading(false)
-      }
+       } else if (isResultsPending) {
+          toast.error("Tally Results Not Yet Published")
+          router.replace(`/poll/${pollId}`)
+       }
     }
-
-    checkEligibility()
-  }, [pollId, userAddress, isConnected, router])
+  }, [isLoading, isWrongState, isResultsPending, pollId, router, error])
 
   const handleMint = async () => {
     if (!canMint) return
     setMinting(true)
+    const toastId = toast.loading('Minting Result NFT...', { id: 'nft' })
     try {
       await mintResultNFT(pollId)
-      setHasMinted(true)
-      // Optional: Redirect or show success state
+      toast.success('NFT minted successfully!', { id: toastId })
+      // Refetch NFTs to update the UI via hook state
+      refetchNFTs()
     } catch (error) {
       console.error("Minting failed", error)
+      toast.error(formatTransactionError(error, 'Failed to mint NFT'), { id: toastId })
     } finally {
       setMinting(false)
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 text-center">
         <p className="text-gray-600">Verifying eligibility...</p>
       </div>
     )
+  }
+  
+  if (error) {
+      return (
+        <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 text-center">
+           <ConnectionError error={error} />
+        </div>
+      )
   }
 
   if (!isConnected) {
@@ -104,7 +86,7 @@ export default function MintNFTPage() {
   }
   
   // If poll is valid but user is not authorized (not owner and not whitelisted)
-  if (poll && !canMint) {
+  if (poll && !canMint && !isWrongState && !isResultsPending) {
       return (
       <div className="pt-24 max-w-3xl mx-auto px-6 pb-32 text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">Not Authorized</h1>
@@ -130,12 +112,7 @@ export default function MintNFTPage() {
             <h1 className="text-5xl font-serif font-bold text-gray-900 mb-2">Mint Result NFT</h1>
             <p className="text-gray-500">Collect your voting history.</p>
         </div>
-        <button 
-          onClick={() => router.push('/poll')}
-          className="text-gray-600 hover:text-black font-medium"
-        >
-          ← Back to Dashboard
-        </button>
+        <BackButton href="/poll" label="Back to Dashboard" />
       </motion.div>
 
       <motion.div 

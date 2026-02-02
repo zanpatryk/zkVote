@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import { useExplorer } from '@/hooks/useExplorer'
 
-export default function ReceiptCard({ pollId, voteId, txHash, interactive = true }) {
+export default function ReceiptCard({ pollId, voteId, txHash, nullifier, proof, interactive = true }) {
+  const { getTxUrl } = useExplorer()
+
   return (
-    <div className="bg-white p-6 md:p-8 max-w-sm mx-auto border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative mb-8 font-mono text-left">
-      {/* Receipt "holes" or decorative top/bottom could be added here, but keeping it clean for now */}
-      
+    <div className="bg-white p-6 md:p-8 max-w-sm mx-auto border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative mb-8 font-mono text-left">      
       <div className="text-center border-b-2 border-dashed border-gray-300 pb-6 mb-6">
         <h2 className="text-2xl font-bold uppercase tracking-wider">zkVote</h2>
         <p className="text-sm text-gray-500 mt-1">Vote Receipt</p>
@@ -34,7 +35,7 @@ export default function ReceiptCard({ pollId, voteId, txHash, interactive = true
             <p className="text-xs text-gray-500 uppercase">Transaction Hash</p>
             {interactive ? (
               <a 
-                href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                href={getTxUrl(txHash)}
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-sm text-gray-600 hover:text-black break-all underline decoration-dotted underline-offset-2 transition-colors"
@@ -46,6 +47,15 @@ export default function ReceiptCard({ pollId, voteId, txHash, interactive = true
             )}
           </div>
         )}
+
+        {nullifier && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase">Nullifier Hash</p>
+            <p className="text-sm text-gray-600 break-all">{nullifier}</p>
+          </div>
+        )}
+
+        {/* Proof is hidden from UI but included in download */ }
       </div>
 
       <div className="border-t-2 border-dashed border-gray-300 pt-6 text-center">

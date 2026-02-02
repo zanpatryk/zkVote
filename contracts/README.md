@@ -1,188 +1,156 @@
 # zkVote Contracts
 
-Modern, modular voting smart contracts written in Solidity (Foundry). The system lets anyone create a poll, manage eligibility, collect votes, and mint a result NFT that encodes poll results on-chain as base64 JSON.
+Modern, modular voting smart contracts written in Solidity (Foundry). The system provides a flexible framework for creating polls with pluggable eligibility and storage modules.
 
-This package is the on-chain component of the zkVote thesis project. It focuses on clean modularity and testability. While current modules implement simple whitelisting and plain vote storage, the architecture is designed to plug in more advanced eligibility (e.g., ZK-based membership proofs) and storage schemes in future versions.
+This package serves as the core on-chain infrastructure for zkVote, supporting both standard transparent voting and privacy-enhanced anonymous voting using Zero-Knowledge Proofs.
 
 ## Features
 
-- **Modular engine** orchestrating poll lifecycle and delegation to modules
-- **Poll management** for creation, state transitions, metadata and options
-- **Eligibility module (V0)** simple per-poll whitelist (owner-managed)
-- **Vote storage (V0)** prevents double voting and tallies per option
-- **Result NFT** ERC721 with metadata that reflects final counts
-- **Foundry scripts** to deploy locally (Anvil) and to Sepolia
-- **Comprehensive tests** unit and integration
+- **Modular Architecture**: Pluggable modules for eligibility and vote storage.
+- **Privacy-Preserving**: Integrated with [Semaphore Protocol](https://semaphore.appliedzkp.org/) for anonymous membership.
+- **ZK Vote Vectors**: Support for homomorphic-compatible ZK vote vectors using ElGamal.
+- **Account Abstraction (ERC-4337)**: Gasless voting via `PollSponsorPaymaster` allowing poll creators to sponsor transaction fees.
+- **Result NFT**: Automatically mints a unique NFT with embedded results upon poll completion.
+- **Extensive Benchmarking**: Scripts to measure gas performance across different voting schemes.
+- **Developer Friendly**: Built with Foundry, featuring comprehensive tests and deployment scripts.
 
-## Architecture
+## Core Modules
 
-- **VotingSystemEngine** (`src/core/VotingSystemEngine.sol`)
-  - Entry point. Owns the system flow.
-  - Creates polls via `PollManager` and enforces state transitions.
-  - Uses `EligibilityModule` to gate voters and `VoteStorage` to record votes.
-  - Builds a base64 JSON metadata and mints a `ResultNFT` after a poll ends.
+- **VotingSystemEngine** (`src/core/VotingSystemEngine.sol`): The central orchestrator for poll lifecycles, whitelisting, and NFT minting.
+- **PollManager** (`src/poll_management/PollManager.sol`): Manages poll metadata and state transitions.
 
-- **PollManager** (`src/poll_management/PollManager.sol`)
-  - Persists poll metadata: title, description, options, owner, state.
-  - States: `CREATED (0)`, `ACTIVE (1)`, `ENDED (2)`.
+### Eligibility Modules
 
-- **EligibilityModuleV0** (`src/eligibility/EligibilityModuleV0.sol`)
-  - Per-poll whitelists. Only the engine (as owner) can modify.
+- **EligibilityModuleV0**: Simple owner-managed whitelist.
+- **SemaphoreEligibilityModule**: Privacy-first membership using Semaphore identity commitments.
 
-- **VoteStorageV0** (`src/vote_storage/VoteStorageV0.sol`)
-  - Prevents double voting per poll, tallies option counts, stores vote records.
+### Vote Storage Modules
 
-- **ResultNFT** (`src/result_nft/ResultNFT.sol`)
-  - ERC721 + URI storage + AccessControl.
-  - Engine gets `MINTER_ROLE` to mint result NFTs.
+- **VoteStorageV0**: Standard transparent vote storage and tallying.
+- **ZKElGamalVoteVector**: ZK-compatible storage that enables private vote casting with on-chain verification.
 
-- **Interfaces** (`src/interfaces/`)
-  - `IPollManager`, `IEligibilityModule`, `IVoteStorage` define pluggable boundaries.
+### Account Abstraction Modules
+
+- **PollSponsorPaymaster** (`src/account_abstraction/PollSponsorPaymaster.sol`): ERC-4337 Paymaster that allows poll creators to sponsor gas fees for voters.
+- **zkVoteSimpleAccount** (`src/account_abstraction/zkVoteSimpleAccount.sol`): Simple smart account for gasless voting operations.
+
+### External Dependencies
+
+- **SemaphoreVerifier**: Pre-deployed Semaphore protocol verifier contract used for anonymous membership proofs.
 
 ## Repository Structure
 
-```
+```text
 contracts/
-  src/
-    core/VotingSystemEngine.sol
-    poll_management/PollManager.sol
-    eligibility/EligibilityModuleV0.sol
-    vote_storage/VoteStorageV0.sol
-    result_nft/ResultNFT.sol
-    interfaces/{IPollManager,IEligibilityModule,IVoteStorage}.sol
-  script/
-    DeployVotingSystem.s.sol
-    HelperConfig.s.sol
-    benchmark/
-      Benchmark.s.sol
-      BenchmarkConfig.json
-      results/
-  test/
-    unit/
-      ElgibilityModuleTest.t.sol
-      PollManagerTest.t.sol
-      VoteStorageTest.t.sol
-    integration/
-      IntegrationTest.t.sol
-  Makefile
+├── lib/             # External dependencies (OZ, Semaphore)
+├── script/          # Deployment and benchmarking scripts
+│   ├── benchmark/   # Gas cost measurement tools
+│   └── DeployVotingSystem.s.sol
+├── src/
+│   ├── account_abstraction/ # ERC-4337 gasless voting
+│   ├── core/        # Central coordination
+│   ├── eligibility/ # Voter identity and whitelisting
+│   ├── interfaces/  # Cross-module definitions
+│   ├── poll_management/ # Metadata storage
+│   ├── result_nft/  # Post-poll rewards
+│   └── vote_storage/ # Tallying and verification
+└── test/
+    ├── unit/        # Isolated module tests
+    └── integration/ # End-to-end voting flows
 ```
-
-## Prerequisites
-
-- Foundry (forge, cast, anvil)
-  - Install: https://book.getfoundry.sh/getting-started/installation
-- A modern Node/PNPM setup is optional if integrating with a frontend.
 
 ## Quick Start
 
-```
-forge install OpenZeppelin/openzeppelin-contracts
-forge build
-forge test -vvv
-```
+### Prerequisites
 
-## Make Targets
+Install [Foundry](https://book.getfoundry.sh/getting-started/installation).
 
-- **make build**: `forge build`
-- **make test**: `forge test`
-- **make clean**: `forge clean`
-- **make start-anvil**: start Anvil in background (pid saved to `anvil.pid`)
-- **make stop-anvil**: stop background Anvil
-- **make deploy-anvil**: deploy the full system to local Anvil
-- **make deploy-sepolia**: deploy to Sepolia (requires env vars)
-- **make benchmark-anvil**: run benchmark script against local Anvil
+### Setup
 
-## Local Deployment (Anvil)
+```bash
+# Install dependencies
+forge install
 
-1. Start local chain
-   ```
-   make start-anvil
-   ```
-2. Deploy
-   ```
-   make deploy-anvil
-   ```
-   This runs `script/DeployVotingSystem.s.sol` and returns:
-   - VotingSystemEngine
-   - PollManager
-   - EligibilityModuleV0
-   - VoteStorageV0
-   - ResultNFT (with `MINTER_ROLE` granted to the engine)
+# Install Account Abstraction (ERC-4337) dependency
+forge install eth-infinitism/account-abstraction
 
-To view logs, check `anvil.log`. Stop with `make stop-anvil`.
+# Build contracts
+make build
 
-## Test Suite
-
-Run all tests:
-
-```
+# Run tests
 make test
 ```
 
-Highlights:
+## Local Development (Anvil)
 
-- Unit tests for each module in `test/unit/`
-- Full end-to-end flow in `test/integration/IntegrationTest.t.sol`
+1. **Start Anvil**: `make start-anvil`
+2. **Deploy System**: `make deploy-anvil`
 
-## Sepolia Deployment
-
-Set required environment variables before deploying:
-
-```
-export SEPOLIA_RPC_URL="https://sepolia.infura.io/v3/<PROJECT_ID>"  # or other provider
-export PRIVATE_KEY=0x<your_private_key>
-```
-
-Deploy:
-
-```
-make deploy-sepolia
-```
-
-`HelperConfig.s.sol` reads `PRIVATE_KEY` on Sepolia, or uses a default Anvil key locally.
-
-## Usage Walkthrough (Core Calls)
-
-Typical flow (addresses managed via your tooling or scripts):
-
-1. **Create poll**
-   - `VotingSystemEngine.createPoll(title, description, options)`
-   - Owner of the poll is `msg.sender` that called `createPoll`.
-2. **Start poll**
-   - `VotingSystemEngine.startPoll(pollId)` → state moves to `ACTIVE`.
-3. **Whitelist voters** (any time while ACTIVE)
-   - `VotingSystemEngine.whitelistUser(pollId, user)` or `whitelistUsers(pollId, users)`
-4. **Cast vote**
-   - `VotingSystemEngine.castVote(pollId, optionIdx)`
-   - Reverts if not whitelisted, invalid option, or double vote.
-5. **End poll**
-   - `VotingSystemEngine.endPoll(pollId)` → state moves to `ENDED`.
-6. **Mint result NFT**
-   - `VotingSystemEngine.mintResultNFT(pollId)`
-   - Allowed for poll owner or any whitelisted voter once ENDED.
-   - NFT metadata encodes final tallies per option.
-
-Refer to `IntegrationTest.t.sol` for a concrete example of the entire lifecycle.
+The deployment script (`DeployVotingSystem.s.sol`) initializes the engine and default modules, preparing the system for local use.
 
 ## Benchmarking
 
-Local benchmark against Anvil:
+We provide detailed benchmarking to compare traditional voting with ZK-enhanced schemes:
 
-```
+```bash
 make benchmark-anvil
 ```
 
-Configuration lives in `script/benchmark/BenchmarkConfig.json`. Results may be written under `script/benchmark/results/` (adjust scripts as needed).
+This runs complex scenarios (multiple polls, hundreds of voters) to verify gas scalability and performance. Configuration can be adjusted in `script/benchmark/BenchmarkConfig.json`.
 
-## Errors (selected)
+## Testing
 
-- Engine: `VotingSystem__NotOwner`, `VotingSystem__InvalidPollState`, `VotingSystem__NotAuthorizedToMint`, etc.
-- PollManager: `PollManager__EmptyOption`, `PollManager__InvalidState`
-- VoteStorageV0: `VoteStorageV0__AlreadyVoted`
-- EligibilityModuleV0: `EligibilityModuleV0__AlreadyWhitelisted`, `EligibilityModuleV0__NotWhitelisted`
+The test suite covers:
 
-## Notes and Assumptions
+- **Unit Tests**: Found in `test/unit/`, ensuring individual modules behave correctly.
+- **Integration Tests**: Found in `test/integration/`, simulating full lifecycles for both plain and ZK pools.
 
-- Current modules are simple, gas-efficient baselines intended for extension.
-- No reentrancy targets exist in core flows, but follow best practices when extending.
-- Ensure to grant `MINTER_ROLE` on `ResultNFT` to the engine when deploying custom setups.
+```bash
+# Run specific ZK integration test
+forge test --match-path test/integration/SemaphoreVoting.t.sol
+```
+
+## Deployment
+
+To deploy to a testnet like Sepolia:
+
+1. Configure `.env` with `SEPOLIA_RPC_URL` and `PRIVATE_KEY`.
+2. Run `make deploy-sepolia`.
+
+## Deployed Contracts
+
+The system is deployed on both **Sepolia** and **Base Sepolia**.
+
+### Sepolia (Chain ID 11155111)
+
+| Contract              | Address                                      |
+| --------------------- | -------------------------------------------- |
+| VotingSystemEngine    | `0xC566Be757A027446461C5C3aDefcB9594961bc13` |
+| PollManager           | `0x7Db51fC5F3E55Af8AEec3A96699064B9186b5D08` |
+| SemaphoreEligibility  | `0xb94B02ACbF4f6E511151b37506C8BbD19Dd8EbEf` |
+| SemaphoreVerifier     | `0x4DeC9E3784EcC1eE002001BfE91deEf4A48931f8` |
+| EligibilityV0         | `0xE51BDfE6E09b4e37fd87e95cFB2Dd7C94f88AE24` |
+| VoteStorageV0         | `0x22Bf9F62F0ec4a860adC292ace08E1825496A6aD` |
+| ZkElGamalVoteVector   | `0x2089B3993cca3353005aC1258c52ac0C79853592` |
+| ElgamalVoteVerifier   | `0xa3145aF3f4e20f171C4403f32f98687564Ac898d` |
+| ElgamalTallyVerifier  | `0x1F2B17622d03BD38d2F4bb697c4b579Ac7E23114` |
+| EntryPoint (ERC-4337) | `0xC4018B2907a623E0490FEf5FeA3207aF954f34fF` |
+| PollSponsorPaymaster  | `0x5BBC00f3F1FD7f1ab42Fed7b35f2DF2d25f7C76b` |
+| zkVoteSimpleAccount   | `0xCB06f2578A0EC8707a939dcc51cE381C84F444F2` |
+
+### Base Sepolia (Chain ID 84532)
+
+| Contract              | Address                                      |
+| --------------------- | -------------------------------------------- |
+| VotingSystemEngine    | `0x5Ae7F0999f63b8B0803699B3e31545F6562910E6` |
+| PollManager           | `0x9B90cB154fEaa5B51978148Fd6E6BfCABE83e671` |
+| SemaphoreEligibility  | `0xB3ac11759Bd47d3bd288791b1723f73d953E9819` |
+| SemaphoreVerifier     | `0x4DeC9E3784EcC1eE002001BfE91deEf4A48931f8` |
+| EligibilityV0         | `0xfd0081c27c020C9daAb6Fa574E3B57c33c44B00F` |
+| VoteStorageV0         | `0x4B62fDD46Cd5B26509F7b3143733CBfd7F6cE425` |
+| ZkElGamalVoteVector   | `0x3F0a65C0b0d2118A909F7e148f677Afab14351c5` |
+| ElgamalVoteVerifier   | `0x3BCC9f97a0873DfaCCcEA0AA2BBa14E7a06A6826` |
+| ElgamalTallyVerifier  | `0x5Cd278Cc71A52383c603BE447277F3944974fddb` |
+| EntryPoint (ERC-4337) | `0x7ADBE3a5f57244428e2C2cbaE58cAEa3197d1A03` |
+| PollSponsorPaymaster  | `0x16009E0EBd4AE0C5bBE0812C276944D33f5bc449` |
+| zkVoteSimpleAccount   | `0xE45B9CFb2C1B63244D91897718A1a6d5982eae32` |

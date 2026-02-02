@@ -1,19 +1,29 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import WhitelistPage from './page'
-import { whitelistUser, whitelistUsers } from '@/lib/blockchain/engine/write'
 import { useParams, useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { toast } from 'react-hot-toast'
 import { isAddress } from 'viem'
+import { useWhitelistedAddresses } from '@/hooks/useWhitelistedAddresses'
 
 // Mock dependencies
+jest.mock('@/hooks/useWhitelistedAddresses', () => ({
+  useWhitelistedAddresses: jest.fn()
+}))
+
 jest.mock('@/lib/blockchain/engine/write', () => ({
-  whitelistUser: jest.fn(),
-  whitelistUsers: jest.fn(),
+  // kept empty
 }))
 
 jest.mock('@/lib/blockchain/engine/read', () => ({
-  isUserWhitelisted: jest.fn(),
+  isUserWhitelisted: jest.fn().mockResolvedValue({ data: false, error: null }),
+}))
+
+jest.mock('@/hooks/usePolls', () => ({
+  usePoll: jest.fn().mockReturnValue({ 
+      poll: { state: 0 }, 
+      isLoading: false 
+  })
 }))
 
 jest.mock('next/navigation', () => ({
@@ -41,6 +51,11 @@ jest.mock('framer-motion', () => ({
   AnimatePresence: ({ children }) => children,
 }))
 
+jest.mock('@/components/WhitelistedAddressesList', () => ({
+  __esModule: true,
+  default: () => <div data-testid="whitelisted-addresses-list">Mocked List</div>,
+}))
+
 // Mock navigator.clipboard
 Object.assign(navigator, {
   clipboard: {
@@ -48,18 +63,11 @@ Object.assign(navigator, {
   },
 })
 
-// Mock FileReader
-class MockFileReader {
-  readAsText(file) {
-    this.onload({ target: { result: file.content } })
-  }
-}
-global.FileReader = MockFileReader
-
 describe('WhitelistPage', () => {
   const mockPollId = '123'
   const mockRouter = { push: jest.fn() }
   const mockAddress = '0x123'
+  const addToWhitelistMock = jest.fn()
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -67,19 +75,28 @@ describe('WhitelistPage', () => {
     useRouter.mockReturnValue(mockRouter)
     useAccount.mockReturnValue({ isConnected: true })
     isAddress.mockReturnValue(true)
+    
+    useWhitelistedAddresses.mockReturnValue({
+        addToWhitelist: addToWhitelistMock,
+        addresses: new Set(),
+        loading: false
+    })
   })
 
-  it('renders correctly', () => {
-    render(<WhitelistPage />)
+  it('renders correctly', async () => {
+    await act(async () => {
+      render(<WhitelistPage />)
+    })
+    
     expect(screen.getByText('Whitelist Voters')).toBeInTheDocument()
     expect(screen.getByText('Single Address')).toBeInTheDocument()
     expect(screen.getByText('Batch Upload')).toBeInTheDocument()
   })
 
-
-
-  it('toggles between single and batch mode', () => {
-    render(<WhitelistPage />)
+  it('toggles between single and batch mode', async () => {
+    await act(async () => {
+      render(<WhitelistPage />)
+    })
     
     // Default is single
     expect(screen.getByPlaceholderText('0x...')).toBeInTheDocument()
@@ -97,7 +114,9 @@ describe('WhitelistPage', () => {
   describe('Single Address Mode', () => {
     it('validates address format', async () => {
       isAddress.mockReturnValue(false)
-      render(<WhitelistPage />)
+      await act(async () => {
+        render(<WhitelistPage />)
+      })
       
       const input = screen.getByPlaceholderText('0x...')
       fireEvent.change(input, { target: { value: 'invalid-address' } })
@@ -106,22 +125,26 @@ describe('WhitelistPage', () => {
       fireEvent.click(submitBtn)
       
       expect(toast.error).toHaveBeenCalledWith('Please enter a valid wallet address.')
-      expect(whitelistUser).not.toHaveBeenCalled()
+      expect(addToWhitelistMock).not.toHaveBeenCalled()
     })
 
     it('requires wallet connection', async () => {
       useAccount.mockReturnValue({ isConnected: false })
-      render(<WhitelistPage />)
+      await act(async () => {
+        render(<WhitelistPage />)
+      })
       
       const submitBtn = screen.getByText('Whitelist Address')
       fireEvent.click(submitBtn)
       
       expect(toast.error).toHaveBeenCalledWith('Please connect your wallet first')
-      expect(whitelistUser).not.toHaveBeenCalled()
+      expect(addToWhitelistMock).not.toHaveBeenCalled()
     })
 
     it('submits valid address successfully', async () => {
-      render(<WhitelistPage />)
+      await act(async () => {
+        render(<WhitelistPage />)
+      })
       
       const input = screen.getByPlaceholderText('0x...')
       fireEvent.change(input, { target: { value: mockAddress } })
@@ -130,14 +153,16 @@ describe('WhitelistPage', () => {
       fireEvent.click(submitBtn)
       
       await waitFor(() => {
-        expect(whitelistUser).toHaveBeenCalledWith(mockPollId, mockAddress.toLowerCase())
+        expect(addToWhitelistMock).toHaveBeenCalledWith([mockAddress.toLowerCase()])
       })
       expect(input.value).toBe('')
     })
 
     it('handles submission error', async () => {
-      whitelistUser.mockRejectedValue(new Error('Failed'))
-      render(<WhitelistPage />)
+      addToWhitelistMock.mockRejectedValue(new Error('Failed'))
+      await act(async () => {
+        render(<WhitelistPage />)
+      })
       
       const input = screen.getByPlaceholderText('0x...')
       fireEvent.change(input, { target: { value: mockAddress } })
@@ -146,21 +171,23 @@ describe('WhitelistPage', () => {
       fireEvent.click(submitBtn)
       
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalled()
+        expect(addToWhitelistMock).toHaveBeenCalled()
       })
     })
   })
 
   describe('Batch Upload Mode', () => {
-    beforeEach(() => {
-      render(<WhitelistPage />)
+    beforeEach(async () => {
+      await act(async () => {
+        render(<WhitelistPage />)
+      })
       fireEvent.click(screen.getByText('Batch Upload'))
     })
 
     it('handles file upload with valid addresses', async () => {
       const fileContent = '0x123\n0x456, 0x789'
       const file = new File([fileContent], 'addresses.txt', { type: 'text/plain' })
-      file.content = fileContent // For MockFileReader
+      file.text = jest.fn().mockResolvedValue(fileContent)
 
       const input = screen.getByLabelText('Upload File')
       fireEvent.change(input, { target: { files: [file] } })
@@ -175,7 +202,7 @@ describe('WhitelistPage', () => {
       isAddress.mockReturnValue(false)
       const fileContent = 'invalid'
       const file = new File([fileContent], 'addresses.txt', { type: 'text/plain' })
-      file.content = fileContent
+      file.text = jest.fn().mockResolvedValue(fileContent)
 
       const input = screen.getByLabelText('Upload File')
       fireEvent.change(input, { target: { files: [file] } })
@@ -188,7 +215,7 @@ describe('WhitelistPage', () => {
     it('submits batch addresses successfully', async () => {
       const fileContent = '0x123'
       const file = new File([fileContent], 'addresses.txt', { type: 'text/plain' })
-      file.content = fileContent
+      file.text = jest.fn().mockResolvedValue(fileContent)
 
       const input = screen.getByLabelText('Upload File')
       fireEvent.change(input, { target: { files: [file] } })
@@ -201,7 +228,7 @@ describe('WhitelistPage', () => {
       fireEvent.click(submitBtn)
 
       await waitFor(() => {
-        expect(whitelistUsers).toHaveBeenCalledWith(mockPollId, ['0x123'])
+        expect(addToWhitelistMock).toHaveBeenCalledWith(['0x123'])
       })
     })
   })

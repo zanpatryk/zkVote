@@ -14,6 +14,8 @@ jest.mock('next/navigation', () => ({
 // Mock wagmi
 jest.mock('wagmi', () => ({
   useAccount: jest.fn(() => ({ isConnected: true, address: '0x123' })),
+  useChainId: jest.fn(() => 31337),
+  http: jest.fn(),
 }))
 
 // Mock read
@@ -28,9 +30,9 @@ describe('HomePage', () => {
   })
 
   it('renders both sections', () => {
-    read.getUserNFTs.mockResolvedValue([])
+    read.getUserNFTs.mockResolvedValue({ data: [], error: null })
     render(<HomePage />)
-    expect(screen.getByText('Your Voting Badges')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search by Poll ID...')).toBeInTheDocument()
   })
 
   it('fetches and displays badges on mount', async () => {
@@ -42,7 +44,7 @@ describe('HomePage', () => {
         attributes: []
       }
     ]
-    read.getUserNFTs.mockResolvedValue(mockNFTs)
+    read.getUserNFTs.mockResolvedValue({ data: mockNFTs, error: null })
 
     render(<HomePage />)
     
@@ -54,13 +56,12 @@ describe('HomePage', () => {
   })
 
   it('displays empty state when no badges found', async () => {
-    read.getUserNFTs.mockResolvedValue([])
+    read.getUserNFTs.mockResolvedValue({ data: [], error: null })
     
     render(<HomePage />)
     
     await waitFor(() => {
-      expect(screen.getByText('No Badges Yet')).toBeInTheDocument()
-      expect(screen.getByText(/Participate/)).toBeInTheDocument()
+      expect(screen.getByText(/Participate in completed polls/)).toBeInTheDocument()
     })
   })
 })

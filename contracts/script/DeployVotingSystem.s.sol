@@ -1,70 +1,171 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.28;
 
-import {Script} from "forge-std/Script.sol";
+import {Script, console} from "forge-std/Script.sol";
 
-// Adjust these import paths to match your repo layout
 import {VotingSystemEngine} from "../src/core/VotingSystemEngine.sol";
 import {PollManager} from "../src/poll_management/PollManager.sol";
+import {
+    SemaphoreEligibilityModule
+} from "../src/eligibility/SemaphoreEligibilityModule.sol";
 import {EligibilityModuleV0} from "../src/eligibility/EligibilityModuleV0.sol";
+import {
+    SemaphoreVerifier
+} from "@semaphore-protocol/contracts/base/SemaphoreVerifier.sol";
+import {
+    ISemaphoreVerifier
+} from "@semaphore-protocol/contracts/interfaces/ISemaphoreVerifier.sol";
 import {VoteStorageV0} from "../src/vote_storage/VoteStorageV0.sol";
-import {ResultNFT} from "../src/result_nft/ResultNFT.sol"; // Ensure path is correct
+import {ZKElGamalVoteVector} from "../src/vote_storage/ZKElGamalVoteVector.sol";
+import {ResultNFT} from "../src/result_nft/ResultNFT.sol";
+
+import {
+    ElGamalVoteVectorVerifier_N16
+} from "zkvote-lib/ElGamalVoteVectorVerifier_N16.sol";
+import {
+    ElGamalTallyDecryptVerifier_N16
+} from "zkvote-lib/ElGamalTallyDecryptVerifier_N16.sol";
+
+import {EntryPoint} from "@account-abstraction/contracts/core/EntryPoint.sol";
+import {
+    IEntryPoint
+} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
+import {
+    PollSponsorPaymaster
+} from "../src/account_abstraction/PollSponsorPaymaster.sol";
+import {
+    zkVoteSimpleAccount
+} from "../src/account_abstraction/zkVoteSimpleAccount.sol";
 
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeployVotingSystem is Script {
-    /**
-     * Deploy order:
-     * 1) deploy VSE (VotingSystemEngine)
-     * 2) deploy modules (PollManager, Eligibility, VoteStorage) linked to VSE
-     * 3) deploy ResultNFT
-     * 4) grant MINTER_ROLE on ResultNFT to VSE
-     * 5) initialize VSE with all module addresses
-     */
     function run()
         external
         returns (
             VotingSystemEngine vse,
             PollManager pollManager,
-            EligibilityModuleV0 eligibilityModule,
-            VoteStorageV0 voteStorage,
-            ResultNFT resultNFT, // Added to return tuple
-            HelperConfig helper
+            SemaphoreEligibilityModule semaphoreEligibility,
+            EligibilityModuleV0 eligibilityV0,
+            VoteStorageV0 voteStorageV0,
+            ZKElGamalVoteVector zkElGamalVoteVector,
+            ResultNFT resultNFT,
+            EntryPoint entryPoint,
+            PollSponsorPaymaster pollSponsorPaymaster,
+            zkVoteSimpleAccount simpleAccount,
+            HelperConfig helper,
+            ISemaphoreVerifier verifierContract
         )
     {
         helper = new HelperConfig();
-        (uint256 deployerKey) = helper.activeNetworkConfig();
-
-        // Derive the deployer's address from the private key
-        // We need this to set the initial admin of the NFT contract
+        (uint256 deployerKey, address semaphoreVerifierAddr) = helper
+            .activeNetworkConfig();
         address deployerAddress = vm.addr(deployerKey);
 
         vm.startBroadcast(deployerKey);
 
-        // 1) Deploy VSE
+        // 1) Deploy Enigne
         vse = new VotingSystemEngine();
 
         // 2) Deploy core modules
-        //    (Assumes module constructors accept `address votingEngine` param)
         pollManager = new PollManager(address(vse));
-        eligibilityModule = new EligibilityModuleV0(address(vse));
-        voteStorage = new VoteStorageV0(address(vse));
+
+        ISemaphoreVerifier verifier;
+        if (semaphoreVerifierAddr != address(0)) {
+            verifier = ISemaphoreVerifier(semaphoreVerifierAddr);
+        } else {
+            verifier = ISemaphoreVerifier(address(new SemaphoreVerifier()));
+        }
+        semaphoreEligibility = new SemaphoreEligibilityModule(
+            verifier,
+            address(vse)
+        );
+        eligibilityV0 = new EligibilityModuleV0(address(vse));
+
+        voteStorageV0 = new VoteStorageV0(address(vse));
+
+        // Deploy ElGamal Verifiers
+        ElGamalVoteVectorVerifier_N16 elgamalVoteVerifier = new ElGamalVoteVectorVerifier_N16();
+        ElGamalTallyDecryptVerifier_N16 elgamalTallyVerifier = new ElGamalTallyDecryptVerifier_N16();
+
+        zkElGamalVoteVector = new ZKElGamalVoteVector(address(pollManager));
 
         // 3) Deploy ResultNFT
-        //    Args: Name, Symbol, Admin (Deployer)
         resultNFT = new ResultNFT("VotingResult", "VRES", deployerAddress);
 
-        // 4) Setup Permissions
-        //    Grant MINTER_ROLE to the VSE contract so it can mint NFTs
-        bytes32 minterRole = resultNFT.MINTER_ROLE();
-        resultNFT.grantRole(minterRole, address(vse));
+        // 4) Permissions
+        resultNFT.grantRole(resultNFT.MINTER_ROLE(), address(vse));
+        zkElGamalVoteVector.transferOwnership(address(vse));
 
-        // 5) Initialize VSE
-        //    Now includes the ResultNFT address as the 4th argument
-        vse.initialize(address(pollManager), address(eligibilityModule), address(voteStorage), address(resultNFT));
+        // 5) Initialize VSE (Default Modules)
+        vse.initialize(
+            address(pollManager),
+            address(eligibilityV0),
+            address(voteStorageV0),
+            address(resultNFT)
+        );
+
+        // 6) Deploy Paymaster and SimpleAccount
+        entryPoint = new EntryPoint();
+        pollSponsorPaymaster = new PollSponsorPaymaster(
+            entryPoint,
+            address(pollManager),
+            address(vse)
+        );
+        simpleAccount = new zkVoteSimpleAccount(
+            deployerAddress,
+            IEntryPoint(address(entryPoint))
+        );
+
+        // Write simplified address.json for frontend
+        string memory json = string.concat(
+            "{\n",
+            '  "vse": "',
+            vm.toString(address(vse)),
+            '",\n',
+            '  "pollManager": "',
+            vm.toString(address(pollManager)),
+            '",\n',
+            '  "semaphoreEligibility": "',
+            vm.toString(address(semaphoreEligibility)),
+            '",\n',
+            '  "semaphoreVerifier": "',
+            vm.toString(address(verifier)),
+            '",\n',
+            '  "eligibilityV0": "',
+            vm.toString(address(eligibilityV0)),
+            '",\n',
+            '  "voteStorageV0": "',
+            vm.toString(address(voteStorageV0)),
+            '",\n',
+            '  "zkElGamalVoteVector": "',
+            vm.toString(address(zkElGamalVoteVector)),
+            '",\n',
+            '  "elgamalVoteVerifier": "',
+            vm.toString(address(elgamalVoteVerifier)),
+            '",\n',
+            '  "elgamalTallyVerifier": "',
+            vm.toString(address(elgamalTallyVerifier)),
+            '",\n',
+            '  "entryPoint": "',
+            vm.toString(address(entryPoint)),
+            '",\n',
+            '  "paymaster": "',
+            vm.toString(address(pollSponsorPaymaster)),
+            '",\n',
+            '  "simpleAccount": "',
+            vm.toString(address(simpleAccount)),
+            '"\n',
+            "}"
+        );
+        string memory chainId = vm.toString(block.chainid);
+        string memory path = string.concat(
+            "../frontend/src/lib/deployments/",
+            chainId,
+            ".json"
+        );
+        vm.writeFile(path, json);
 
         vm.stopBroadcast();
-
-        return (vse, pollManager, eligibilityModule, voteStorage, resultNFT, helper);
     }
 }

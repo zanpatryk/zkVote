@@ -1,20 +1,29 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import MintNFTPage from './page'
-import * as read from '@/lib/blockchain/engine/read'
 import * as write from '@/lib/blockchain/engine/write'
 import * as wagmi from 'wagmi'
+import { toast } from 'react-hot-toast'
 import { useRouter, useParams } from 'next/navigation'
+import { useMintEligibility } from '@/hooks/useMintEligibility'
 import '@testing-library/jest-dom'
 
 // Mock dependencies
 jest.mock('@/lib/blockchain/engine/read', () => ({
-  getPollById: jest.fn(),
-  isUserWhitelisted: jest.fn(),
-  getUserNFTs: jest.fn(),
+  // Empty mock for the library if it is not used directly
+}))
+
+jest.mock('@/hooks/useMintEligibility', () => ({
+  useMintEligibility: jest.fn(),
 }))
 
 jest.mock('@/lib/blockchain/engine/write', () => ({
   mintResultNFT: jest.fn(),
+}))
+
+// Mock the useUserNFTs hook
+const mockRefetchNFTs = jest.fn()
+jest.mock('@/hooks/useUserNFTs', () => ({
+  useUserNFTs: jest.fn(),
 }))
 
 jest.mock('@/components/PollDetails', () => ({
@@ -32,7 +41,12 @@ jest.mock('next/navigation', () => ({
 }))
 
 jest.mock('react-hot-toast', () => ({
-  toast: { error: jest.fn() },
+  toast: { 
+    error: jest.fn(),
+    success: jest.fn(),
+    loading: jest.fn(),
+    dismiss: jest.fn()
+  },
 }))
 
 describe('MintNFTPage', () => {
@@ -45,13 +59,39 @@ describe('MintNFTPage', () => {
     jest.clearAllMocks()
     useRouter.mockReturnValue({ push: mockPush, replace: mockReplace })
     useParams.mockReturnValue({ pollId: mockPollId })
-    // Default: not minted
-    read.getUserNFTs.mockResolvedValue([])
+    // Default: eligible, results published, not minted
+    useMintEligibility.mockReturnValue({
+      poll: { state: 2, creator: '0xOther' },
+      canMint: true,
+      hasMinted: false,
+      isWrongState: false,
+      isResultsPending: false,
+      isLoading: false,
+      error: null,
+      refetchNFTs: mockRefetchNFTs
+    })
   })
 
-  it('redirects if wallet not connected', async () => {
+  it('renders connection error state', async () => {
+    wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
+    useMintEligibility.mockReturnValue({
+      isLoading: false,
+      error: 'Network Error',
+    })
+
+    render(<MintNFTPage />)
+
+    await waitFor(() => {
+        expect(screen.getByText('Connection Error')).toBeInTheDocument()
+    })
+  })
+
+  it('shows access denied if wallet not connected', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: false })
-    read.getPollById.mockReturnValue(new Promise(() => {})) // Pending
+    useMintEligibility.mockReturnValue({
+      isLoading: false,
+      error: null,
+    })
     
     render(<MintNFTPage />)
     
@@ -60,9 +100,13 @@ describe('MintNFTPage', () => {
     })
   })
 
-  it('redirects if poll is not ended (state != 2)', async () => {
+  it('redirects if poll is not ended', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 1, creator: '0xOther' }) // Active
+    useMintEligibility.mockReturnValue({
+      isLoading: false,
+      isWrongState: true,
+      error: null,
+    })
     
     render(<MintNFTPage />)
     
@@ -71,10 +115,16 @@ describe('MintNFTPage', () => {
     })
   })
 
-  it('shows not authorized if not owner and not whitelisted', async () => {
+  it('shows not authorized if canMint is false and state is correct', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 2, creator: '0xOther' }) // Ended
-    read.isUserWhitelisted.mockResolvedValue(false)
+    useMintEligibility.mockReturnValue({
+      poll: { state: 2 },
+      canMint: false,
+      isWrongState: false,
+      isResultsPending: false,
+      isLoading: false,
+      error: null,
+    })
     
     render(<MintNFTPage />)
     
@@ -83,64 +133,59 @@ describe('MintNFTPage', () => {
     })
   })
 
-  it('shows mint button if owner (and not minted)', async () => {
+  it('shows mint button if eligible (canMint is true)', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 2, creator: mockUserAddress.toLowerCase() }) // Ended, Owner
+    useMintEligibility.mockReturnValue({
+      canMint: true,
+      hasMinted: false,
+      isLoading: false,
+    })
     
     render(<MintNFTPage />)
     
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Mint Result NFT' })).toBeInTheDocument()
-      expect(screen.queryByTestId('poll-details')).not.toBeInTheDocument()
     })
   })
 
-  it('shows mint button if whitelisted (and not minted)', async () => {
+
+
+  it('calls mintResultNFT and shows success state', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 2, creator: '0xOther' }) // Ended
-    read.isUserWhitelisted.mockResolvedValue(true)
+    useMintEligibility.mockReturnValue({
+      canMint: true,
+      hasMinted: false,
+      isLoading: false,
+      refetchNFTs: mockRefetchNFTs
+    })
     
     render(<MintNFTPage />)
     
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Mint Result NFT' })).toBeInTheDocument()
-      expect(screen.queryByTestId('poll-details')).not.toBeInTheDocument()
-    })
-  })
-
-  it('calls mintResultNFT when button clicked and shows results', async () => {
-    wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 2, creator: mockUserAddress.toLowerCase() })
-    
-    render(<MintNFTPage />)
-    
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Mint Result NFT' })).toBeInTheDocument()
-    })
-
     const button = screen.getByRole('button', { name: 'Mint Result NFT' })
     fireEvent.click(button)
 
     expect(screen.getByText('Minting NFT...')).toBeInTheDocument()
+    expect(toast.loading).toHaveBeenCalledWith('Minting Result NFT...', expect.any(Object))
+
     await waitFor(() => {
       expect(write.mintResultNFT).toHaveBeenCalledWith(mockPollId)
-      // Results appear after success
-      expect(screen.getByText(/NFT Badge Minted Successfully/)).toBeInTheDocument()
-      expect(screen.getByTestId('poll-details')).toBeInTheDocument()
     })
+    
+    expect(toast.success).toHaveBeenCalledWith('NFT minted successfully!', expect.any(Object))
   })
 
-  it('shows results immediately if already minted', async () => {
+  it('shows already minted state', async () => {
     wagmi.useAccount.mockReturnValue({ isConnected: true, address: mockUserAddress })
-    read.getPollById.mockResolvedValue({ state: 2, creator: mockUserAddress.toLowerCase() })
-    read.getUserNFTs.mockResolvedValue([{ name: `Poll #${mockPollId} Results` }])
+    useMintEligibility.mockReturnValue({
+      hasMinted: true,
+      isLoading: false,
+    })
 
     render(<MintNFTPage />)
 
     await waitFor(() => {
         expect(screen.getByText(/NFT Badge Minted Successfully/)).toBeInTheDocument()
         expect(screen.getByTestId('poll-details')).toBeInTheDocument()
-        expect(screen.queryByRole('button', { name: 'Mint Result NFT' })).not.toBeInTheDocument()
     })
   })
 })

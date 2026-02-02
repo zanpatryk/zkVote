@@ -226,20 +226,6 @@
   },
   {
     "type": "function",
-    "name": "testCreatePollAndStart",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "testDoubleVotingRevert",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "testInvalidOptionsRevert",
     "inputs": [],
     "outputs": [],
@@ -254,21 +240,7 @@
   },
   {
     "type": "function",
-    "name": "testNonWhitelistedCannotVote",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "testRevertMintResultNFT",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "testWhitelistAndVote",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"

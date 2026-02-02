@@ -1,0 +1,10 @@
+# Dependencies
+node_modules
+
+# Build outputs
+build/
+.temp/
+test/output/
+
+# Misc
+.DS_Store

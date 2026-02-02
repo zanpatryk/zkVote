@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import {IPollManager} from "../interfaces/IPollManager.sol";
 import {IEligibilityModule} from "../interfaces/IEligibilityModule.sol";
+import {ISemaphoreEligibilityModule} from "../interfaces/ISemaphoreEligibilityModule.sol";
 import {IVoteStorage} from "../interfaces/IVoteStorage.sol";
+import {IZKElGamalVoteVector} from "../interfaces/IZKElGamalVoteVector.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {ResultNFT} from "../result_nft/ResultNFT.sol";
+import "zkvote-lib/ZKVoteLib.sol";
 
 /* Errors */
 error VotingSystem__NotOwner();
@@ -23,21 +26,25 @@ error VotingSystem__NotAuthorizedToMint();
 error VotingSystem__NFTContractNotSet();
 
 /**
- * @title Voting System
- * @dev This contract is the main contract for the voting system.
- * It is the entry point for all voting related operations.
+ * @title Voting System Engine
+ * @dev Main entry point for all voting operations.
+ * Supports plain voting, ZK encrypted voting and anonymous voting.
  */
 contract VotingSystemEngine {
     /* State variables */
     address public immutable i_owner;
     IPollManager public s_pollManager;
-    IEligibilityModule public s_eligibilityModule;
-    IVoteStorage public s_voteStorage;
+    IVoteStorage public s_defaultVoteStorage;
+    IEligibilityModule public s_defaultEligibility;
+    mapping(uint256 => IVoteStorage) public s_pollVoteStorage;
+    mapping(uint256 => IEligibilityModule) public s_pollEligibility;
     address public s_resultNFT;
     bool public s_initializationFlag;
 
     /* Events */
-    /* ... */
+
+    event EncryptedVoteCast(uint256 indexed pollId, address indexed voter, uint256 voteId);
+    event EncryptedResultsPublished(uint256 indexed pollId);
 
     /* Modifiers */
     modifier ownerOnly() {
@@ -67,27 +74,36 @@ contract VotingSystemEngine {
         i_owner = msg.sender;
     }
 
-    function initialize(address pollManager, address eligibilityModule, address voteStorage, address resultNFTAddress)
-        external
-        ownerOnly
-    {
+    function initialize(
+        address pollManager,
+        address defaultEligibilityModule,
+        address defaultVoteStorage,
+        address resultNFTAddress
+    ) external ownerOnly {
         if (s_initializationFlag) {
             revert VotingSystem__AlreadyInitialized();
         }
-        if (pollManager == address(0) || eligibilityModule == address(0) || voteStorage == address(0)) {
+        if (pollManager == address(0) || defaultVoteStorage == address(0)) {
             revert VotingSystem__InvalidAddress();
         }
         s_pollManager = IPollManager(pollManager);
-        s_eligibilityModule = IEligibilityModule(eligibilityModule);
-        s_voteStorage = IVoteStorage(voteStorage);
+        s_defaultVoteStorage = IVoteStorage(defaultVoteStorage);
+        if (defaultEligibilityModule != address(0)) {
+            s_defaultEligibility = IEligibilityModule(defaultEligibilityModule);
+        }
         s_resultNFT = resultNFTAddress;
         s_initializationFlag = true;
     }
 
-    function createPoll(string calldata title, string calldata description, string[] calldata options)
-        external
-        returns (uint256 pollId)
-    {
+    function createPoll(
+        string calldata title,
+        string calldata description,
+        string[] calldata options,
+        bytes calldata voteStorageConfig,
+        bytes calldata eligibilityConfig,
+        address eligibilityModule,
+        address voteStorage
+    ) external returns (uint256 pollId) {
         if (bytes(title).length == 0) {
             revert VotingSystem__EmptyTitle();
         }
@@ -98,14 +114,29 @@ contract VotingSystemEngine {
 
         pollId = s_pollManager.createPoll(title, description, options, msg.sender);
 
+        if (voteStorage == address(0)) {
+            s_pollVoteStorage[pollId] = s_defaultVoteStorage;
+        } else {
+            s_pollVoteStorage[pollId] = IVoteStorage(voteStorage);
+        }
+
+        if (eligibilityModule == address(0)) {
+            s_pollEligibility[pollId] = s_defaultEligibility;
+        } else {
+            s_pollEligibility[pollId] = IEligibilityModule(eligibilityModule);
+        }
+
+        s_pollVoteStorage[pollId].initPoll(pollId, voteStorageConfig);
+        s_pollEligibility[pollId].initPoll(pollId, eligibilityConfig);
+
         return pollId;
     }
 
+    // ============ Whitelist Management ============
+
     function whitelistUser(uint256 pollId, address user) external checkPollValidity(pollId) onlyWhenInState(pollId, 0) {
-        if (msg.sender != s_pollManager.getPollOwner(pollId)) {
-            revert VotingSystem__NotPollOwner();
-        }
-        s_eligibilityModule.addWhitelisted(pollId, user);
+        if (msg.sender != s_pollManager.getPollOwner(pollId)) revert VotingSystem__NotPollOwner();
+        s_pollEligibility[pollId].addWhitelisted(pollId, user);
     }
 
     function whitelistUsers(uint256 pollId, address[] calldata users)
@@ -116,7 +147,7 @@ contract VotingSystemEngine {
         if (msg.sender != s_pollManager.getPollOwner(pollId)) {
             revert VotingSystem__NotPollOwner();
         }
-        s_eligibilityModule.addWhitelistedBatch(pollId, users);
+        s_pollEligibility[pollId].addWhitelistedBatch(pollId, users);
     }
 
     function removeWhitelisted(uint256 pollId, address user)
@@ -127,12 +158,14 @@ contract VotingSystemEngine {
         if (msg.sender != s_pollManager.getPollOwner(pollId)) {
             revert VotingSystem__NotPollOwner();
         }
-        s_eligibilityModule.removeWhitelisted(pollId, user);
+        s_pollEligibility[pollId].removeWhitelisted(pollId, user);
     }
 
     function isWhitelisted(uint256 pollId, address user) external view checkPollValidity(pollId) returns (bool) {
-        return s_eligibilityModule.isWhitelisted(pollId, user);
+        return s_pollEligibility[pollId].isWhitelisted(pollId, user);
     }
+
+    // ============ Plain Voting ============
 
     function castVote(uint256 pollId, uint256 optionIdx)
         external
@@ -141,7 +174,7 @@ contract VotingSystemEngine {
         returns (uint256 voteId)
     {
         address voter = msg.sender;
-        if (!s_eligibilityModule.isWhitelisted(pollId, voter)) {
+        if (!s_pollEligibility[pollId].isEligibleToVote(pollId, abi.encode(voter))) {
             revert VotingSystem__AddressNotWhitelisted(voter);
         }
 
@@ -150,44 +183,153 @@ contract VotingSystemEngine {
             revert VotingSystem__InvalidOption();
         }
 
-        voteId = s_voteStorage.castVote(pollId, voter, abi.encode(optionIdx));
+        voteId = s_pollVoteStorage[pollId].castVote(pollId, voter, abi.encode(optionIdx));
     }
 
+    /**
+     * @notice Casts a plain vote on behalf of an EOA voter, allowing
+     *         third-party sponsors (e.g. smart accounts or relayers)
+     *         to pay gas while preserving EOA-based eligibility and
+     *         storage accounting.
+     *
+     * Requirements:
+     * - `voter` must be eligible to vote for the given poll (whitelisted).
+     * - `optionIdx` must be within bounds of available options.
+     *
+     * Security:
+     * - `msg.sender` is not used for eligibility; any relayer can call
+     *   this as long as `voter` is eligible. This is intentional for
+     *   the Account Abstraction + paymaster use case, where a bundler
+     *   sponsors gas for voters.
+     */
+    function castSponsoredVote(uint256 pollId, uint256 optionIdx, address voter)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 1)
+        returns (uint256 voteId)
+    {
+        if (!s_pollEligibility[pollId].isEligibleToVote(pollId, abi.encode(voter))) {
+            revert VotingSystem__AddressNotWhitelisted(voter);
+        }
+
+        uint256 optionCount = s_pollManager.getPollOptionCount(pollId);
+        if (optionIdx >= optionCount) {
+            revert VotingSystem__InvalidOption();
+        }
+
+        voteId = s_pollVoteStorage[pollId].castVote(pollId, voter, abi.encode(optionIdx));
+    }
+
+    // ============ ZK Voting ============
+
+    function registerVoter(uint256 pollId, uint256 identityCommitment)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 0)
+    {
+        if (!s_pollEligibility[pollId].isWhitelisted(pollId, msg.sender)) {
+            revert VotingSystem__AddressNotWhitelisted(msg.sender);
+        }
+        ISemaphoreEligibilityModule(address(s_pollEligibility[pollId]))
+            .registerIdentity(pollId, identityCommitment, msg.sender);
+    }
+
+    function castVoteWithProof(uint256 pollId, uint256 optionIdx, uint256 nullifierHash, uint256[8] calldata proof)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 1)
+        returns (uint256 voteId)
+    {
+        uint256 optionCount = s_pollManager.getPollOptionCount(pollId);
+        if (optionIdx >= optionCount) {
+            revert VotingSystem__InvalidOption();
+        }
+
+        ISemaphoreEligibilityModule(address(s_pollEligibility[pollId]))
+            .verifyVote(pollId, optionIdx, nullifierHash, proof);
+
+        address voter = address(uint160(nullifierHash));
+        voteId = s_pollVoteStorage[pollId].castVote(pollId, voter, abi.encode(optionIdx));
+    }
+
+    function castEncryptedVoteWithProof(
+        uint256 pollId,
+        uint256 nullifierHash,
+        uint256[8] calldata semaphoreProof,
+        uint256[64] calldata encVote,
+        ZKVoteLib.Proof calldata elgamalProof
+    ) external checkPollValidity(pollId) onlyWhenInState(pollId, 1) returns (uint256 voteId) {
+        // Since vote is encrypted, we use optionIdx=0 as placeholder
+        ISemaphoreEligibilityModule(address(s_pollEligibility[pollId]))
+            .verifyVote(pollId, 0, nullifierHash, semaphoreProof);
+
+        address voter = address(uint160(nullifierHash));
+        voteId = s_pollVoteStorage[pollId].castVote(pollId, voter, abi.encode(encVote, elgamalProof));
+
+        emit EncryptedVoteCast(pollId, voter, voteId);
+    }
+
+    function castEncryptedVote(uint256 pollId, uint256[64] calldata encVote, ZKVoteLib.Proof calldata proof)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 1)
+        returns (uint256 voteId)
+    {
+        address voter = msg.sender;
+        if (!s_pollEligibility[pollId].isWhitelisted(pollId, voter)) {
+            revert VotingSystem__AddressNotWhitelisted(voter);
+        }
+        voteId = s_pollVoteStorage[pollId].castVote(pollId, voter, abi.encode(encVote, proof));
+        emit EncryptedVoteCast(pollId, voter, voteId);
+    }
+
+    function publishEncryptedResults(uint256 pollId, uint256[16] calldata tally, ZKVoteLib.Proof calldata tallyProof)
+        external
+        checkPollValidity(pollId)
+        onlyWhenInState(pollId, 2)
+    {
+        if (msg.sender != s_pollManager.getPollOwner(pollId)) revert VotingSystem__NotPollOwner();
+        IZKElGamalVoteVector(address(s_pollVoteStorage[pollId])).publishResults(pollId, tally, tallyProof);
+        emit EncryptedResultsPublished(pollId);
+    }
+
+    function getAggregatedCiphertexts(uint256 pollId)
+        external
+        view
+        returns (uint256[2][16] memory c1, uint256[2][16] memory c2)
+    {
+        return IZKElGamalVoteVector(address(s_pollVoteStorage[pollId])).getAggregatedCiphertexts(pollId);
+    }
+
+    // ============ Poll State Management ============
+
     function startPoll(uint256 pollId) external checkPollValidity(pollId) onlyWhenInState(pollId, 0) {
-        address owner = s_pollManager.getPollOwner(pollId);
-        if (msg.sender != owner) revert VotingSystem__NotPollOwner();
-        s_pollManager.setState(pollId, 1); // Set state to ACTIVE
+        if (msg.sender != s_pollManager.getPollOwner(pollId)) revert VotingSystem__NotPollOwner();
+        s_pollManager.setState(pollId, 1);
     }
 
     function endPoll(uint256 pollId) external checkPollValidity(pollId) onlyWhenInState(pollId, 1) {
-        address owner = s_pollManager.getPollOwner(pollId);
-        if (msg.sender != owner) revert VotingSystem__NotPollOwner();
-        s_pollManager.setState(pollId, 2); // Set state to ENDED
+        if (msg.sender != s_pollManager.getPollOwner(pollId)) revert VotingSystem__NotPollOwner();
+        s_pollManager.setState(pollId, 2);
     }
+
+    // ============ NFT ============
 
     function mintResultNFT(uint256 pollId) external checkPollValidity(pollId) onlyWhenInState(pollId, 2) {
         if (s_resultNFT == address(0)) revert VotingSystem__NFTContractNotSet();
 
         address pollOwner = s_pollManager.getPollOwner(pollId);
-        bool isOnWhitelist = s_eligibilityModule.isWhitelisted(pollId, msg.sender);
-
-        if (msg.sender != pollOwner && !isOnWhitelist) {
+        if (msg.sender != pollOwner && !s_pollEligibility[pollId].isWhitelisted(pollId, msg.sender)) {
             revert VotingSystem__NotAuthorizedToMint();
         }
 
         string memory title = s_pollManager.getPollTitle(pollId);
         string[] memory options = s_pollManager.getPollOptions(pollId);
+        uint256[] memory results = s_pollVoteStorage[pollId].getResults(pollId, options.length);
 
-        uint256[] memory results = s_voteStorage.getResults(pollId, options.length);
-
-        string memory tokenURI = _constructTokenURI(pollId, title, options, results);
-
-        ResultNFT(s_resultNFT).mintResult(msg.sender, tokenURI);
+        ResultNFT(s_resultNFT).mintResult(msg.sender, _constructTokenURI(pollId, title, options, results));
     }
 
-    /**
-     * @dev Internal helper to build the base64 encoded JSON
-     */
     function _constructTokenURI(uint256 pollId, string memory title, string[] memory options, uint256[] memory results)
         internal
         pure
@@ -206,14 +348,9 @@ contract VotingSystemEngine {
         for (uint256 i = 0; i < options.length; i++) {
             json =
                 string.concat(json, '{"trait_type": "', options[i], '", "value": ', Strings.toString(results[i]), "}");
-
-            if (i < options.length - 1) {
-                json = string.concat(json, ",");
-            }
+            if (i < options.length - 1) json = string.concat(json, ",");
         }
 
-        json = string.concat(json, "]}");
-
-        return string.concat("data:application/json;base64,", Base64.encode(bytes(json)));
+        return string.concat("data:application/json;base64,", Base64.encode(bytes(string.concat(json, "]}"))));
     }
 }

@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import PollCard, { formatDuration } from './PollCard.jsx'
+import PollCard from './PollCard.jsx'
+import { usePollRegistry } from '@/hooks/usePollRegistry'
 import '@testing-library/jest-dom'
 
 // Mock react-hot-toast
@@ -9,10 +10,42 @@ jest.mock('react-hot-toast', () => ({
   },
 }))
 
+// Mock wagmi
+jest.mock('wagmi', () => ({
+  useAccount: jest.fn(() => ({ address: '0x123' })),
+}))
+
+// Mock usePollRegistry
+jest.mock('@/hooks/usePollRegistry', () => ({
+  usePollRegistry: jest.fn(() => ({
+    isZK: false,
+    isRegistered: false,
+    merkleTreeDepth: 0,
+    eligibilityModuleAddress: '0x000'
+  }))
+}))
+
+// Mock useSemaphore
+jest.mock('@/hooks/useSemaphore', () => ({
+  useSemaphore: jest.fn(() => ({
+    createIdentity: jest.fn(),
+    register: jest.fn(),
+    isLoadingIdentity: false,
+    isRegistering: false,
+  })),
+}))
+
+// Mock useUserNFTs
+jest.mock('@/hooks/useUserNFTs', () => ({
+  useUserNFTs: jest.fn(() => ({ nfts: [] })),
+}))
+
 // Mock viem
 jest.mock('viem', () => ({
-  hexToString: jest.fn((hex) => hex), // Simple mock, or implement if needed
+  hexToString: jest.fn((hex) => hex),
 }))
+
+import { useUserNFTs } from '@/hooks/useUserNFTs'
 
 describe('PollCard', () => {
   const defaultProps = {
@@ -46,10 +79,19 @@ describe('PollCard', () => {
     expect(screen.getByText('Ended')).toBeInTheDocument()
   })
 
-  it('shows Mint Result NFT link for Ended poll (state 2)', () => {
+  it('shows Mint Result NFT link for Ended poll (state 2) when not minted', () => {
+    useUserNFTs.mockReturnValue({ nfts: [] })
     render(<PollCard {...defaultProps} state={2} />)
     expect(screen.getByText('Mint Result NFT')).toBeInTheDocument()
-    expect(screen.getByText('View Details')).toBeInTheDocument()
+  })
+
+  it('shows NFT Minted badge when user has minted', () => {
+    useUserNFTs.mockReturnValue({ 
+      nfts: [{ name: `Poll #${defaultProps.pollId} Results` }] 
+    })
+    render(<PollCard {...defaultProps} state={2} />)
+    expect(screen.getByText('NFT Minted')).toBeInTheDocument()
+    expect(screen.queryByText('Mint Result NFT')).not.toBeInTheDocument()
   })
 
   it('shows owner badge when isOwner is true', () => {
@@ -60,6 +102,17 @@ describe('PollCard', () => {
   it('does not show owner badge when isOwner is false', () => {
     render(<PollCard {...defaultProps} isOwner={false} />)
     expect(screen.queryByText('Owner')).not.toBeInTheDocument()
+  })
+
+  it('shows registered badge when user is registered', () => {
+    usePollRegistry.mockReturnValue({
+      isZK: true,
+      isRegistered: true,
+      merkleTreeDepth: 20,
+      eligibilityModuleAddress: '0x123'
+    })
+    render(<PollCard {...defaultProps} />)
+    expect(screen.getByText('Registered')).toBeInTheDocument()
   })
 
   it('shows Manage Poll link for owner', () => {
@@ -74,10 +127,27 @@ describe('PollCard', () => {
     expect(viewLink).toHaveAttribute('href', `/poll/${defaultProps.pollId}`)
   })
 
-  it('shows vote button when showVoteButton is true and state is Active (1)', () => {
+  it('shows vote button when showVoteButton is true and state is Active (1) and user is registered', () => {
+    usePollRegistry.mockReturnValue({
+      isZK: true,
+      isRegistered: true,
+      merkleTreeDepth: 20,
+      eligibilityModuleAddress: '0x123'
+    })
     // Must be Active (1) to show vote button
     render(<PollCard {...defaultProps} state={1} showVoteButton={true} />)
     expect(screen.getByText('Vote Now')).toBeInTheDocument()
+  })
+
+  it('does not show vote button when active but user is NOT registered', () => {
+    usePollRegistry.mockReturnValue({
+      isZK: true,
+      isRegistered: false,
+      merkleTreeDepth: 20,
+      eligibilityModuleAddress: '0x123'
+    })
+    render(<PollCard {...defaultProps} state={1} showVoteButton={true} />)
+    expect(screen.queryByText('Vote Now')).not.toBeInTheDocument()
   })
 
   it('does not show vote button when state is Created (0) even if showVoteButton is true', () => {
@@ -102,25 +172,5 @@ describe('PollCard', () => {
     expect(writeTextMock).toHaveBeenCalledWith('123456789')
   })
 
-  describe('formatDuration', () => {
-    it('formats 0 or negative ms as 0m', () => {
-      expect(formatDuration(0)).toBe('0m')
-      expect(formatDuration(-100)).toBe('0m')
-    })
 
-    it('formats minutes correctly', () => {
-      expect(formatDuration(60 * 1000)).toBe('1m')
-      expect(formatDuration(5 * 60 * 1000)).toBe('5m')
-    })
-
-    it('formats hours correctly', () => {
-      expect(formatDuration(60 * 60 * 1000)).toBe('1h')
-      expect(formatDuration(2 * 60 * 60 * 1000 + 30 * 60 * 1000)).toBe('2h 30m')
-    })
-
-    it('formats days correctly', () => {
-      expect(formatDuration(24 * 60 * 60 * 1000)).toBe('1d')
-      expect(formatDuration(2 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000)).toBe('2d 5h')
-    })
-  })
 })

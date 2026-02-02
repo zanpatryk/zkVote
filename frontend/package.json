@@ -9,7 +9,10 @@
         "test:ui": "jest",
         "test:ui:watch": "jest --watch",
         "test:ui:coverage": "jest --coverage",
-        "test:ui:integration": "jest tests/navigation.test.jsx tests/poll-creation.test.jsx tests/voting.test.jsx"
+        "test:ui:integration": "jest tests/",
+        "download:circuits": "bun scripts/download-circuits.mjs",
+        "copy:circuits": "bun scripts/copy-circuits.mjs",
+        "setup:circuits": "bun run download:circuits && bun run copy:circuits"
     },
     "dependencies": {
         "@base-org/account": "^2.5.0",
@@ -17,6 +20,11 @@
         "@metamask/sdk": "^0.34.0",
         "@rainbow-me/rainbowkit": "^2.2.9",
         "@safe-global/safe-apps-provider": "^0.18.6",
+        "@semaphore-protocol/core": "^4.14.0",
+        "@semaphore-protocol/data": "^4.14.0",
+        "@semaphore-protocol/group": "^4.14.0",
+        "@semaphore-protocol/identity": "^4.14.0",
+        "@semaphore-protocol/proof": "^4.14.0",
         "@tanstack/react-query": "^5.90.10",
         "@wagmi/connectors": "^7.0.1",
         "@wagmi/core": "^3.0.0",
@@ -27,9 +35,11 @@
         "react-dom": "^19.2.3",
         "react-hot-toast": "^2.6.0",
         "viem": "^2.40.2",
-        "wagmi": "^3.0.1"
+        "wagmi": "^3.0.1",
+        "@zkvote/lib": "workspace:*"
     },
     "devDependencies": {
+        "@happy-dom/global-registrator": "^20.3.1",
         "@tailwindcss/postcss": "^4.1.17",
         "@testing-library/dom": "^10.4.1",
         "@testing-library/jest-dom": "^6.9.1",
@@ -37,6 +47,7 @@
         "@testing-library/user-event": "^14.6.1",
         "@wagmi/cli": "^2.8.0",
         "autoprefixer": "^10.4.22",
+        "happy-dom": "^20.3.1",
         "jest": "^30.2.0",
         "jest-environment-jsdom": "^30.2.0",
         "postcss": "^8.5.6",

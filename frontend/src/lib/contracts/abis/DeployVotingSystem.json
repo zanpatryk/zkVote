@@ -28,14 +28,24 @@
         "internalType": "contract PollManager"
       },
       {
-        "name": "eligibilityModule",
+        "name": "semaphoreEligibility",
+        "type": "address",
+        "internalType": "contract SemaphoreEligibilityModule"
+      },
+      {
+        "name": "eligibilityV0",
         "type": "address",
         "internalType": "contract EligibilityModuleV0"
       },
       {
-        "name": "voteStorage",
+        "name": "voteStorageV0",
         "type": "address",
         "internalType": "contract VoteStorageV0"
+      },
+      {
+        "name": "zkElGamalVoteVector",
+        "type": "address",
+        "internalType": "contract ZKElGamalVoteVector"
       },
       {
         "name": "resultNFT",
@@ -43,9 +53,29 @@
         "internalType": "contract ResultNFT"
       },
       {
+        "name": "entryPoint",
+        "type": "address",
+        "internalType": "contract EntryPoint"
+      },
+      {
+        "name": "pollSponsorPaymaster",
+        "type": "address",
+        "internalType": "contract PollSponsorPaymaster"
+      },
+      {
+        "name": "simpleAccount",
+        "type": "address",
+        "internalType": "contract zkVoteSimpleAccount"
+      },
+      {
         "name": "helper",
         "type": "address",
         "internalType": "contract HelperConfig"
+      },
+      {
+        "name": "verifierContract",
+        "type": "address",
+        "internalType": "contract ISemaphoreVerifier"
       }
     ],
     "stateMutability": "nonpayable"

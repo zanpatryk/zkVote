@@ -1,0 +1,18 @@
+[
+  {
+    "type": "error",
+    "name": "Semaphore__VKPtBytesMaxDepthInvariantViolated",
+    "inputs": [
+      {
+        "name": "actual",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "expected",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  }
+]

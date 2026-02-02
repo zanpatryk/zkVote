@@ -1,25 +1,16 @@
 'use client'
 
-import { WagmiProvider } from 'wagmi'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useState, useEffect, useRef } from 'react'
+import { WagmiProvider, useChainId } from 'wagmi'
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
+import { IdentityTransferProvider } from '@/lib/providers/IdentityTransferContext'
 import { wagmiConfig } from '@/lib/wagmi/config'
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: (failureCount, error) => {
-        if (error.status === '403') return false
-        return failureCount < 3
-      },
-    },
-  },
-}) 
 
 // Custom RainbowKit theme - Premium Monochrome
 const customTheme = {
   fonts: {
-    body: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+    body: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
   radii: {
     connectButton: '8px',
@@ -63,13 +54,54 @@ const customTheme = {
   },
 }
 
+// Invalidates all queries when chain changes to prevent stale cross-chain data
+function ChainChangeHandler({ children }) {
+  const chainId = useChainId()
+  const queryClient = useQueryClient()
+  const prevChainIdRef = useRef(chainId)
+
+  useEffect(() => {
+    if (prevChainIdRef.current !== chainId) {
+      // Chain changed - invalidate all queries to refetch with new chain data
+      queryClient.invalidateQueries()
+      prevChainIdRef.current = chainId
+    }
+  }, [chainId, queryClient])
+
+  return children
+}
+
 export default function Providers({ children }) {
+  const [mounted, setMounted] = useState(false)
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: (failureCount, error) => {
+          if (error.status === '403') return false
+          return failureCount < 3
+        },
+      },
+    },
+  }))
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
+
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={customTheme}>
-          {children}
-        </RainbowKitProvider>
+        <ChainChangeHandler>
+          <RainbowKitProvider theme={customTheme}>
+            <IdentityTransferProvider>
+              {children}
+            </IdentityTransferProvider>
+          </RainbowKitProvider>
+        </ChainChangeHandler>
       </QueryClientProvider>
     </WagmiProvider>
   )

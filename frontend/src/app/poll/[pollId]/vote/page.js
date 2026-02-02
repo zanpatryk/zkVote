@@ -1,94 +1,37 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { useAccount } from 'wagmi'
-import { getPollById, hasVoted, getVoteTransaction } from '@/lib/blockchain/engine/read'
-import { castVote } from '@/lib/blockchain/engine/write'
-import { toast } from 'react-hot-toast'
+import { useState } from 'react'
+import { useParams } from 'next/navigation'
+import { useVoteFlow } from '@/hooks/useVoteFlow'
 import { motion, AnimatePresence } from 'framer-motion'
-
 import VoteBallot from '@/components/VoteBallot'
+import BackButton from '@/components/BackButton'
+import ConnectionError from '@/components/ConnectionError'
 
 export default function VoteOnPoll() {
   const { pollId } = useParams()
-  const router = useRouter()
-  const { address, isConnected } = useAccount()
+  
+  const {
+    poll,
+    alreadyVoted,
+    voteTxHash,
+    loadedIdentity,
+    isLoading,
+    isSubmitting,
+    currentStep,
+    steps,
+    error,
+    handleVoteSubmit
+  } = useVoteFlow(pollId)
 
-  const [poll, setPoll] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [selectedIndex, setSelectedIndex] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [alreadyVoted, setAlreadyVoted] = useState(false)
-  const [voteTxHash, setVoteTxHash] = useState(null)
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadData() {
-      try {
-        const pollData = await getPollById(pollId)
-        if (!cancelled) setPoll(pollData)
-
-        if (isConnected && address) {
-          const voted = await hasVoted(pollId, address)
-          if (!cancelled) {
-            setAlreadyVoted(voted)
-            if (voted) {
-              const tx = await getVoteTransaction(pollId, address)
-              if (!cancelled) setVoteTxHash(tx)
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load poll data:', error)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    loadData()
-
-    return () => {
-      cancelled = true
-    }
-  }, [pollId, isConnected, address])
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-
-    if (!isConnected) {
-      toast.error('Please connect your wallet first')
-      return
-    }
-
-    if (!poll) return
-
-    if (alreadyVoted) {
-      toast.error('You have already voted in this poll')
-      return
-    }
-
-    if (selectedIndex === null) {
-      toast.error('Please select an option to vote for')
-      return
-    }
-
-    setSubmitting(true)
-    try {
-      const { voteId, txHash } = await castVote(pollId, { optionIndex: selectedIndex })
-      router.push(`/poll/${pollId}/vote/receipt/${voteId}?txHash=${txHash}`)
-    } catch {
-      // errors already toasted in castVote
-    } finally {
-      setSubmitting(false)
-    }
-  }
+  const showBallot = alreadyVoted || (poll && poll.isZK ? loadedIdentity : true) || (poll && poll.state !== 1)
 
   return (
     <div className="pt-12 md:pt-24 max-w-2xl mx-auto px-6 pb-16 md:pb-32 font-mono">
       <AnimatePresence mode="wait">
-        {loading ? (
+        {isLoading ? (
           <motion.p 
             key="loading"
             initial={{ opacity: 0 }}
@@ -98,15 +41,8 @@ export default function VoteOnPoll() {
           >
             Loading ballot...
           </motion.p>
-        ) : !poll ? (
-          <motion.p 
-            key="error"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-red-600 font-bold text-center py-20"
-          >
-            Poll data could not be loaded.
-          </motion.p>
+        ) : error || !poll ? (
+          <ConnectionError error={error || "Poll data could not be loaded."} />
         ) : (
           <motion.div 
             key="content"
@@ -120,24 +56,26 @@ export default function VoteOnPoll() {
                  <div className="w-3 h-3 bg-black rounded-full animate-pulse"></div>
                  <span className="text-sm uppercase tracking-widest text-gray-500 font-bold">Secure Voting Terminal</span>
                </div>
-              <button 
-                onClick={() => router.push('/poll')}
-                className="text-gray-500 hover:text-black whitespace-nowrap text-sm font-bold uppercase tracking-wider hover:underline"
-              >
-                [ Go Back ]
-              </button>
+              <BackButton href="/poll" label="Go Back" variant="bracket" className="text-sm font-bold uppercase tracking-wider" />
             </div>
 
-            <VoteBallot 
-              poll={poll}
-              pollId={pollId}
-              alreadyVoted={alreadyVoted}
-              voteTxHash={voteTxHash}
-              submitting={submitting}
-              onSubmit={handleSubmit}
-              selectedIndex={selectedIndex}
-              setSelectedIndex={setSelectedIndex}
-            />
+            {showBallot && (
+              <VoteBallot 
+                poll={poll}
+                pollId={pollId}
+                alreadyVoted={alreadyVoted}
+                voteTxHash={voteTxHash}
+                submitting={isSubmitting}
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleVoteSubmit(selectedIndex)
+                }}
+                selectedIndex={selectedIndex}
+                setSelectedIndex={setSelectedIndex}
+                currentStep={currentStep}
+                steps={steps}
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>

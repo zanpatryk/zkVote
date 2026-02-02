@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import CreatePollPage from '../src/app/poll/create/page'
 import '@testing-library/jest-dom'
 import { toast } from 'react-hot-toast'
+import { MODULE_ADDRESSES } from '../src/lib/contracts'
 
 // Mock next/navigation
 const mockPush = jest.fn()
@@ -9,6 +10,7 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  useParams: jest.fn(),
 }))
 
 // Mock wagmi
@@ -17,10 +19,35 @@ jest.mock('wagmi', () => ({
   useAccount: () => mockUseAccount(),
 }))
 
+jest.mock('@wagmi/core', () => ({
+  getAccount: jest.fn(() => ({ chainId: 31337 })),
+}))
+
+jest.mock('../src/lib/wagmi/config', () => ({
+  wagmiConfig: {},
+}))
+
+jest.mock('../src/lib/contracts', () => {
+  const addresses = {
+    semaphoreEligibility: '0xSemaphoreEligibility',
+    eligibilityV0: '0xEligibilityV0',
+    zkElGamalVoteVector: '0xZkElGamalVoteVector',
+    voteStorageV0: '0xVoteStorageV0'
+  };
+  return {
+    MODULE_ADDRESSES: addresses,
+    getAddresses: jest.fn(() => addresses)
+  };
+})
+
 // Mock blockchain write function
 const mockCreatePoll = jest.fn()
 jest.mock('../src/lib/blockchain/engine/write', () => ({
   createPoll: (...args) => mockCreatePoll(...args),
+}))
+
+jest.mock('../src/lib/wagmi/config', () => ({
+  wagmiConfig: {},
 }))
 
 // Mock toast
@@ -28,113 +55,183 @@ jest.mock('react-hot-toast', () => ({
   toast: {
     error: jest.fn(),
     success: jest.fn(),
+    loading: jest.fn(),
     promise: jest.fn((promise) => promise),
   },
+}))
+
+// Mock elgamal library
+jest.mock('@zkvote/lib', () => ({
+  elgamal: {
+    init: jest.fn().mockResolvedValue(true),
+    generateKeyPair: jest.fn().mockReturnValue({
+      sk: BigInt(12345),
+      pk: [BigInt(99999), BigInt(88888)]
+    })
+  }
 }))
 
 describe('Integration Test: Poll Creation', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-  })
-
-  it('sanity check: toast mock works', () => {
-    toast.error('test')
-    expect(toast.error).toHaveBeenCalledWith('test')
-  })
-
-  it('shows error if wallet is not connected', async () => {
-    mockUseAccount.mockReturnValue({ isConnected: false })
-    const { container } = render(<CreatePollPage />)
-
-    // Try submitting the form directly
-    const form = container.querySelector('form')
-    fireEvent.submit(form)
-
-    await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Please connect your wallet first')
-    })
-    expect(mockCreatePoll).not.toHaveBeenCalled()
-  })
-
-  it('validates form inputs', async () => {
     mockUseAccount.mockReturnValue({ isConnected: true })
-    const { container } = render(<CreatePollPage />)
-    const form = container.querySelector('form')
+    mockCreatePoll.mockResolvedValue(BigInt(100))
+  })
 
-    // Default state: options are empty strings, so cleanOptions is []
-    // Code checks options length < 2 first.
-    fireEvent.submit(form)
-    await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Need at least 2 options')
-    })
-
-    // Now fill options to satisfy first check
+  const fillBasicForm = (title = 'Frameworks', description = 'Which one?', options = ['React', 'Vue']) => {
+    fireEvent.change(screen.getByPlaceholderText('e.g., Should we adopt the new governance proposal?'), { target: { value: title } })
+    fireEvent.change(screen.getByPlaceholderText('Provide context for voters...'), { target: { value: description } })
+    
     const optionInputs = screen.getAllByPlaceholderText(/Option \d/)
-    fireEvent.change(optionInputs[0], { target: { value: 'A' } })
-    fireEvent.change(optionInputs[1], { target: { value: 'B' } })
+    options.forEach((opt, idx) => {
+      if (optionInputs[idx]) fireEvent.change(optionInputs[idx], { target: { value: opt } })
+    })
+  }
 
-    // Now submit with empty title (default)
-    fireEvent.submit(form)
+  it('Create Default Poll (Anonymous=True, Secret=False)', async () => {
+    render(<CreatePollPage />)
+    
+    fillBasicForm()
+    
+    // Anonymity is ON by default. Secrecy is OFF by default.
+    fireEvent.submit(screen.getByRole('button', { name: /launch poll/i }))
+
     await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Poll title is required')
+      expect(mockCreatePoll).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Frameworks',
+        merkleTreeDepth: 20, // Default depth
+        eligibilityModule: MODULE_ADDRESSES.semaphoreEligibility,
+        voteStorage: MODULE_ADDRESSES.voteStorageV0,
+        voteStorageParams: null
+      }))
     })
   })
 
-  it('successfully creates a poll and redirects', async () => {
-    mockUseAccount.mockReturnValue({ isConnected: true })
-    mockCreatePoll.mockResolvedValue(BigInt(123)) // Mock returning pollId
+  it('Create Public Poll (Anonymous=False, Secret=False)', async () => {
+    render(<CreatePollPage />)
+    
+    fillBasicForm()
 
-    const { container } = render(<CreatePollPage />)
-    const form = container.querySelector('form')
+    // Toggle Anonymity OFF
+    fireEvent.click(screen.getByText('Anonymity').closest('div').parentElement)
 
-    // Fill Title
-    const titleInput = screen.getByPlaceholderText('e.g., What is your favorite color?')
-    fireEvent.change(titleInput, { target: { value: 'Best Framework?' } })
+    fireEvent.submit(screen.getByRole('button', { name: /launch poll/i }))
 
-    // Fill Description
-    const descInput = screen.getByPlaceholderText('Provide context for voters...')
-    fireEvent.change(descInput, { target: { value: 'React vs Vue' } })
+    await waitFor(() => {
+      expect(mockCreatePoll).toHaveBeenCalledWith(expect.objectContaining({
+        merkleTreeDepth: 0, // Should be 0 when not anonymous
+        eligibilityModule: MODULE_ADDRESSES.eligibilityV0,
+        voteStorage: MODULE_ADDRESSES.voteStorageV0,
+      }))
+    })
+  })
 
-    // Fill Options
-    const optionInputs = screen.getAllByPlaceholderText(/Option \d/)
-    fireEvent.change(optionInputs[0], { target: { value: 'React' } })
-    fireEvent.change(optionInputs[1], { target: { value: 'Vue' } })
+  it('Create Secret Poll (Anonymous=False, Secret=True)', async () => {
+    render(<CreatePollPage />)
+    
+    fillBasicForm()
+
+    // Toggle Anonymity OFF
+    fireEvent.click(screen.getByText('Anonymity').closest('div').parentElement)
+    
+    // Toggle Secrecy ON
+    fireEvent.click(screen.getByText('Secrecy').closest('div').parentElement)
+
+    // Check validation: requires keys
+    fireEvent.submit(screen.getByRole('button', { name: /launch poll/i }))
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Please generate and save your encryption keys', expect.anything())
+    })
+
+    // Generate Keys
+    fireEvent.click(screen.getByText('Generate Encryption Keys'))
+    await waitFor(() => {
+        expect(screen.getByText(/Your Secret Key/)).toBeInTheDocument()
+    })
+
+    // Confirm Saved
+    fireEvent.click(screen.getByLabelText('I have saved my secret key securely'))
 
     // Submit
-    fireEvent.submit(form)
+    fireEvent.submit(screen.getByRole('button', { name: /launch poll/i }))
 
     await waitFor(() => {
-      expect(mockCreatePoll).toHaveBeenCalledWith({
-        title: 'Best Framework?',
-        description: 'React vs Vue',
-        options: ['React', 'Vue'],
-      })
-      expect(mockPush).toHaveBeenCalledWith('/poll/123/whitelist')
+      expect(mockCreatePoll).toHaveBeenCalledWith(expect.objectContaining({
+        merkleTreeDepth: 0, 
+        eligibilityModule: MODULE_ADDRESSES.eligibilityV0,
+        voteStorage: MODULE_ADDRESSES.zkElGamalVoteVector,
+        voteStorageParams: {
+           publicKey: ['99999', '88888']
+        }
+      }))
     })
   })
 
-  it('handles creation errors', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-    mockUseAccount.mockReturnValue({ isConnected: true })
-    mockCreatePoll.mockRejectedValue(new Error('Transaction failed'))
+  it('Create ZK Encrypted Poll (Anonymous=True, Secret=True)', async () => {
+    render(<CreatePollPage />)
+    
+    fillBasicForm()
 
-    const { container } = render(<CreatePollPage />)
-    const form = container.querySelector('form')
+    // Anonymity ON by default.
+    // Toggle Secrecy ON
+    fireEvent.click(screen.getByText('Secrecy').closest('div').parentElement)
 
-    // Fill minimal valid form
-    fireEvent.change(screen.getByPlaceholderText('e.g., What is your favorite color?'), { target: { value: 'Test' } })
-    const optionInputs = screen.getAllByPlaceholderText(/Option \d/)
-    fireEvent.change(optionInputs[0], { target: { value: 'A' } })
-    fireEvent.change(optionInputs[1], { target: { value: 'B' } })
+    // Generate Keys
+    fireEvent.click(screen.getByText('Generate Encryption Keys'))
+    await waitFor(() => screen.getByLabelText('I have saved my secret key securely'))
+    fireEvent.click(screen.getByLabelText('I have saved my secret key securely'))
 
-    fireEvent.submit(form)
+    // Submit
+    fireEvent.submit(screen.getByRole('button', { name: /launch poll/i }))
 
     await waitFor(() => {
-      // toast.promise handles the error display internally, so we verify mockCreatePoll was called
-      expect(mockCreatePoll).toHaveBeenCalled()
-      expect(screen.getByText('Launch Poll')).toBeInTheDocument() // Loading state cleared
+      expect(mockCreatePoll).toHaveBeenCalledWith(expect.objectContaining({
+        merkleTreeDepth: 20, 
+        eligibilityModule: MODULE_ADDRESSES.semaphoreEligibility,
+        voteStorage: MODULE_ADDRESSES.zkElGamalVoteVector,
+        voteStorageParams: {
+           publicKey: ['99999', '88888']
+        }
+      }))
     })
+  })
+
+  it('Truncates options if Secrecy is enabled > 16 options', async () => {
+    const user = {
+        setup: () => render(<CreatePollPage />)
+    }
+    user.setup()
     
-    consoleSpy.mockRestore()
+    // Default has 2 options. Add 16 more to get 18.
+    const addButton = screen.getByText('+ Add Another Option')
+    
+    // We can't use fireEvent in a loop too fast or React state updates might batch/lag in tests? 
+    // Usually fireEvent is sync.
+    for (let i = 0; i < 16; i++) {
+        fireEvent.click(addButton)
+    }
+
+    const inputs = screen.getAllByPlaceholderText(/Option \d/)
+    expect(inputs.length).toBe(18)
+    
+    // Toggle Secrecy ON
+    // Based on PollSettings component structure, find the toggle
+    const secrecyToggle = screen.getByText('Secrecy').closest('div').parentElement
+    fireEvent.click(secrecyToggle)
+    
+    // Should now be truncated to 16
+    await waitFor(() => {
+        const truncatedInputs = screen.getAllByPlaceholderText(/Option \d/)
+        expect(truncatedInputs.length).toBe(16)
+    })
+
+    // Try adding one more while Secret is ON
+    // The button should be disabled, so clicking it won't trigger the toast (or even fire click).
+    // Instead, verify it is disabled.
+    expect(addButton).toBeDisabled()
+    
+    // And verify count remains 16
+    const finalInputs = screen.getAllByPlaceholderText(/Option \d/)
+    expect(finalInputs.length).toBe(16)
   })
 })

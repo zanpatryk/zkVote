@@ -5,25 +5,30 @@ import { usePathname, useRouter } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount } from 'wagmi'
 import { useEffect, useState } from 'react'
+import { useIsMounted } from '@/hooks/useIsMounted'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Navbar() {
-  const { isConnected, address } = useAccount()
+  const { isConnected: wagmiConnected, address } = useAccount()
   const pathname = usePathname()
   const router = useRouter()
+  const mounted = useIsMounted()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const isConnected = mounted && wagmiConnected
 
   // Redirect logic (connect → /home, disconnect → /)
   useEffect(() => {
-    const protectedRoutes = ['/home', '/poll', '/vote']
+    const protectedRoutes = ['/home', '/poll', '/vote', '/nfts']
     const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+
+    if (!mounted) return
 
     if (isConnected && pathname === '/') {
       router.replace('/home')
     } else if (!isConnected && isProtectedRoute) {
       router.replace('/')
     }
-  }, [isConnected, address, pathname, router])
+  }, [isConnected, address, pathname, router, mounted])
 
   // Close menu when route changes
   useEffect(() => {
@@ -31,9 +36,10 @@ export default function Navbar() {
   }, [pathname])
 
   const navLinks = [
-    { href: '/poll', label: 'Poll', isActive: (p) => p.startsWith('/poll') },
+    { href: '/poll', label: 'Poll', isActive: (p) => p === '/poll' },
     { href: '/vote', label: 'Vote', isActive: (p) => p === '/vote' },
     { href: '/verify', label: 'Verify', isActive: (p) => p === '/verify' },
+    { href: '/nfts', label: 'NFTs', isActive: (p) => p === '/nfts' },
   ]
 
   return (
@@ -77,7 +83,13 @@ export default function Navbar() {
 
         {/* Right Side: Connect Button + Mobile Menu Toggle */}
         <div className="flex items-center gap-4">
-          <ConnectButton showBalance={false} />
+          <ConnectButton 
+            showBalance={false} 
+            accountStatus={{
+              smallScreen: 'avatar',
+              largeScreen: 'full',
+            }}
+          />
 
           {isConnected && (
             <button

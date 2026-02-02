@@ -28,4 +28,13 @@ describe('ReceiptCard', () => {
     expect(link).toBeInTheDocument()
     expect(link).toHaveAttribute('href', 'https://sepolia.etherscan.io/tx/0xabc123')
   })
+
+  it('does NOT render ZK Proof even if provided', () => {
+    // We want to ensure the raw proof string is hidden from the UI
+    const proofStr = JSON.stringify({ a: 1, b: 2 })
+    render(<ReceiptCard {...defaultProps} proof={proofStr} />)
+    
+    expect(screen.queryByText('ZK Proof')).not.toBeInTheDocument()
+    expect(screen.queryByText(proofStr)).not.toBeInTheDocument()
+  })
 })

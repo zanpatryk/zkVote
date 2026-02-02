@@ -1,0 +1,22 @@
+{
+  "name": "circuits",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.js",
+    "setup": "node scripts/setup.js",
+    "generate:verifiers": "node scripts/generate-verifiers.js",
+    "test": "mocha 'test/unit/**/*Test.js' --timeout 120000 --exit",
+    "test:integration": "node test/integration/pedersenVoteVectorIntegrationTest.js && node test/integration/elGamalVoteVectorIntegrationTest.js && node test/integration/elGamalVoteScalarIntegrationTest.js"
+  },
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.7",
+    "snarkjs": "^0.7.5",
+    "ffjavascript": "^0.3.0"
+  },
+  "devDependencies": {
+    "chai": "^6.2.2",
+    "mocha": "^11.7.5"
+  }
+}
